@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Dalamud.Hooking;
+using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -12,15 +14,42 @@ using MacroMate.Extensions.Dotnet;
 namespace MacroMate.Extensions.Dalamud.Macros;
 
 /// No longer used, kept as reference as an alterantive macro management system
-public unsafe class VanillaMacroManager {
+public unsafe class VanillaMacroManager : IDisposable {
     private RaptureShellModule* raptureShellModule;
     private RaptureMacroModule* raptureMacroModule;
     private RaptureHotbarModule* raptureHotbarModule;
 
+    private delegate void ReloadMacroSlotsDelegate(
+        RaptureHotbarModule* raptureHotbarModule,
+        byte macroSet,
+        byte macroIndex
+    );
+
+    // TODO: Delete this and all related code when https://github.com/aers/FFXIVClientStructs/pull/660 lands
+    [Signature("E8 ?? ?? ?? ?? 8B 83 ?? ?? ?? ?? 39 87", DetourName = nameof(ReloadDetour))]
+    private Hook<ReloadMacroSlotsDelegate>? ReloadMacroSlotsHook { get; init; }
+
+    // Hooks don't hook without a detour :(
+    private void ReloadDetour(RaptureHotbarModule* raptureHotbarModule, byte macroSet, byte macroIndex) {
+        ReloadMacroSlotsHook!.Original(raptureHotbarModule, macroSet, macroIndex);
+    }
+
     public VanillaMacroManager() {
+        Env.GameInteropProvider.InitializeFromAttributes(this);
+
         raptureShellModule = RaptureShellModule.Instance();
         raptureMacroModule = RaptureMacroModule.Instance();
         raptureHotbarModule = RaptureHotbarModule.Instance();
+
+        if (ReloadMacroSlotsHook != null) {
+            ReloadMacroSlotsHook.Enable();
+        }
+    }
+
+    public void Dispose() {
+        if (ReloadMacroSlotsHook != null) {
+            ReloadMacroSlotsHook.Dispose();
+        }
     }
 
     public VanillaMacro GetMacro(VanillaMacroSet macroSet, uint macroNumber) {
@@ -127,7 +156,11 @@ public unsafe class VanillaMacroManager {
         }
 
         // TODO: Uncomment this when FFXIVClientStructs updates
-        // raptureHotbarModule->ReloadMacroSlots((uint)macroSet, (uint)macroSlot);
+        // raptureHotbarModule->ReloadMacroSlots((byte)macroSet, (byte)macroSlot);
+        //
+        if (ReloadMacroSlotsHook != null) {
+            ReloadMacroSlotsHook.Original(raptureHotbarModule, (byte)macroSet, (byte)macroSlot);
+        }
     }
 
     public void DeleteMacro(VanillaMacroSet macroSet, uint macroSlot) {
