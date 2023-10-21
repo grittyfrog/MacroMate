@@ -37,6 +37,15 @@ public class BackupWindow : Window {
                     UseShellExecute = true
                 });
             }
+
+            if (ImGui.MenuItem("Reload Config File")) {
+                Env.MacroMate.LoadConfig();
+                Env.ChatGui.Print("Macro Mate config reloaded");
+            }
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Reload the current MacroMate.xml config file");
+            }
+
             ImGui.EndMenuBar();
         }
     }
