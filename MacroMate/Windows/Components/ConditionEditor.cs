@@ -65,6 +65,19 @@ public class ConditionEditor : IDisposable {
             edited = topLevelUpdated || narrowUpdated;
         }
 
+        if (ImGui.Button("Select Current")) {
+            var current = ConditionFactory?.Current();
+            if (current != null) {
+                TrySelect(current);
+                edited = true;
+            }
+        }
+        if (ImGui.IsItemHovered()) {
+            ImGui.SetTooltip("Select the currently active condition");
+        }
+
+        ImGui.SameLine();
+
         if (ImGui.Button("Delete")) {
             return DrawResult.DeleteRequested;
         }
