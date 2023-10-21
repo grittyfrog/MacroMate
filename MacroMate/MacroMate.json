@@ -1,0 +1,12 @@
+{
+  "Author": "FFXIVMate",
+  "Name": "Macro Mate",
+  "Punchline": "Organise your macros with Macro Mate",
+  "Description": "Store as many macros as you want. Link macros to vanilla macro slots for easy controller support.\n\nThis plugin does NOT extend the macro system in any way, macro execution is still limited to 15 lines and this plugin provides no extra commands.\n\nLonger macros can be stored in MacroMate, but macros can only be executed and linked in 15-line blocks.",
+  "InternalName": "macromate",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "macros",
+    "plugin"
+  ]
+}
