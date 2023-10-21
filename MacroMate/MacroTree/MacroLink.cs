@@ -30,6 +30,7 @@ public class MacroLink {
     }
 
     public bool IsBound() => Slots.Count > 0;
+    public bool IsUnbound() => !IsBound();
 
     public override string ToString() => Name();
 
