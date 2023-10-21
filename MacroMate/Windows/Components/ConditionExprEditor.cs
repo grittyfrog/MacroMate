@@ -19,28 +19,35 @@ public class ConditionExprEditor : IDisposable {
         var edited = false;
 
         var tableFlags = ImGuiTableFlags.RowBg | ImGuiTableFlags.Borders;
-        if (ImGui.BeginTable("condition_expr_editor_layout_table", 2, tableFlags)) {
-            ImGui.TableSetupColumn("Conditions", ImGuiTableColumnFlags.WidthStretch);
-            ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthFixed);
 
-            foreach (var (andExpression, andIndex) in conditionExpr.options.WithIndex()) {
-                ImGui.PushID(andIndex);
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4f, 4f));
+        foreach (var (andExpression, andIndex) in conditionExpr.options.WithIndex()) {
+            ImGui.PushID(andIndex);
+
+            if (andIndex != 0) {
+                var or = "Or";
+                var preOrPos = ImGui.GetCursorPos();
+                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y + ImGui.GetStyle().CellPadding.Y);
+                ImGui.Text(or);
+                ImGui.SetCursorPos(new Vector2(preOrPos.X + ImGui.CalcTextSize(or).X + ImGui.GetStyle().ItemSpacing.X, preOrPos.Y));
+            }
+
+            if (ImGui.BeginTable("condition_expr_editor_layout_table", 2, tableFlags)) {
+                ImGui.TableSetupColumn("Conditions", ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthFixed);
+
                 ImGui.TableNextRow();
-
-                ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4f, 4f));
 
                 // Conditions
                 ImGui.TableNextColumn();
                 foreach (var (condition, conditionIndex) in andExpression.conditions.WithIndex()) {
                     ImGui.PushID(conditionIndex);
-                    ImGui.AlignTextToFramePadding();
                     edited |= DrawCondition(andIndex, conditionIndex, condition, ref conditionExpr);
                     ImGui.PopID();
                 }
 
                 // Action Button
                 ImGui.TableNextColumn();
-                ImGui.AlignTextToFramePadding();
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Bars.ToIconString())) {
                     ImGui.OpenPopup($"condition_action_button_popup");
                 }
@@ -69,11 +76,12 @@ public class ConditionExprEditor : IDisposable {
                     ImGui.EndPopup();
                 }
 
-                ImGui.PopID();
+                ImGui.EndTable();
             }
 
-            ImGui.EndTable();
+            ImGui.PopID();
         }
+        ImGui.PopStyleVar();
 
         // Add a "And" expression button
         if (ImGuiComponents.IconButton(FontAwesomeIcon.Plus.ToIconString())) {
@@ -81,7 +89,7 @@ public class ConditionExprEditor : IDisposable {
             edited = true;
         }
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
-            ImGui.SetTooltip("Add Condition Group");
+            ImGui.SetTooltip("Add 'Or' group");
         }
 
         return edited;
@@ -97,6 +105,7 @@ public class ConditionExprEditor : IDisposable {
 
         ImGui.PushID(conditionIndex);
         var andString = conditionIndex > 0 ? "and " : "";
+        ImGui.AlignTextToFramePadding();
         ImGui.Text($"{andString}{condition.ConditionName} is");
         ImGui.SameLine();
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(0f, 4f));
