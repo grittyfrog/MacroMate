@@ -2,8 +2,10 @@ using System;
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MacroMate.Conditions;
+using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dotnet;
 
 namespace MacroMate.Windows.Components;
@@ -23,6 +25,14 @@ public class ConditionExprEditor : IDisposable {
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4f, 4f));
         foreach (var (andExpression, andIndex) in conditionExpr.options.WithIndex()) {
             ImGui.PushID(andIndex);
+
+            var andExpressionSatisfied = andExpression.SatisfiedBy(Env.ConditionManager.CurrentConditions());
+            if (andExpressionSatisfied) {
+                ImGui.PushStyleColor(ImGuiCol.TableBorderStrong, Colors.ActiveGreen);
+            } else {
+                ImGui.PushStyleColor(ImGuiCol.TableBorderStrong, ImGui.GetStyle().Colors[(int)ImGuiCol.TableBorderStrong]);
+            }
+
 
             if (andIndex != 0) {
                 var or = "Or";
@@ -79,6 +89,8 @@ public class ConditionExprEditor : IDisposable {
                 ImGui.EndTable();
             }
 
+            ImGui.PopStyleColor();
+
             ImGui.PopID();
         }
         ImGui.PopStyleVar();
@@ -103,7 +115,15 @@ public class ConditionExprEditor : IDisposable {
     ) {
         bool edited = false;
 
+        var conditionActive = condition.SatisfiedBy(Env.ConditionManager.CurrentConditions());
+
         ImGui.PushID(conditionIndex);
+        if (conditionActive) {
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.ActiveGreen);
+        } else {
+            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
+        }
+
         var andString = conditionIndex > 0 ? "and " : "";
         ImGui.AlignTextToFramePadding();
         ImGui.Text($"{andString}{condition.ConditionName} is");
@@ -115,6 +135,21 @@ public class ConditionExprEditor : IDisposable {
             conditionEditor.TrySelect(condition);
         };
         ImGui.PopStyleVar();
+
+        if (condition.SatisfiedBy(Env.ConditionManager.CurrentConditions())) {
+            var yesIcon = Env.TextureProvider.GetIcon(76574);
+            if (yesIcon != null) {
+                ImGui.SameLine();
+                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
+                ImGui.Image(yesIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(ImGui.GetTextLineHeight()));
+
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip("This condition is active");
+                }
+            }
+        }
+
+        ImGui.PopStyleColor();
 
         if (ImGui.BeginPopup("edit_condition_popup")) {
             var drawResult = conditionEditor.Draw();

@@ -10,7 +10,7 @@ using System;
 using MacroMate.Conditions;
 using MacroMate.Extensions.Dalamud.Macros;
 using Dalamud.Plugin.Services;
-using MacroMate.Extensions.Dalamud.Fontn;
+using MacroMate.Extensions.Dalamud.Font;
 using MacroMate.Serialization;
 using Dalamud.Game;
 
