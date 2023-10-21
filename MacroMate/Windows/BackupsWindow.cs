@@ -53,7 +53,6 @@ public class BackupWindow : Window {
                 ImGui.PushID(backup.FullName);
 
                 var loadPopup = DrawLoadPopupModal(backup);
-                var deletePopup = DrawDeletePopupModal(backup);
 
                 ImGui.TableNextRow();
 
@@ -73,8 +72,13 @@ public class BackupWindow : Window {
                 }
 
                 ImGui.TableNextColumn();
-                if (ImGui.Button("Delete")) {
-                    ImGui.OpenPopup(deletePopup);
+                ImGui.Button("Delete");
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip($"Double right click this button to delete {backup.Name}");
+
+                    if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Right)) {
+                        backup.Delete();
+                    }
                 }
 
                 ImGui.PopID();
@@ -104,25 +108,5 @@ public class BackupWindow : Window {
         }
 
         return loadPopupId;
-    }
-
-    private uint DrawDeletePopupModal(FileInfo backup) {
-        var deletePopupName = $"Delete###backups_window/delete_popup/{backup.FullName}";
-        var deletePopupId = ImGui.GetID(deletePopupName);
-
-        if (ImGuiExt.BeginPopupModal(deletePopupName, ImGuiWindowFlags.AlwaysAutoResize)) {
-            ImGui.Text($"Are you sure you want to delete {backup.Name}?");
-            if (ImGui.Button("Yes")) {
-                backup.Delete();
-                ImGui.CloseCurrentPopup();
-            }
-            ImGui.SameLine();
-            if (ImGui.Button("No")) {
-                ImGui.CloseCurrentPopup();
-            }
-            ImGui.EndPopup();
-        }
-
-        return deletePopupId;
     }
 }
