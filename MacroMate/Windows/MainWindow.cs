@@ -75,6 +75,10 @@ public class MainWindow : Window, IDisposable {
                 Env.PluginWindowManager.BackupWindow.ShowOrFocus();
             }
 
+            if (ImGui.MenuItem("Help")) {
+                Env.PluginWindowManager.HelpWindow.ShowOrFocus();
+            }
+
             ImGui.EndMenuBar();
         }
     }
