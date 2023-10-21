@@ -190,6 +190,7 @@ public class MainWindow : Window, IDisposable {
             tooltipSb.AppendLine("-- Active Macros Links --");
             foreach (var activeMacro in activelyLinkedChildren) {
                 tooltipSb.AppendJoin(" » ", activeMacro.PathFrom(group).Select(pn => pn.Name));
+                tooltipSb.Append($": bound to {activeMacro.Link.Name()}");
                 tooltipSb.AppendLine();
             }
 
