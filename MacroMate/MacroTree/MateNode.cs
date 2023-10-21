@@ -21,6 +21,14 @@ public abstract class MateNode : TreeNode<MateNode> {
         public string Lines { get; set; } = "";
         public ConditionExpr.Or ConditionExpr = Conditions.ConditionExpr.Or.Empty;
 
+        public Macro Clone() => new Macro {
+            Name = this.Name,
+            IconId = this.IconId,
+            Link = this.Link.Clone(),
+            Lines = this.Lines,
+            ConditionExpr = ConditionExpr
+        };
+
         /// Get the Vanilla Macros that can be produced by this macro.
         ///
         /// Each block of 15 lines in this Macro will produce one Vanilla macro

@@ -378,6 +378,12 @@ public class MainWindow : Window, IDisposable {
                 ImGui.OpenPopup(renamePopupId);
             }
 
+            if (node is MateNode.Macro macro) {
+                if (ImGui.Selectable("Duplicate")) {
+                    Env.MacroConfig.MoveBeside(macro.Clone(), macro, TreeNodeOffset.BELOW);
+                }
+            }
+
             if (ImGui.Selectable("Delete")) {
                 ImGui.OpenPopup(deletePopupId);
             }
