@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Text;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
+using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Macros;
 using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.Imgui;
@@ -79,8 +80,7 @@ public static class MacroLinkEditor {
 
         Vector4 buttonColor;
         if (linkedMateNodes.Count > 0) {
-            var ffBlue = new Vector4(0.102f, 0.0f, 0.427f, 1.0f);
-            buttonColor = ffBlue;
+            buttonColor = Colors.FinalFantasyBlue;
         } else if (vanillaMacro.IsDefined()) {
             buttonColor = ImGui.ColorConvertU32ToFloat4(ImGui.GetColorU32(ImGuiCol.Button));
         } else {

@@ -1,7 +1,7 @@
 using System;
 using Dalamud.Interface.GameFonts;
 
-namespace MacroMate.Extensions.Dalamud.Fontn;
+namespace MacroMate.Extensions.Dalamud.Font;
 
 public class FontManager : IDisposable {
     public GameFontHandle Axis18 = Env.PluginInterface.UiBuilder.GetGameFontHandle(
