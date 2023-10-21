@@ -37,6 +37,10 @@ public class MacroConfig {
 
         var macroNodes = Root.Values().SelectNonNull(node => node as MateNode.Macro);
         foreach (var macroNode in macroNodes) {
+            // If the macro doesn't have anything to link to, skip it
+            if (macroNode.Link.IsUnbound()) { continue; }
+
+            // If we've already linked a macro in any of the slots this macro wants, skip it
             if (macroNode.Link.Slots.Any(slot => allocatedSlots.Contains(slot))) {
                 continue;
             }
