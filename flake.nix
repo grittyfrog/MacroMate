@@ -23,7 +23,7 @@
 
         dotnet = pkgs.dotnet-sdk_7;
 
-        # Once nix flakes support zip files with top-level folders we can remvoe this and just point
+        # Once nix flakes support zip files with top-level folders we can remove this and just point
         # the flake straight at the zip file.
         dalamud-distrib = pkgs.runCommand "dalamud-distrib" { buildInputs = [ pkgs.unzip ]; } ''
           unzip ${dalamud-distrib-repo}/latest.zip -d $out
