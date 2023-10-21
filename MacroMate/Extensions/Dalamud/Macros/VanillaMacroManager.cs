@@ -18,7 +18,6 @@ public unsafe class VanillaMacroManager {
     private RaptureHotbarModule* raptureHotbarModule;
 
     public VanillaMacroManager() {
-        var uiModule = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework.Instance()->GetUiModule();
         raptureShellModule = RaptureShellModule.Instance();
         raptureMacroModule = RaptureMacroModule.Instance();
         raptureHotbarModule = RaptureHotbarModule.Instance();
@@ -111,9 +110,20 @@ public unsafe class VanillaMacroManager {
         var macroAddon = Env.GameGui.GetAddonByName("Macro");
         if (macroAddon != nint.Zero) {
             var addon = (AtkUnitBase*)macroAddon;
-            addon->AtkValues[04].Int = (int)macroSlot;
-            addon->AtkValues[12].Int = (int)vanillaMacro.IconId;
-            addon->OnRefresh(addon->AtkValuesCount, addon->AtkValues);
+
+            // We only want to update the screen if it's visible, since otherwise we'll be writing
+            // shared icons into individual and vice-versa.
+            var addonMacroSet = (VanillaMacroSet)addon->AtkValues[05].Int; // Individual / Shared
+            if (macroSet == addonMacroSet) {
+                // This sets the active selection of the macro window. It's a bit of a hack but
+                // I couldn't see any other way to "target" the slot.
+                addon->AtkValues[04].Int = (int)macroSlot;
+
+                // This sets the icon of the active selection
+                addon->AtkValues[12].Int = (int)vanillaMacro.IconId;
+
+                addon->OnRefresh(addon->AtkValuesCount, addon->AtkValues);
+            }
         }
 
         // TODO: Uncomment this when FFXIVClientStructs updates
