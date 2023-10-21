@@ -44,6 +44,7 @@ public class Env {
         PluginWindowManager.Dispose();
         PluginCommandManager.Dispose();
         FontManager.Dispose();
+        VanillaMacroManager.Dispose();
     }
 
     /// ===
