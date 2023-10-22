@@ -18,6 +18,13 @@ public record class VanillaMacro(
     public static uint DefaultIconId = 66001; // Default "M" Icon
     public static uint InactiveIconId = 60861; // A red cross
 
+    public static VanillaMacro Empty => new VanillaMacro(
+        IconId: DefaultIconId,
+        Title: "",
+        LineCount: 0,
+        Lines: new(() => "")
+    );
+
     /// Macros seem to "exist" if they have any title or lines.
     public bool IsDefined() {
         return Title != "" || LineCount > 0 && IconRowId > 0;

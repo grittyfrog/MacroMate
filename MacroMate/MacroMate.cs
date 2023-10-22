@@ -50,10 +50,8 @@ public class MacroMate {
             var inactiveVanillaMacroLinks = CurrentVanillaLinks.ToList();
             foreach (var macro in Env.MacroConfig.ActiveMacros) {
                 foreach (var (vanillaMacroLink, vanillaMacroOrNull) in macro.VanillaMacroLinkBinding()) {
-                    if (vanillaMacroOrNull != null) {
-                        Env.VanillaMacroManager.SetMacro(vanillaMacroLink, vanillaMacroOrNull);
-                        inactiveVanillaMacroLinks.Remove(vanillaMacroLink);
-                    }
+                    Env.VanillaMacroManager.SetMacro(vanillaMacroLink, vanillaMacroOrNull);
+                    inactiveVanillaMacroLinks.Remove(vanillaMacroLink);
                 }
             }
 

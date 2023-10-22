@@ -7,6 +7,7 @@ using MacroMate.Windows.Components;
 using MacroMate.MacroTree;
 using MacroMate.Extensions.Dalamud.Macros;
 using MacroMate.Extensions.Dotnet;
+using MacroMate.Extensions.Dalamud;
 
 namespace MacroMate.Windows;
 
@@ -96,6 +97,31 @@ public class MacroWindow : Window, IDisposable {
             }
             if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
                 ImGui.SetTooltip("Define when to link this macro to the in-game macro slots");
+            }
+
+            if (ImGui.BeginMenu("Settings")) {
+                if (Env.PluginInterface.MacroChainPluginIsLoaded()) {
+                    var linkWithMacroChain = Macro.LinkWithMacroChain;
+                    if (ImGui.Checkbox("Use Macro Chain", ref linkWithMacroChain)) {
+                        Macro.LinkWithMacroChain = linkWithMacroChain;
+                        edited = true;
+                    }
+                    if (ImGui.IsItemHovered()) {
+                        ImGui.SetTooltip("Use Macro Chain when binding long macros. Macros must be linked to adjacent positions for this to work");
+                    }
+                } else {
+                    ImGui.BeginDisabled();
+                    var disabled = false;
+                    if (ImGui.Checkbox("Use Macro Chain", ref disabled)) {
+                        disabled = false;
+                    };
+                    ImGui.EndDisabled();
+                    if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+                        ImGui.SetTooltip("Use Macro Chain when binding long macros. This setting is only availalbe if Macro Chain is installed.");
+                    }
+
+                }
+                ImGui.EndMenu();
             }
 
             // Delete Item
