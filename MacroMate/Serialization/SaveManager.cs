@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using MacroMate.Extensions.Dotnet;
 using MacroMate.MacroTree;
 using MacroMate.Serialization.V1;
 
@@ -12,18 +11,47 @@ public class SaveManager {
     public FileInfo MacroDataFile {
         get => new FileInfo(Path.Combine(Env.PluginInterface.ConfigDirectory.FullName, "MacroMate.xml"));
     }
-
-    public FileInfo MacroLastBackupTimeFile {
-        get => new FileInfo(Path.Combine(Env.PluginInterface.ConfigDirectory.FullName, "MacroMateLastBackup.txt"));
-    }
-
     public DirectoryInfo MacroBackupFolder {
         get => new DirectoryInfo(Path.Combine(Env.PluginInterface.ConfigDirectory.FullName, "Backups"));
     }
 
+    /// The maximum number of timed backup files to keep.
+    ///
+    /// When writing a new timed backup file the oldest one will be deleted
+    /// if we are over this limit.
+    public int MaxTimedBackupFiles { get; set; } = 3;
+    public int MinutesBetweenTimedBackups { get; set; } = 60;
+    private string timedBackupPostabmle = "timedBackup";
+
+    public IEnumerable<FileInfo> GetCurrentTimedBackupFiles() =>
+        MacroBackupFolder.EnumerateFiles().Where(file => file.Name.Contains(timedBackupPostabmle));
+
     public void Save(MateNode root) {
         SaveTimedBackup();
         SaveManagerV1.Write(root, MacroDataFile);
+    }
+
+    public void SaveTimedBackup() {
+        if (!MacroDataFile.Exists) { return; }
+
+        var currentTimedBackupFiles = GetCurrentTimedBackupFiles().ToList();
+        var lastBackupTime = currentTimedBackupFiles.Count > 0
+            ? currentTimedBackupFiles.Max(file => file.CreationTime)
+            : DateTime.MinValue;
+
+        var timeSinceLastBackup = DateTime.Now - lastBackupTime;
+        if (timeSinceLastBackup.TotalMinutes > MinutesBetweenTimedBackups) {
+            var backupDate = DateTime.Now.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss");
+            var backupFile = SaveBackup($"{timedBackupPostabmle}-{backupDate}");
+        }
+
+        // Reduce the number of timed backup files until we're back to the max
+        var oldestTimedBackupFilesBeyondMax = GetCurrentTimedBackupFiles()
+            .OrderByDescending(file => file.CreationTime)
+            .Skip(MaxTimedBackupFiles);
+        foreach (var file in oldestTimedBackupFilesBeyondMax) {
+            file.Delete();
+        }
     }
 
     public FileInfo SaveBackup() {
@@ -41,27 +69,6 @@ public class SaveManager {
         return new FileInfo(backupFile);
     }
 
-    public void SaveTimedBackup() {
-        if (!MacroDataFile.Exists) { return; }
-
-        DateTime lastBackupTime = DateTime.MinValue;
-        if (MacroLastBackupTimeFile.Exists) {
-            using (var lastBackupTimeFile = MacroLastBackupTimeFile.OpenText()) {
-                lastBackupTime = lastBackupTimeFile.ReadToEnd().ToDateTimeOrNull() ?? DateTime.MinValue;
-            }
-        }
-
-        var timeSinceLastBackup = DateTime.Now - lastBackupTime;
-        if (timeSinceLastBackup.TotalHours > 1) {
-            var backupFile = SaveBackup();
-
-            // Write the last backup time
-            using (var lastBackupTimeFile = MacroLastBackupTimeFile.Create())
-            using (var lastBackupTimeWriter = new StreamWriter(lastBackupTimeFile)) {
-                lastBackupTimeWriter.Write(backupFile.LastWriteTime);
-            }
-        }
-    }
 
     public List<FileInfo> ListBackups() {
         return MacroBackupFolder
