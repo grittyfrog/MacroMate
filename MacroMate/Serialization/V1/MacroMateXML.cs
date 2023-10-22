@@ -58,8 +58,10 @@ public class MacroXML : MateNodeXML {
     public uint? IconId { get; set; }
     public VanillaMacroSet? MacroSet { get; set; }
     public List<uint>? MacroSlots { get; set; }
+    public bool? LinkWithMacroChain { get; set; }
     public string? Lines { get; set; }
     public OrConditionXML? OrCondition { get; set; }
+
 
     public override MateNode ToReal() => new MateNode.Macro {
         Name = Name,
@@ -68,6 +70,7 @@ public class MacroXML : MateNodeXML {
             Set = MacroSet ?? VanillaMacroSet.INDIVIDUAL,
             Slots = MacroSlots ?? new()
         },
+        LinkWithMacroChain = LinkWithMacroChain ?? false,
         Lines = Lines ?? "",
         ConditionExpr = OrCondition?.ToReal() ?? ConditionExpr.Or.Empty
     };
@@ -77,6 +80,7 @@ public class MacroXML : MateNodeXML {
         IconId = macro.IconId,
         MacroSet = macro.Link.Set,
         MacroSlots = macro.Link.Slots,
+        LinkWithMacroChain = macro.LinkWithMacroChain,
         Lines = macro.Lines,
         OrCondition = OrConditionXML.From(macro.ConditionExpr)
     };
