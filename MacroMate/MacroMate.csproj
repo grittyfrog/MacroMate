@@ -32,7 +32,6 @@
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="2.1.12" />
     <PackageReference Include="System.Collections.Immutable" Version="7.0.0" />
-    <PackageReference Include="XivCommon" Version="7.0.2" />
     <PackageReference Include="XSerializer" Version="0.4.4" />
     <Reference Include="FFXIVClientStructs">
       <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
