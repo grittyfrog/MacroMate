@@ -38,9 +38,9 @@ public class PluginWindowManager : IDisposable {
             var currentPos = ImGui.GetWindowPos();
             var currentSize = ImGui.GetWindowSize();
 
-            window.IsOpen = true;
             window.Position = currentPos + new Vector2(currentSize.X, 0);
             window.PositionCondition = ImGuiCond.Appearing;
+            window.IsOpen = true;
         } else {
             ImGui.SetWindowFocus(window.WindowName);
         }
