@@ -23,8 +23,20 @@ public class SaveManager {
     public int MinutesBetweenTimedBackups { get; set; } = 60;
     private string timedBackupPostabmle = "timedBackup";
 
-    public IEnumerable<FileInfo> GetCurrentTimedBackupFiles() =>
-        MacroBackupFolder.EnumerateFiles().Where(file => file.Name.Contains(timedBackupPostabmle));
+    public IEnumerable<FileInfo> GetCurrentTimedBackupFiles() {
+        if (!MacroBackupFolder.Exists) { return new List<FileInfo>(); }
+
+        return MacroBackupFolder.EnumerateFiles().Where(file => file.Name.Contains(timedBackupPostabmle));
+    }
+
+    public List<FileInfo> ListBackups() {
+        if (!MacroBackupFolder.Exists) { return new List<FileInfo>(); }
+
+        return MacroBackupFolder
+            .EnumerateFiles("*.xml")
+            .OrderByDescending(file => file.LastWriteTime)
+            .ToList();
+    }
 
     public void Save(MateNode root) {
         SaveTimedBackup();
@@ -40,9 +52,9 @@ public class SaveManager {
             : DateTime.MinValue;
 
         var timeSinceLastBackup = DateTime.Now - lastBackupTime;
-        if (timeSinceLastBackup.TotalMinutes > MinutesBetweenTimedBackups) {
+        if (timeSinceLastBackup > TimeSpan.FromMinutes(MinutesBetweenTimedBackups)) {
             var backupDate = DateTime.Now.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss");
-            var backupFile = SaveBackup($"{timedBackupPostabmle}-{backupDate}");
+            SaveBackup($"{timedBackupPostabmle}-{backupDate}");
         }
 
         // Reduce the number of timed backup files until we're back to the max
@@ -54,12 +66,14 @@ public class SaveManager {
         }
     }
 
-    public FileInfo SaveBackup() {
+    public FileInfo? SaveBackup() {
         var backupDate = DateTime.Now.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss");
         return SaveBackup(backupDate);
     }
 
-    public FileInfo SaveBackup(string postamble) {
+    public FileInfo? SaveBackup(string postamble) {
+        if (!MacroDataFile.Exists) { return null; }
+
         // Write the backup
         MacroBackupFolder.Create();
 
@@ -69,13 +83,6 @@ public class SaveManager {
         return new FileInfo(backupFile);
     }
 
-
-    public List<FileInfo> ListBackups() {
-        return MacroBackupFolder
-            .EnumerateFiles("*.xml")
-            .OrderByDescending(file => file.LastWriteTime)
-            .ToList();
-    }
 
     public MateNode? Load() => LoadFrom(MacroDataFile);
 
