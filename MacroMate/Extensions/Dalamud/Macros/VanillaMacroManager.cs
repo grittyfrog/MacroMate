@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Hooking;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
@@ -18,6 +20,8 @@ public unsafe class VanillaMacroManager : IDisposable {
     private RaptureShellModule* raptureShellModule;
     private RaptureMacroModule* raptureMacroModule;
     private RaptureHotbarModule* raptureHotbarModule;
+
+    private bool macroAddonIsSetup = false;
 
     private delegate void ReloadMacroSlotsDelegate(
         RaptureHotbarModule* raptureHotbarModule,
@@ -41,6 +45,9 @@ public unsafe class VanillaMacroManager : IDisposable {
         raptureMacroModule = RaptureMacroModule.Instance();
         raptureHotbarModule = RaptureHotbarModule.Instance();
 
+        Env.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Macro", OnMacroAddonPostSetup);
+        Env.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Macro", OnMacroAddonPreFinalise);
+
         if (ReloadMacroSlotsHook != null) {
             ReloadMacroSlotsHook.Enable();
         }
@@ -50,6 +57,9 @@ public unsafe class VanillaMacroManager : IDisposable {
         if (ReloadMacroSlotsHook != null) {
             ReloadMacroSlotsHook.Dispose();
         }
+
+        Env.AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, "Macro", OnMacroAddonPostSetup);
+        Env.AddonLifecycle.UnregisterListener(AddonEvent.PreFinalize, "Macro", OnMacroAddonPreFinalise);
     }
 
     public VanillaMacro GetMacro(VanillaMacroSet macroSet, uint macroNumber) {
@@ -170,13 +180,16 @@ public unsafe class VanillaMacroManager : IDisposable {
         if (macroAddonRaw == nint.Zero) { return; }
         var macroAddon = (AtkUnitBase*)macroAddonRaw;
 
-        var macroInterfaceRaw = Env.GameGui.FindAgentInterface(macroAddon);
-        if (macroInterfaceRaw == nint.Zero) { return; }
-        var macroInterface = (AgentInterface*)macroInterfaceRaw;
+        // We need to make sure the addon is fully initialised (i.e. Setup has finished) before
+        // calling OnRefresh, otherwise things crash.
+        if (macroAddon->RootNode == null) { return; }
+        if (macroAddon->RootNode->ChildNode == null) { return; }
 
-        // This prevents a crash when editing the icon prior to opening the
-        // interface for the first time and writing to a previously deleted slot.
-        if (!macroInterface->IsAgentActive()) { return; }
+        // Just for double extra safety we also make sure we've seen a full setup event.
+        //
+        // This should be redundant given the above checks on RootNode and ChildNode, but lets check it
+        // anyway to be sure.
+        if (!macroAddonIsSetup) { return; }
 
         // We only want to update the screen if it's visible, since otherwise we'll be writing
         // shared icons into individual and vice-versa.
@@ -191,5 +204,14 @@ public unsafe class VanillaMacroManager : IDisposable {
 
             macroAddon->OnRefresh(macroAddon->AtkValuesCount, macroAddon->AtkValues);
         }
+    }
+
+    private void OnMacroAddonPostSetup(AddonEvent type, AddonArgs args) {
+        macroAddonIsSetup = true;
+    }
+
+
+    private void OnMacroAddonPreFinalise(AddonEvent type, AddonArgs args) {
+        macroAddonIsSetup = false;
     }
 }
