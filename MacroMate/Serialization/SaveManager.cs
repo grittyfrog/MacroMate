@@ -53,7 +53,7 @@ public class SaveManager {
 
         var timeSinceLastBackup = DateTime.Now - lastBackupTime;
         if (timeSinceLastBackup > TimeSpan.FromMinutes(MinutesBetweenTimedBackups)) {
-            var backupDate = DateTime.Now.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss");
+            var backupDate = DateTime.Now.ToString("yyyy'-'MM'-'dd'T'HH'-'mm'0'ss");
             SaveBackup($"{timedBackupPostabmle}-{backupDate}");
         }
 
@@ -67,7 +67,7 @@ public class SaveManager {
     }
 
     public FileInfo? SaveBackup() {
-        var backupDate = DateTime.Now.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss");
+        var backupDate = DateTime.Now.ToString("yyyy'-'MM'-'dd'T'HH'-'mm'-'ss");
         return SaveBackup(backupDate);
     }
 
