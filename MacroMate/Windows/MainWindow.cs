@@ -70,6 +70,10 @@ public class MainWindow : Window, IDisposable {
             if (ImGui.MenuItem("Edit Mode", null, editMode)) {
                 EditModeSetEnabled(!editMode);
             }
+            if (ImGui.IsItemHovered()) {
+                var editModeState = editMode ? "Enabled" : "Disabled";
+                ImGui.SetTooltip($"Toggle Edit Mode, which can be used to to edit multiple macros at once ({editModeState})");
+            }
 
             if (ImGui.MenuItem("Backups")) {
                 Env.PluginWindowManager.BackupWindow.ShowOrFocus();
