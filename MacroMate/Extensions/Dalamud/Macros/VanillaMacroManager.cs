@@ -136,24 +136,7 @@ public unsafe class VanillaMacroManager : IDisposable {
         raptureMacroModule->UserFileEvent.HasChanges = true;
 
         // Update the MacroAddon if it's open (since it doesn't auto-refresh)
-        var macroAddon = Env.GameGui.GetAddonByName("Macro");
-        if (macroAddon != nint.Zero) {
-            var addon = (AtkUnitBase*)macroAddon;
-
-            // We only want to update the screen if it's visible, since otherwise we'll be writing
-            // shared icons into individual and vice-versa.
-            var addonMacroSet = (VanillaMacroSet)addon->AtkValues[05].Int; // Individual / Shared
-            if (macroSet == addonMacroSet) {
-                // This sets the active selection of the macro window. It's a bit of a hack but
-                // I couldn't see any other way to "target" the slot.
-                addon->AtkValues[04].Int = (int)macroSlot;
-
-                // This sets the icon of the active selection
-                addon->AtkValues[12].Int = (int)vanillaMacro.IconId;
-
-                addon->OnRefresh(addon->AtkValuesCount, addon->AtkValues);
-            }
-        }
+        SetVanillaMacroUISlotIcon(macroSet, macroSlot, vanillaMacro.IconId);
 
         // TODO: Uncomment this when FFXIVClientStructs updates
         // raptureHotbarModule->ReloadMacroSlots((byte)macroSet, (byte)macroSlot);
@@ -177,5 +160,36 @@ public unsafe class VanillaMacroManager : IDisposable {
             IconRowId: 0
         );
         SetMacro(macroSet, macroSlot, deletedMacro);
+    }
+
+    /// When we change the Icon of a macro it doesn't actually refresh the Macro UI when it's open,
+    /// so we need to write the UI values ourself.
+    private void SetVanillaMacroUISlotIcon(VanillaMacroSet macroSet, uint macroSlot, uint iconId) {
+        // Update the MacroAddon if it's open (since it doesn't auto-refresh)
+        var macroAddonRaw = Env.GameGui.GetAddonByName("Macro");
+        if (macroAddonRaw == nint.Zero) { return; }
+        var macroAddon = (AtkUnitBase*)macroAddonRaw;
+
+        var macroInterfaceRaw = Env.GameGui.FindAgentInterface(macroAddon);
+        if (macroInterfaceRaw == nint.Zero) { return; }
+        var macroInterface = (AgentInterface*)macroInterfaceRaw;
+
+        // This prevents a crash when editing the icon prior to opening the
+        // interface for the first time and writing to a previously deleted slot.
+        if (!macroInterface->IsAgentActive()) { return; }
+
+        // We only want to update the screen if it's visible, since otherwise we'll be writing
+        // shared icons into individual and vice-versa.
+        var addonMacroSet = (VanillaMacroSet)macroAddon->AtkValues[05].Int; // Individual / Shared
+        if (macroSet == addonMacroSet) {
+            // This sets the active selection of the macro window. It's a bit of a hack but
+            // I couldn't see any other way to "target" the slot.
+            macroAddon->AtkValues[04].Int = (int)macroSlot;
+
+            // This sets the icon of the active selection
+            macroAddon->AtkValues[12].Int = (int)iconId;
+
+            macroAddon->OnRefresh(macroAddon->AtkValuesCount, macroAddon->AtkValues);
+        }
     }
 }
