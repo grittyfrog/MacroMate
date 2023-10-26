@@ -409,6 +409,7 @@ public class MainWindow : Window, IDisposable {
             ImGui.InputText("###group_name", ref name, 255);
             if (ImGui.IsItemDeactivatedAfterEdit()) {
                 Env.MacroConfig.CreateGroup(parent, name);
+                ImGui.CloseCurrentPopup();
             }
             ImGui.EndPopup();
         }
