@@ -73,7 +73,7 @@ public static class MacroLinkEditor {
         uint macroSlot,
         ref MacroLink macroLink
     ) {
-        bool edited = true;
+        bool edited = false;
 
         var linkedMateNodes = Env.MacroConfig.LinkedNodesFor(macroLink.Set, macroSlot);
         var vanillaMacro = Env.VanillaMacroManager.GetMacro(macroLink.Set, macroSlot);
