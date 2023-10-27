@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Icons;
+using MacroMate.Extensions.Dalamud.Texture;
 using MacroMate.MacroTree;
 
 namespace MacroMate.Windows;
@@ -27,6 +29,10 @@ public class IconPicker : EventWindow<uint>, IDisposable {
 
     private TextureCache TextureCache = new(Env.TextureProvider);
     private List<IconTab> iconTabs = new();
+    private NamedIconIndex namedIconIndex = new();
+
+    private string searchText = "";
+    private bool showIconNames = false;
 
     public IconPicker() : base(NAME) {
         this.SizeConstraints = new WindowSizeConstraints {
@@ -189,10 +195,63 @@ public class IconPicker : EventWindow<uint>, IDisposable {
 
 
         if (ImGui.BeginTabBar("Icon Tabs", ImGuiTabBarFlags.NoTooltip)) {
+            DrawSearchTab(iconSize, columns);
+
             foreach (var iconTab in allIconTabs) {
                 DrawIconTab(iconTab, iconSize, columns);
             }
             ImGui.EndTabBar();
+        }
+    }
+
+    private void DrawSearchTab(float iconSize, int columns) {
+        if (ImGui.BeginTabItem("Search")) {
+
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text("Search");
+            ImGui.SameLine();
+            ImGui.InputText("###iconsearch", ref searchText, 255);
+            ImGui.SameLine();
+            ImGui.Checkbox("Show Icon Tags", ref showIconNames);
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("WARNING: Icon tags may contain spoilers! Use at your own risk.");
+            }
+
+            ImGui.BeginChild("Search##IconList");
+
+            var allNamedIcons = namedIconIndex.BasicSearch(searchText);
+            var lineHeight = iconSize + ImGui.GetStyle().ItemSpacing.Y;
+            ImGuiClip.ClippedDraw(allNamedIcons, (namedIcon) => {
+                var icon = TextureCache.GetIcon(namedIcon.IconId)!;
+                ImGui.Image(icon.ImGuiHandle, new Vector2(iconSize));
+                if (ImGui.IsItemHovered()) {
+                    ImGui.BeginTooltip();
+                    ImGui.TextUnformatted($"{namedIcon.IconId}");
+
+                    if (showIconNames) {
+                        var columns = 3;
+                        var currentColumn = 0;
+                        foreach (var name in namedIcon.Names) {
+                            ImGui.TextUnformatted(name);
+                            if (currentColumn > columns) {
+                                currentColumn = 0;
+                            } else {
+                                ImGui.SameLine();
+                                currentColumn += 1;
+                            }
+                        }
+                    }
+                    ImGui.EndTooltip();
+                }
+                if (ImGui.IsItemClicked() && CurrentEventScope != null) {
+                    CurrentIconId = namedIcon.IconId;
+                    EnqueueEvent(namedIcon.IconId);
+                    this.IsOpen = false;
+                }
+            }, columns, lineHeight);
+
+            ImGui.EndChild();
+            ImGui.EndTabItem();
         }
     }
 
