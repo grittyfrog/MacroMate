@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud;
@@ -29,9 +28,12 @@ public class IconPicker : EventWindow<uint>, IDisposable {
 
     private TextureCache TextureCache = new(Env.TextureProvider);
     private List<IconTab> iconTabs = new();
+
     private NamedIconIndex namedIconIndex = new();
 
     private string searchText = "";
+    private List<NamedIcon> searchedNamedIcons = new();
+
     private bool showIconNames = false;
 
     public IconPicker() : base(NAME) {
@@ -165,6 +167,16 @@ public class IconPicker : EventWindow<uint>, IDisposable {
         );
     }
 
+    public override void OnOpen() {
+        namedIconIndex.StartIndexing(() => {
+            RefreshSearch();
+        });
+    }
+
+    private void RefreshSearch() {
+        searchedNamedIcons = namedIconIndex.BasicSearch(searchText);
+    }
+
     public override void OnClose() {
         base.OnClose();
         TextureCache.Clear();
@@ -185,15 +197,13 @@ public class IconPicker : EventWindow<uint>, IDisposable {
     }
 
     public override void Draw() {
-        float iconSize = 48 * ImGuiHelpers.GlobalScale;
-        var columns = (int)((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().WindowPadding.X) / (iconSize + ImGui.GetStyle().ItemSpacing.X));
-
         var allIconTabs = iconTabs.ToList();
 
         var activeIconsTab = ActiveIconsTab();
         allIconTabs.Insert(0, activeIconsTab);
 
-
+        float iconSize = 48 * ImGuiHelpers.GlobalScale;
+        var columns = (int)((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().WindowPadding.X) / (iconSize + ImGui.GetStyle().ItemSpacing.X));
         if (ImGui.BeginTabBar("Icon Tabs", ImGuiTabBarFlags.NoTooltip)) {
             DrawSearchTab(iconSize, columns);
 
@@ -206,11 +216,9 @@ public class IconPicker : EventWindow<uint>, IDisposable {
 
     private void DrawSearchTab(float iconSize, int columns) {
         if (ImGui.BeginTabItem("Search")) {
-
-            ImGui.AlignTextToFramePadding();
-            ImGui.Text("Search");
-            ImGui.SameLine();
-            ImGui.InputText("###iconsearch", ref searchText, 255);
+            if (ImGui.InputTextWithHint("###iconsearch", "Search", ref searchText, 255)) {
+                RefreshSearch();
+            }
             ImGui.SameLine();
             ImGui.Checkbox("Show Icon Tags", ref showIconNames);
             if (ImGui.IsItemHovered()) {
@@ -218,41 +226,48 @@ public class IconPicker : EventWindow<uint>, IDisposable {
             }
 
             ImGui.BeginChild("Search##IconList");
-
-            var allNamedIcons = namedIconIndex.BasicSearch(searchText);
-            var lineHeight = iconSize + ImGui.GetStyle().ItemSpacing.Y;
-            ImGuiClip.ClippedDraw(allNamedIcons, (namedIcon) => {
-                var icon = TextureCache.GetIcon(namedIcon.IconId)!;
-                ImGui.Image(icon.ImGuiHandle, new Vector2(iconSize));
-                if (ImGui.IsItemHovered()) {
-                    ImGui.BeginTooltip();
-                    ImGui.TextUnformatted($"{namedIcon.IconId}");
-
-                    if (showIconNames) {
-                        var columns = 3;
-                        var currentColumn = 0;
-                        foreach (var name in namedIcon.Names) {
-                            ImGui.TextUnformatted(name);
-                            if (currentColumn > columns) {
-                                currentColumn = 0;
-                            } else {
-                                ImGui.SameLine();
-                                currentColumn += 1;
-                            }
-                        }
-                    }
-                    ImGui.EndTooltip();
-                }
-                if (ImGui.IsItemClicked() && CurrentEventScope != null) {
-                    CurrentIconId = namedIcon.IconId;
-                    EnqueueEvent(namedIcon.IconId);
-                    this.IsOpen = false;
-                }
-            }, columns, lineHeight);
+            if (namedIconIndex.State == NamedIconIndex.IndexState.INDEXED) {
+                DrawSearchResults(iconSize, columns);
+            } else {
+                var spinner = "|/-\\"[(int)(ImGui.GetTime() / 0.05f) % 3];
+                ImGui.Text($"Loading {spinner}");
+            }
 
             ImGui.EndChild();
             ImGui.EndTabItem();
         }
+    }
+
+    private void DrawSearchResults(float iconSize, int columns) {
+        var lineHeight = iconSize + ImGui.GetStyle().ItemSpacing.Y;
+        ImGuiClip.ClippedDraw(searchedNamedIcons, (namedIcon) => {
+            var icon = TextureCache.GetIcon(namedIcon.IconId)!;
+            ImGui.Image(icon.ImGuiHandle, new Vector2(iconSize));
+            if (ImGui.IsItemHovered()) {
+                ImGui.BeginTooltip();
+                ImGui.TextUnformatted($"{namedIcon.IconId}");
+
+                if (showIconNames) {
+                    var columns = 3;
+                    var currentColumn = 0;
+                    foreach (var name in namedIcon.Names) {
+                        ImGui.TextUnformatted(name);
+                        if (currentColumn > columns) {
+                            currentColumn = 0;
+                        } else {
+                            ImGui.SameLine();
+                            currentColumn += 1;
+                        }
+                    }
+                }
+                ImGui.EndTooltip();
+            }
+            if (ImGui.IsItemClicked() && CurrentEventScope != null) {
+                CurrentIconId = namedIcon.IconId;
+                EnqueueEvent(namedIcon.IconId);
+                this.IsOpen = false;
+            }
+        }, columns, lineHeight);
     }
 
     private void DrawIconTab(IconTab tab, float iconSize, int columns) {

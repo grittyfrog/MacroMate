@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Dalamud.Utility;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
@@ -17,9 +19,53 @@ namespace MacroMate.Extensions.Dalamud.Texture;
 /// but it covers most of the game icons.
 public class NamedIconIndex {
     private List<NamedIcon> namedIcons = new();
-    private Dictionary<uint, NamedIcon> iconIndex = new();
+    private ConcurrentDictionary<uint, NamedIcon> iconIndex = new();
 
-    public NamedIconIndex() {
+    public enum IndexState {
+        UNINDEXED,
+        INDEXING,
+        INDEXED
+    };
+
+    public IndexState State { get; private set; } = IndexState.UNINDEXED;
+
+    public NamedIconIndex() {}
+
+    public void StartIndexing(System.Action onFinish) {
+        if (State != IndexState.UNINDEXED) { return; }
+
+        Task.Run(() => {
+            State = IndexState.INDEXING;
+            IndexNamedIcons();
+            State = IndexState.INDEXED;
+            onFinish();
+        });
+    }
+
+    public List<NamedIcon> BasicSearch(string needle) {
+        if (State != IndexState.INDEXED) { return new(); }
+        if (needle.Length < 2)  { return new(); }
+
+        IEnumerable<(NamedIcon, int)> results = namedIcons
+            .Select<NamedIcon, (NamedIcon, int)?>(icon => {
+                if (icon.IconId.ToString() == needle) { return (icon, 0); }
+                foreach (var searchName in icon.SearchNames) {
+                    if (searchName == needle) { return (icon, 1); }
+                    if (searchName.Split(" ").Any(word => word == needle)) { return (icon, 2); }
+                    if (searchName.Contains(needle)) { return (icon, 3); }
+                }
+
+                return null;
+            })
+            .OfType<(NamedIcon, int)>();
+
+        return results
+            .OrderBy(iconAndScore => iconAndScore.Item2)
+            .Select(iconAndScore => iconAndScore.Item1)
+            .ToList();
+    }
+
+    private void IndexNamedIcons() {
         IndexIcons<FFXIVAction>(
             (row) => row.Icon,
             (row) => new[] { row.Name, row.ClassJob.Value?.Name, row.ActionCategory.Value?.Name }
@@ -341,6 +387,11 @@ public class NamedIconIndex {
             (row) => new[] { row.ItemName.Value?.Name, row.KeyItemName.Value?.Name }
         );
 
+        IndexIcons<VVDNotebookContents>(
+            (row) => (uint)row.Icon,
+            (row) => new[] { row.Name, row.Description }
+        );
+
         IndexIcons<Weather>(
             (row) => (uint)row.Icon,
             (row) => new[] { row.Name }
@@ -359,14 +410,6 @@ public class NamedIconIndex {
         // TODO: "Frontline03" (maybe)
     }
 
-    public List<NamedIcon> BasicSearch(string needle) {
-        if (needle.Length < 2)  { return new(); }
-
-        var results = namedIcons.Where(icon =>
-            icon.SearchNames.Any(name => name.Contains(needle.ToLowerInvariant()))
-        );
-        return results.ToList();
-    }
 
     private void IndexIcons<Row>(
         Func<Row, IEnumerable<uint>> icons,
