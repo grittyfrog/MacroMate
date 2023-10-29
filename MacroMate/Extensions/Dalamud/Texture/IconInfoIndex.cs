@@ -17,7 +17,7 @@ namespace MacroMate.Extensions.Dalamud.Texture;
 ///
 /// The sheets for this index are hand-selected so it may not be exhaustive,
 /// but it covers most of the game icons.
-public class NamedIconIndex {
+public class IconInfoIndex {
     /// The full range of icons that we will try and explore.
     private List<int> iconRange = Enumerable.Range(0, 200000).ToList();
 
@@ -37,7 +37,7 @@ public class NamedIconIndex {
 
     public IndexState State { get; private set; } = IndexState.UNINDEXED;
 
-    public NamedIconIndex() {}
+    public IconInfoIndex() {}
 
     public void StartIndexing(System.Action onFinish) {
         if (State != IndexState.UNINDEXED) { return; }
