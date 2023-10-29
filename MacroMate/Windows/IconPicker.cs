@@ -32,7 +32,7 @@ public class IconPicker : EventWindow<uint>, IDisposable {
     private NamedIconIndex namedIconIndex = new();
 
     private string searchText = "";
-    private List<NamedIcon> searchedNamedIcons = new();
+    private List<IconInfo> searchedIconInfo = new();
 
     private bool showIconNames = false;
 
@@ -174,7 +174,7 @@ public class IconPicker : EventWindow<uint>, IDisposable {
     }
 
     private void RefreshSearch() {
-        searchedNamedIcons = namedIconIndex.BasicSearch(searchText);
+        searchedIconInfo = namedIconIndex.NameSearch(searchText);
     }
 
     public override void OnClose() {
@@ -240,7 +240,7 @@ public class IconPicker : EventWindow<uint>, IDisposable {
 
     private void DrawSearchResults(float iconSize, int columns) {
         var lineHeight = iconSize + ImGui.GetStyle().ItemSpacing.Y;
-        ImGuiClip.ClippedDraw(searchedNamedIcons, (namedIcon) => {
+        ImGuiClip.ClippedDraw(searchedIconInfo, (namedIcon) => {
             var icon = TextureCache.GetIcon(namedIcon.IconId)!;
             ImGui.Image(icon.ImGuiHandle, new Vector2(iconSize));
             if (ImGui.IsItemHovered()) {

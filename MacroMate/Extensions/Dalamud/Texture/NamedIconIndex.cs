@@ -18,8 +18,16 @@ namespace MacroMate.Extensions.Dalamud.Texture;
 /// The sheets for this index are hand-selected so it may not be exhaustive,
 /// but it covers most of the game icons.
 public class NamedIconIndex {
-    private List<NamedIcon> namedIcons = new();
-    private ConcurrentDictionary<uint, NamedIcon> iconIndex = new();
+    /// The full range of icons that we will try and explore.
+    private List<int> iconRange = Enumerable.Range(0, 200000).ToList();
+
+    /// The range of icons within iconRange that should be ignored (because they cause exceptions).
+    private readonly HashSet<int> iconRangeNullValues = Enumerable.Range(170000, 9999).ToHashSet();
+
+    private List<IconInfo> iconInfo = new();
+
+    private ConcurrentDictionary<uint, IconInfo> iconIdIndex = new();
+    private ConcurrentDictionary<string, List<IconInfo>> iconCategoryIndex = new();
 
     public enum IndexState {
         UNINDEXED,
@@ -42,12 +50,14 @@ public class NamedIconIndex {
         });
     }
 
-    public List<NamedIcon> BasicSearch(string needle) {
+    public List<string> AllCategories() => iconCategoryIndex.Keys.ToList();
+
+    public List<IconInfo> NameSearch(string needle) {
         if (State != IndexState.INDEXED) { return new(); }
         if (needle.Length < 2)  { return new(); }
 
-        IEnumerable<(NamedIcon, int)> results = namedIcons
-            .Select<NamedIcon, (NamedIcon, int)?>(icon => {
+        IEnumerable<(IconInfo, int)> results = iconInfo
+            .Select<IconInfo, (IconInfo, int)?>(icon => {
                 if (icon.IconId.ToString() == needle) { return (icon, 0); }
                 foreach (var searchName in icon.SearchNames) {
                     if (searchName == needle) { return (icon, 1); }
@@ -57,7 +67,7 @@ public class NamedIconIndex {
 
                 return null;
             })
-            .OfType<(NamedIcon, int)>();
+            .OfType<(IconInfo, int)>();
 
         return results
             .OrderBy(iconAndScore => iconAndScore.Item2)
@@ -430,17 +440,17 @@ public class NamedIconIndex {
                 .Where(icon => icon != 0);
 
             foreach (var usefulIcon in usefulIcons) {
-                var namedIcon = new NamedIcon {
+                var iconInfo = new IconInfo {
                     IconId = usefulIcon!,
                     Names = usefulNames
                 };
 
-                if (iconIndex.ContainsKey(namedIcon.IconId)) {
-                    var existingNamedIcon = iconIndex[namedIcon.IconId];
-                    existingNamedIcon.AddNames(namedIcon.Names);
+                if (iconIdIndex.ContainsKey(iconInfo.IconId)) {
+                    var existingNamedIcon = iconIdIndex[iconInfo.IconId];
+                    existingNamedIcon.AddNames(iconInfo.Names);
                 } else {
-                    iconIndex[namedIcon.IconId] = namedIcon;
-                    namedIcons.Add(namedIcon);
+                    iconIdIndex[iconInfo.IconId] = iconInfo;
+                    this.iconInfo.Add(iconInfo);
                 }
             }
         }
@@ -464,10 +474,10 @@ public class NamedIconIndex {
     }
 }
 
-public class NamedIcon {
+public class IconInfo {
     public required uint IconId { get; init; }
 
-    /// The names that refer to this IconId.
+    /// The names/descriptions that refer to this IconId.
     ///
     /// By convention this must always have at least one element, and the names
     /// should be ordered by "specificity", with the first name being the "best"
@@ -483,6 +493,9 @@ public class NamedIcon {
     /// Same as Names, but all lowercase
     public List<string> SearchNames { get; private set; } = new();
 
+    /// The Categories that this Icon belongs to.
+    public List<string> Categories { get; private set; } = new();
+
     public void AddNames(IEnumerable<string> names) {
         foreach (var name in names) {
             var searchName = name.ToLowerInvariant();
@@ -492,4 +505,4 @@ public class NamedIcon {
             SearchNames.Add(searchName);
         }
     }
-};
+}
