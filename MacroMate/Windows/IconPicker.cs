@@ -82,7 +82,7 @@ public class IconPicker : EventWindow<uint>, IDisposable {
 
 
         if (ImGui.BeginTable("icon_picker_layout_table", 2, ImGuiTableFlags.Resizable)) {
-            ImGui.TableSetupColumn("CategoryTree", ImGuiTableColumnFlags.WidthFixed);
+            ImGui.TableSetupColumn("CategoryTree", ImGuiTableColumnFlags.WidthFixed, 150.0f);
             ImGui.TableSetupColumn("Icons", ImGuiTableColumnFlags.WidthStretch);
 
             ImGui.TableNextRow();
@@ -91,6 +91,12 @@ public class IconPicker : EventWindow<uint>, IDisposable {
 
             if (ImGui.InputTextWithHint("###iconsearch", "Search", ref searchText, 255)) {
                 RefreshSearch();
+            }
+
+            ImGui.SameLine();
+            ImGui.Checkbox("Show Icon Tags", ref showIconNames);
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("WARNING: Icon tags may contain spoilers! Use at your own risk.");
             }
 
             ImGui.TableNextRow();
@@ -107,13 +113,6 @@ public class IconPicker : EventWindow<uint>, IDisposable {
             }
             foreach (var categoryTree in iconInfoIndex.CategoryRoots()) {
                 DrawCategoryGroupTree(categoryTree);
-            }
-
-            ImGui.Separator();
-
-            ImGui.Checkbox("Show Icon Tags", ref showIconNames);
-            if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip("WARNING: Icon tags may contain spoilers! Use at your own risk.");
             }
             ImGui.EndChild();
 
@@ -226,7 +225,12 @@ public class IconPicker : EventWindow<uint>, IDisposable {
         var lineHeight = iconSize + ImGui.GetStyle().ItemSpacing.Y;
         ImGuiClip.ClippedDraw(searchedIconInfo, (namedIcon) => {
             var icon = TextureCache.GetIcon(namedIcon.IconId)!;
-            ImGui.Image(icon.ImGuiHandle, new Vector2(iconSize));
+            ImGui.Image(
+                icon.ImGuiHandle,
+                new Vector2(iconSize),
+                new Vector2(0.0f, 0.0f),
+                new Vector2(1.0f, 1.0f)
+            );
             if (ImGui.IsItemHovered()) {
                 ImGui.BeginTooltip();
 
