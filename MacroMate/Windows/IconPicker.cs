@@ -29,10 +29,19 @@ public class IconPicker : EventWindow<uint>, IDisposable {
     private TextureCache TextureCache = new(Env.TextureProvider);
     private List<IconTab> iconTabs = new();
 
-    private NamedIconIndex namedIconIndex = new();
+    private IconInfoIndex iconInfoIndex = new();
 
     private string searchText = "";
     private List<IconInfo> searchedIconInfo = new();
+
+    private IconInfoCategory? _selectedCategory = null;
+    private IconInfoCategory? selectedCategory {
+        get { return _selectedCategory; }
+        set {
+            _selectedCategory = value;
+            RefreshSearch();
+        }
+    }
 
     private bool showIconNames = false;
 
@@ -168,13 +177,17 @@ public class IconPicker : EventWindow<uint>, IDisposable {
     }
 
     public override void OnOpen() {
-        namedIconIndex.StartIndexing(() => {
+        iconInfoIndex.StartIndexing(() => {
             RefreshSearch();
         });
     }
 
     private void RefreshSearch() {
-        searchedIconInfo = namedIconIndex.NameSearch(searchText);
+        if (searchText == "") {
+            searchedIconInfo = iconInfoIndex.All(selectedCategory);
+        } else {
+            searchedIconInfo = iconInfoIndex.NameSearch(searchText, selectedCategory);
+        }
     }
 
     public override void OnClose() {
@@ -216,6 +229,22 @@ public class IconPicker : EventWindow<uint>, IDisposable {
 
     private void DrawSearchTab(float iconSize, int columns) {
         if (ImGui.BeginTabItem("Search")) {
+            ImGui.SetNextItemWidth(100);
+            if (ImGui.BeginCombo("###iconcategory", selectedCategory?.ToString() ?? "All")) {
+                var flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick
+                    | ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
+                ImGui.TreeNodeEx("All", flags);
+                if (ImGui.IsItemClicked()) {
+                    selectedCategory = null;
+                    ImGui.CloseCurrentPopup();
+                }
+                foreach (var categoryTree in iconInfoIndex.CategoryRoots()) {
+                    DrawCategoryGroupTree(categoryTree);
+                }
+                ImGui.EndCombo();
+            }
+
+            ImGui.SameLine();
             if (ImGui.InputTextWithHint("###iconsearch", "Search", ref searchText, 255)) {
                 RefreshSearch();
             }
@@ -226,16 +255,41 @@ public class IconPicker : EventWindow<uint>, IDisposable {
             }
 
             ImGui.BeginChild("Search##IconList");
-            if (namedIconIndex.State == NamedIconIndex.IndexState.INDEXED) {
+            if (iconInfoIndex.State == IconInfoIndex.IndexState.INDEXED) {
                 DrawSearchResults(iconSize, columns);
             } else {
                 var spinner = "|/-\\"[(int)(ImGui.GetTime() / 0.05f) % 3];
-                ImGui.Text($"Loading {spinner}");
+                ImGui.Text($"Indexing... {spinner}");
             }
 
             ImGui.EndChild();
             ImGui.EndTabItem();
         }
+    }
+
+    private void DrawCategoryGroupTree(IconInfoCategoryGroup categoryGroup) {
+        ImGui.PushID(categoryGroup.Category.ToString());
+        var flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick;
+        if (categoryGroup.SubcategoryIconInfos.Count == 0) {
+            flags |= ImGuiTreeNodeFlags.Leaf;
+        }
+
+        bool categoryOpen = ImGui.TreeNodeEx(categoryGroup.Category.ToString(), flags);
+        if (ImGui.IsItemClicked() && !ImGui.IsItemToggledOpen()) {
+            selectedCategory = categoryGroup.Category;
+            ImGui.CloseCurrentPopup();
+        }
+        if (categoryOpen) {
+            foreach (var (subcategory, _) in categoryGroup.SubcategoryIconInfos) {
+                ImGui.TreeNodeEx(subcategory.ToString(), flags | ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen);
+                if (ImGui.IsItemClicked() && !ImGui.IsItemToggledOpen()) {
+                    selectedCategory = subcategory;
+                    ImGui.CloseCurrentPopup();
+                }
+            }
+            ImGui.TreePop();
+        }
+        ImGui.PopID();
     }
 
     private void DrawSearchResults(float iconSize, int columns) {
