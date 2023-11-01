@@ -27,9 +27,6 @@ public class IconInfoIndex {
     private SortedList<uint, IconInfo> iconInfos = new();
     private SortedList<IconInfoCategory, IconInfoCategoryGroup> iconInfoGroupForCategory = new(IconInfoCategory.NameComparer);
 
-    // private SortedSet<IconInfoCategoryGroup> iconInfoCategoryGroups = new(IconInfoCategoryGroup.CompareByCategory);
-    // private ConcurrentDictionary<IconInfoCategory, SortedSet<IconInfo>> iconInfoByCategory = new();
-
     public enum IndexState {
         UNINDEXED,
         INDEXING,
@@ -120,9 +117,6 @@ public class IconInfoIndex {
         }
     }
 
-    // iiCG[Action] = ActionGroup()
-    // iiCG[Action (Weaponskill)] = ActionGroup()
-    //
     private void IndexIcons() {
         foreach (var iconInfo in iconInfos.Values) {
             foreach (var category in iconInfo.Categories) {
@@ -142,11 +136,83 @@ public class IconInfoIndex {
         // First add the categories to the correct icons.
         ApplyIconCategory(1..100, "System");
         ApplyIconCategory(100..4_000, "Actions", "Class/Job");
-        ApplyIconCategory(4_000..4_400, "Items", "Mounts");
-        ApplyIconCategory(4_400..5_100, "Items", "Minions");
-        ApplyIconCategory(62_000..62_600, "Actions", "Class/Job");
-
-        // Now go through all our icons and index the categories
+        ApplyIconCategory(4_000..4_400, "Mounts");
+        ApplyIconCategory(4_400..5_100, "Minions");
+        ApplyIconCategory(5_100..8_000, "Actions", "Traits");
+        ApplyIconCategory(8_000..9_000, "Actions", "Fashion");
+        ApplyIconCategory(9_000..10_000, "Actions", "PvP");
+        ApplyIconCategory(10_000..20_000, "Statuses");
+        ApplyIconCategory(20_000..30_000, "Items", "General");
+        ApplyIconCategory(30_000..50_000, "Items", "Equipment");
+        ApplyIconCategory(50_000..54_400, "Items", "Housing");
+        ApplyIconCategory(54_400..58_000, "Items", "Equipment");
+        ApplyIconCategory(58_000..59_000, "Items", "Fashion");
+        ApplyIconCategory(59_000..59_400, "Mounts");
+        ApplyIconCategory(59_400..60_000, "Minions");
+        ApplyIconCategory(60_000..61_000, "System", "UI");
+        ApplyIconCategory(68_000..68_400, "Mounts");
+        ApplyIconCategory(68_400..69_000, "Minions");
+        ApplyIconCategory(61_000..61_100, "Textures", "Splash Logos");
+        ApplyIconCategory(61_100..61_200, "Actions", "Event");
+        ApplyIconCategory(61_200..61_250, "System", "Markers");
+        ApplyIconCategory(61_250..61_290, "Actions", "Duties/Trials");
+        ApplyIconCategory(61_290..61_390, "System", "Markers");
+        ApplyIconCategory(61_390..62_000, "System", "UI");
+        ApplyIconCategory(62_000..62_600, "Icons", "Class/Job");
+        ApplyIconCategory(62_600..62_620, "Icons", "Banners");
+        ApplyIconCategory(62_620..62_800, "Textures", "World Map");
+        ApplyIconCategory(62_800..62_900, "Icons", "Class/Job");
+        ApplyIconCategory(62_900..63_200, "Icons", "Achievements");
+        ApplyIconCategory(63_200..63_900, "Textures", "Zone Maps");
+        ApplyIconCategory(63_900..64_000, "System", "Map Markers");
+        ApplyIconCategory(64_000..64_200, "Actions", "Emotes");
+        ApplyIconCategory(64_200..64_325, "Actions", "Free Company");
+        ApplyIconCategory(64_325..64_500, "Actions", "Emotes");
+        ApplyIconCategory(64_500..64_600, "Icons", "Stamps");
+        ApplyIconCategory(64_600..64_800, "Actions", "Eureka");
+        ApplyIconCategory(64_800..65_000, "Actions", "NPC");
+        ApplyIconCategory(65_000..65_900, "Icons", "Currencies");
+        ApplyIconCategory(65_900..66_000, "Icons", "Ocean Fishing");
+        ApplyIconCategory(66_000..66_400, "Icons", "Macros");
+        ApplyIconCategory(66_400..66_500, "Icons", "Tags");
+        ApplyIconCategory(66_500..67_000, "Textures", "Gardening Log");
+        ApplyIconCategory(67_000..68_000, "Items", "Fashion");
+        ApplyIconCategory(68_000..68_400, "Mounts", "Log");
+        ApplyIconCategory(68_400..69_000, "Minions", "Log");
+        ApplyIconCategory(69_000..70_000, "Textures", "Footprints"); // Mount/Minion
+        ApplyIconCategory(70_000..70_200, "Actions", "Chocobo Racing");
+        ApplyIconCategory(70_200..71_000, "Textures", "DoH/DoL Logs");
+        ApplyIconCategory(71_000..71_500, "Icons", "Quests");
+        ApplyIconCategory(71_500..72_000, "Spoilers", "Credits");
+        ApplyIconCategory(72_000..72_500, "System", "BLU UI");
+        ApplyIconCategory(72_500..76_000, "System", "Bozja UI");
+        ApplyIconCategory(76_000..76_200, "System", "Mahjong");
+        ApplyIconCategory(76_200..76_300, "Textures", "Fan Festival");
+        ApplyIconCategory(76_300..78_000, "Icons", "Group Pose");
+        ApplyIconCategory(78_000..80_000, "Textures", "Fishing Log");
+        ApplyIconCategory(80_000..80_200, "Icons", "Quests"); // Quest Log
+        ApplyIconCategory(80_200..80_730, "Icons", "Notebooks");
+        ApplyIconCategory(80_730..81_000, "Textures", "Relic Log");
+        ApplyIconCategory(81_000..82_020, "Icons" , "Notebooks");
+        ApplyIconCategory(82_020..82_040, "Icons" , "Orchestration");
+        ApplyIconCategory(82_040..82_050, "Icons" , "Island Sanctuary");
+        ApplyIconCategory(82_050..82_080, "Spoilers" , "Fall Guys");
+        ApplyIconCategory(82_080..83_000, "Icons"); // This used to be triple triad, not anymore?
+        ApplyIconCategory(83_000..84_000, "Icons", "Grand Company");
+        ApplyIconCategory(84_000..85_000, "Textures", "Hunts");
+        ApplyIconCategory(85_000..90_000, "Textures", "UI");
+        ApplyIconCategory(90_000..100_000, "Icons", "Free Company");
+        ApplyIconCategory(100_000..114_000, "Spoilers", "Quest Images");
+        ApplyIconCategory(114_100..120_000, "Spoilers", "New Game+");
+        ApplyIconCategory(120_000..130_000, "Spoilers", "Popup Texts");
+        ApplyIconCategory(130_000..142_000, "Aesthetics");
+        ApplyIconCategory(142_000..150_000, "Spoilers", "Japanese Popup Texts");
+        ApplyIconCategory(150_000..170_000, "Textures", "Tutorials");
+        // 170_000..180_000 -- blank placeholder files
+        ApplyIconCategory(180_000..180_060, "Textures", "Stamps/Chocobo Racing");
+        ApplyIconCategory(180_060..180_100, "Spoilers", "Fall Guys");
+        ApplyIconCategory(180_100..181_500, "Spoilers", "Boss Titles");
+        ApplyIconCategory(181_500..200_000, "Spoilers", "Ungrouped");
     }
 
     private void ApplyIconCategory(Range range, string category, string? subcategory = null) {
