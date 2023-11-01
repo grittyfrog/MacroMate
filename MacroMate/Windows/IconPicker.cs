@@ -174,9 +174,7 @@ public class IconPicker : EventWindow<uint>, IDisposable {
             new IconGroup(100_000..114_000, "Quest Images"),
             new IconGroup(114_100..120_000, "New Game+")
         );
-    }
 
-    public override void OnOpen() {
         iconInfoIndex.StartIndexing(() => {
             RefreshSearch();
         });
