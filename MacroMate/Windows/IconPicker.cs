@@ -130,61 +130,6 @@ public class IconPicker : EventWindow<uint>, IDisposable {
 
             ImGui.EndTable();
         }
-
-        // var allIconTabs = iconTabs.ToList();
-
-        // var activeIconsTab = ActiveIconsTab();
-        // allIconTabs.Insert(0, activeIconsTab);
-
-        // float iconSize = 48 * ImGuiHelpers.GlobalScale;
-        // var columns = (int)((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().WindowPadding.X) / (iconSize + ImGui.GetStyle().ItemSpacing.X));
-        // if (ImGui.BeginTabBar("Icon Tabs", ImGuiTabBarFlags.NoTooltip)) {
-        //     DrawSearchTab(iconSize, columns);
-
-        //     foreach (var iconTab in allIconTabs) {
-        //         DrawIconTab(iconTab, iconSize, columns);
-        //     }
-        //     ImGui.EndTabBar();
-        // }
-    }
-
-    private void DrawSearchTab(float iconSize, int columns) {
-        if (ImGui.BeginTabItem("Search")) {
-            ImGui.SetNextItemWidth(100);
-            if (ImGui.BeginCombo("###iconcategory", selectedCategory?.ToString() ?? "All")) {
-                var flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick
-                    | ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
-                ImGui.TreeNodeEx("All", flags);
-                if (ImGui.IsItemClicked()) {
-                    selectedCategory = null;
-                    ImGui.CloseCurrentPopup();
-                }
-                foreach (var categoryTree in iconInfoIndex.CategoryRoots()) {
-                    DrawCategoryGroupTree(categoryTree);
-                }
-                ImGui.EndCombo();
-            }
-
-            ImGui.SameLine();
-            if (ImGui.InputTextWithHint("###iconsearch", "Search", ref searchText, 255)) {
-                RefreshSearch();
-            }
-            ImGui.Checkbox("Show Icon Tags", ref showIconNames);
-            if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip("WARNING: Icon tags may contain spoilers! Use at your own risk.");
-            }
-
-            ImGui.BeginChild("Search##IconList");
-            if (iconInfoIndex.State == IconInfoIndex.IndexState.INDEXED) {
-                DrawSearchResults(iconSize, columns);
-            } else {
-                var spinner = "|/-\\"[(int)(ImGui.GetTime() / 0.05f) % 3];
-                ImGui.Text($"Indexing... {spinner}");
-            }
-
-            ImGui.EndChild();
-            ImGui.EndTabItem();
-        }
     }
 
     private void DrawCategoryGroupTree(IconInfoCategoryGroup categoryGroup) {
@@ -263,43 +208,5 @@ public class IconPicker : EventWindow<uint>, IDisposable {
                 this.IsOpen = false;
             }
         }, columns, lineHeight);
-    }
-
-    private void DrawIconTab(IconTab tab, float iconSize, int columns) {
-        if (ImGui.BeginTabItem(tab.Name)) {
-            ImGui.BeginChild($"{tab.Name}##IconList");
-
-            var allIconIds = tab.IconGroups.SelectMany(g => g.IconIds).ToList();
-            var lineHeight = iconSize + ImGui.GetStyle().ItemSpacing.Y;
-            ImGuiClip.ClippedDraw(allIconIds, (iconId) => {
-                var icon = TextureCache.GetIcon(iconId)!;
-                ImGui.Image(icon.ImGuiHandle, new Vector2(iconSize));
-                if (ImGui.IsItemHovered()) {
-                    ImGui.SetTooltip(iconId.ToString());
-                }
-                if (ImGui.IsItemClicked() && CurrentEventScope != null) {
-                    CurrentIconId = iconId;
-                    EnqueueEvent(iconId);
-                    this.IsOpen = false;
-                }
-            }, columns, lineHeight);
-
-            ImGui.EndChild();
-            ImGui.EndTabItem();
-        }
-    }
-
-    private IconTab ActiveIconsTab() {
-        var usedIcons = Env.MacroConfig.Root.Values()
-            .OfType<MateNode.Macro>()
-            .Select(macro => macro.IconId)
-            .Distinct()
-            .ToList();
-
-        var activeGroup = new IconGroup(usedIcons, "Active");
-        return new IconTab(
-            "Active",
-            new() { activeGroup }
-        );
     }
 }
