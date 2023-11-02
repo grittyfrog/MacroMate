@@ -21,6 +21,11 @@ public abstract class MateNode : TreeNode<MateNode> {
         public bool LinkWithMacroChain = false;
 
         public string Lines { get; set; } = "";
+
+        /** <summary>If true: ignore `ConditionExpr` and always link this macro</summary> */
+        public bool AlwaysLinked { get; set; } = false;
+
+        /** <summary>The conditions when this macro should be linked</summary> */
         public ConditionExpr.Or ConditionExpr = Conditions.ConditionExpr.Or.Empty;
 
         public Macro Clone() => new Macro {
@@ -132,7 +137,7 @@ public abstract class MateNode : TreeNode<MateNode> {
         }
 
         public bool SatisfiedBy(CurrentConditions conditions) {
-            return ConditionExpr.SatisfiedBy(conditions);
+            return AlwaysLinked || ConditionExpr.SatisfiedBy(conditions);
         }
 
         public Macro AddAndExpression() {
