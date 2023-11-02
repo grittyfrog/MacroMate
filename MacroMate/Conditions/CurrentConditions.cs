@@ -5,7 +5,7 @@ namespace MacroMate.Conditions;
 public record CurrentConditions(
     ContentCondition? content = null,
     LocationCondition? location = null,
-    TargetNpcCondition? targetNpc = null,
+    TargetNameCondition? targetNpc = null,
     JobCondition? job = null
 ) {
     public static CurrentConditions Empty => new CurrentConditions();

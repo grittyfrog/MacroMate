@@ -50,7 +50,7 @@ public interface ICondition {
         static IEnumerable<IFactory> All => new IFactory[] {
             ContentCondition.Factory,
             LocationCondition.Factory,
-            TargetNpcCondition.Factory,
+            TargetNameCondition.Factory,
             JobCondition.Factory
         };
     }

@@ -38,6 +38,9 @@ public record class ExcelId<T>(uint Id) : ExcelId where T : ExcelRow {
         var npcName = (GameData as BNpcName)?.Singular?.Text();
         if (npcName != null) { return $"{npcName} ({Id})"; }
 
+        var enpcName = (GameData as ENpcResident)?.Singular?.Text();
+        if (enpcName != null) { return $"{enpcName} ({Id})"; }
+
         var contentName = (GameData as ContentFinderCondition)?.Name?.Text();
         if (contentName != null) { return $"{contentName} ({Id})"; }
 

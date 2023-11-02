@@ -24,6 +24,7 @@ public class OrConditionXML {
 public class AndConditionXML {
     [XmlElement("ContentCondition", typeof(ContentConditionXML))]
     [XmlElement("LocationCondition", typeof(LocationConditionXML))]
+    [XmlElement("TargetNameCondition", typeof(TargetNameConditionXML))]
     [XmlElement("TargetNpcCondition", typeof(TargetNpcConditionXML))]
     [XmlElement("JobCondition", typeof(JobConditionXML))]
     public List<ConditionXML>? Conditions { get; set;  }
