@@ -45,7 +45,7 @@ public class ConditionManager : IDisposable {
         return new CurrentConditions(
             content: ContentCondition.Current(),
             location: LocationCondition.Current(),
-            targetNpc: TargetNpcCondition.Current(),
+            targetNpc: TargetNameCondition.Current(),
             job: JobCondition.Current()
         );
     }

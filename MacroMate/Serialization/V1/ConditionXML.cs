@@ -1,7 +1,9 @@
 using System;
 using System.Xml;
 using System.Xml.Serialization;
+using Lumina.Excel.GeneratedSheets;
 using MacroMate.Conditions;
+using MacroMate.Extensions.Dalamaud.Excel;
 using MacroMate.Extensions.Dotnet;
 
 namespace MacroMate.Serialization.V1;
@@ -9,6 +11,7 @@ namespace MacroMate.Serialization.V1;
 [XmlInclude(typeof(ContentConditionXML))]
 [XmlInclude(typeof(LocationConditionXML))]
 [XmlInclude(typeof(TargetNpcConditionXML))]
+[XmlInclude(typeof(TargetNameConditionXML))]
 [XmlInclude(typeof(JobConditionXML))]
 public abstract class ConditionXML {
     public abstract ICondition ToReal();
@@ -16,7 +19,7 @@ public abstract class ConditionXML {
     public static ConditionXML From(ICondition condition) => condition switch {
         ContentCondition cond => ContentConditionXML.From(cond),
         LocationCondition cond => LocationConditionXML.From(cond),
-        TargetNpcCondition cond => TargetNpcConditionXML.From(cond),
+        TargetNameCondition cond => TargetNameConditionXML.From(cond),
         JobCondition cond => JobConditionXML.From(cond),
         _ => throw new Exception($"Unexpected condition {condition}")
     };
@@ -53,16 +56,68 @@ public class LocationConditionXML : ConditionXML {
     };
 }
 
+/**
+ * Deprecated in favor of TargetNameCondition
+ */
 [XmlType("TargetNpcCondition")]
 public class TargetNpcConditionXML : ConditionXML {
     [XmlAnyElement("TargetNameComment")]
-    public XmlComment? TargetNameComment { get => TargetName.Comment; set {} }
-    public required ExcelIdXML TargetName { get; set; }
+    public XmlComment? TargetNameComment { get => TargetName?.Comment; set {} }
+    public ExcelIdXML? TargetName { get; set; }
+    public string? TargetNameCustom { get; set; }
 
-    public override ICondition ToReal() => new TargetNpcCondition(TargetName.Id);
+    public override ICondition ToReal() {
+        if (TargetName != null) {
+            return new TargetNameCondition(new ExcelId<BNpcName>(TargetName.Id));
+        }
 
-    public static TargetNpcConditionXML From(TargetNpcCondition cond) => new() {
-        TargetName = new ExcelIdXML(cond.targetName)
+        if (TargetNameCustom != null) {
+            return new TargetNameCondition(TargetNameCustom);
+        }
+
+        return new TargetNameCondition();
+    }
+
+    public static TargetNpcConditionXML From(TargetNameCondition cond) => new() {
+        TargetName = cond.targetName.Match(
+            bNpc => new ExcelIdXML(bNpc),
+            customName => null
+        ),
+        TargetNameCustom = cond.targetName.Match(
+            bNpc => null,
+            customName => customName
+        )
+    };
+}
+
+[XmlType("TargetNameCondition")]
+public class TargetNameConditionXML : ConditionXML {
+    [XmlAnyElement("TargetNameComment")]
+    public XmlComment? TargetNameComment { get => TargetNameNpc?.Comment; set {} }
+    public ExcelIdXML? TargetNameNpc { get; set; }
+    public string? TargetNameCustom { get; set; }
+
+    public override ICondition ToReal() {
+        if (TargetNameNpc != null) {
+            return new TargetNameCondition(new ExcelId<BNpcName>(TargetNameNpc.Id));
+        }
+
+        if (TargetNameCustom != null) {
+            return new TargetNameCondition(TargetNameCustom);
+        }
+
+        return new TargetNameCondition();
+    }
+
+    public static TargetNameConditionXML From(TargetNameCondition cond) => new() {
+        TargetNameNpc = cond.targetName.Match(
+            bNpc => new ExcelIdXML(bNpc),
+            customName => null
+        ),
+        TargetNameCustom = cond.targetName.Match(
+            bNpc => null,
+            customName => customName
+        )
     };
 }
 
