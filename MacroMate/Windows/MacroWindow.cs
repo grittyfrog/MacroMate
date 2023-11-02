@@ -190,8 +190,10 @@ public class MacroWindow : Window, IDisposable {
             )
         );
 
+        var alwaysLinked = Macro!.AlwaysLinked;
         var conditionExpr = Macro!.ConditionExpr;
-        if (conditionExprEditor.DrawEditor(ref conditionExpr)) {
+        if (conditionExprEditor.DrawEditor(ref alwaysLinked, ref conditionExpr)) {
+            Macro.AlwaysLinked = alwaysLinked;
             Macro.ConditionExpr = conditionExpr;
             Save();
         };

@@ -17,9 +17,27 @@ public class ConditionExprEditor : IDisposable {
         conditionEditor.Dispose();
     }
 
-    public bool DrawEditor(ref ConditionExpr.Or conditionExpr) {
+    public bool DrawEditor(ref bool alwaysLinked, ref ConditionExpr.Or conditionExpr) {
         var edited = false;
 
+        if (ImGui.Checkbox("Always Linked", ref alwaysLinked)) {
+            edited = true;
+        }
+        if (ImGui.IsItemHovered()) {
+            ImGui.SetTooltip("Ignore all conditions and always link this macro");
+        }
+
+        if (!alwaysLinked) {
+            edited |= DrawOrCondition(ref conditionExpr);
+        }
+        // if (alwaysLinked) { ImGui.BeginDisabled(); }
+        // if (alwaysLinked) { ImGui.EndDisabled(); }
+
+        return edited;
+    }
+
+    private bool DrawOrCondition(ref ConditionExpr.Or conditionExpr) {
+        var edited = false;
         var tableFlags = ImGuiTableFlags.RowBg | ImGuiTableFlags.Borders;
 
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4f, 4f));

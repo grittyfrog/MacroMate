@@ -60,8 +60,8 @@ public class MacroXML : MateNodeXML {
     public List<uint>? MacroSlots { get; set; }
     public bool? LinkWithMacroChain { get; set; }
     public string? Lines { get; set; }
+    public bool? AlwaysLinked { get; set; }
     public OrConditionXML? OrCondition { get; set; }
-
 
     public override MateNode ToReal() => new MateNode.Macro {
         Name = Name,
@@ -72,6 +72,7 @@ public class MacroXML : MateNodeXML {
         },
         LinkWithMacroChain = LinkWithMacroChain ?? false,
         Lines = Lines ?? "",
+        AlwaysLinked = AlwaysLinked ?? false,
         ConditionExpr = OrCondition?.ToReal() ?? ConditionExpr.Or.Empty
     };
 
@@ -82,6 +83,7 @@ public class MacroXML : MateNodeXML {
         MacroSlots = macro.Link.Slots,
         LinkWithMacroChain = macro.LinkWithMacroChain,
         Lines = macro.Lines,
+        AlwaysLinked = macro.AlwaysLinked,
         OrCondition = OrConditionXML.From(macro.ConditionExpr)
     };
 }
