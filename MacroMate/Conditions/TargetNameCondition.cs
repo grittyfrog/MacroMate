@@ -55,7 +55,7 @@ public record class TargetNameCondition(
         ObjectKind.Treasure => null,
         ObjectKind.Aetheryte => null,
         ObjectKind.GatheringPoint => null,
-        ObjectKind.EventObj => null,
+        ObjectKind.EventObj => Env.DataManager.GetExcelSheet<EObjName>()?.GetRow(TargetId)?.Singular?.Text(),
         ObjectKind.MountType => null,
         ObjectKind.Companion => null, // Minion
         ObjectKind.Retainer => null,
@@ -96,12 +96,20 @@ public record class TargetNameCondition(
                 .Select(enpc => new TargetNameCondition(ObjectKind.EventNpc, enpc.RowId))
                 .AsParallel();
 
+            // Same as enpc -- identical names, different ids
+            var eobjNames = Env.DataManager.GetExcelSheet<EObjName>()!
+                .Where(eobj => eobj.Singular != "")
+                .DistinctBy(eobj => eobj.Singular.Text())
+                .Select(eobj => new TargetNameCondition(ObjectKind.EventObj, eobj.RowId))
+                .AsParallel();
+
             var housingNames = Env.DataManager.GetExcelSheet<HousingFurniture>()!
                 .Select(furniture => new TargetNameCondition(ObjectKind.Housing, furniture.RowId))
                 .AsParallel();
 
             return bnpcNames
                 .Concat(enpcNames)
+                .Concat(eobjNames)
                 .Concat(housingNames);
         }
     }
