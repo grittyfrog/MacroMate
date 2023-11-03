@@ -7,6 +7,7 @@ namespace MacroMate.Extensions.Dalamaud.Excel;
 
 public interface ExcelId {
     public uint Id { get; }
+    public string? Name();
     public string DisplayName();
 }
 
@@ -31,7 +32,7 @@ public record class ExcelId<T>(uint Id) : ExcelId where T : ExcelRow {
     /// <returns>The ExcelRow in the specified language.</returns>
     public T? GetWithLanguage(ClientLanguage language) => Env.DataManager.GetExcelSheet<T>(language)?.GetRow(this.Id);
 
-    public string? Name() {
+    public string Name() {
         if (GameData is BNpcName bNpcName) { return bNpcName.Singular.Text(); }
         if (GameData is ENpcResident eNpc) { return eNpc.Singular.Text(); }
         if (GameData is ContentFinderCondition cfc) { return cfc.Name.Text(); }
@@ -42,16 +43,10 @@ public record class ExcelId<T>(uint Id) : ExcelId where T : ExcelRow {
         if (GameData is PlaceName placeName) { return placeName.Name.Text(); }
         if (GameData is ClassJob job) { return job.Abbreviation.Text(); }
 
-        return null;
+        return $"<unknown>";
     }
 
-    public string DisplayName() {
-        if (Name() is {} name) {
-            return $"{name} ({Id})";
-        } else {
-            return $"<id:{Id}>";
-        }
-    }
+    public string DisplayName() => $"{Name()} ({Id})";
 
     public override string ToString() => $"ExcelId({Id})";
 }

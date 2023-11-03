@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Icons;
 using MacroMate.Extensions.Dalamud.Texture;
-using MacroMate.MacroTree;
 
 namespace MacroMate.Windows;
 
