@@ -33,11 +33,10 @@ public record class JobCondition(
         public ICondition Default() => new JobCondition();
         public ICondition? FromConditions(CurrentConditions conditions) => conditions.job;
 
-        public List<ICondition> TopLevel() {
+        public IEnumerable<ICondition> TopLevel() {
             return Env.DataManager.GetExcelSheet<ClassJob>()!
                 .Where(job => job.RowId != 0)
-                .Select(job => new JobCondition(job.RowId) as ICondition)
-                .ToList();
+                .Select(job => new JobCondition(job.RowId) as ICondition);
         }
     }
 }

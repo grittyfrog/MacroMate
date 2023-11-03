@@ -21,7 +21,9 @@ public class ConditionEditor : IDisposable {
         bool topLevelUpdated = topLevelColumn.TrySelect(condition);
 
         if (topLevelUpdated && topLevelColumn.SelectedCondition != null) {
-            narrowColumn.Conditions = topLevelColumn.SelectedCondition.FactoryRef.Narrow(topLevelColumn.SelectedCondition);
+            narrowColumn.Conditions = topLevelColumn.SelectedCondition.FactoryRef
+                .Narrow(topLevelColumn.SelectedCondition)
+                .ToList();
             narrowColumn.TrySelect(condition);
         }
     }
@@ -32,8 +34,8 @@ public class ConditionEditor : IDisposable {
         set {
             if (_conditionFactory != value) {
                 _conditionFactory = value;
-                topLevelColumn.Conditions = _conditionFactory?.TopLevel() ?? new();
-                narrowColumn.Conditions = new();
+                topLevelColumn.Conditions = _conditionFactory?.TopLevel() ?? new List<ICondition>();
+                narrowColumn.Conditions = new List<ICondition>();
             }
         }
     }
@@ -48,14 +50,16 @@ public class ConditionEditor : IDisposable {
             ImGui.PushID("top_level");
             var topLevelUpdated = topLevelColumn.Draw();
             if (topLevelUpdated && topLevelColumn.SelectedCondition != null) {
-                narrowColumn.Conditions = topLevelColumn.SelectedCondition.FactoryRef.Narrow(topLevelColumn.SelectedCondition);
+                narrowColumn.Conditions = topLevelColumn.SelectedCondition.FactoryRef
+                    .Narrow(topLevelColumn.SelectedCondition)
+                    .ToList();
                 narrowColumn.TrySelect(null);
             }
             ImGui.PopID();
 
             ImGui.TableNextColumn();
             var narrowUpdated = false;
-            if (narrowColumn.Conditions.Count > 0) {
+            if (narrowColumn.Conditions.Count() > 0) {
                 ImGui.PushID("narrow");
                 narrowUpdated = narrowColumn.Draw();
                 ImGui.PopID();
@@ -96,8 +100,8 @@ unsafe class ConditionEditorColumn : IDisposable {
     private ImGuiListClipperPtr clipper;
     private int? scrollToIndexOnNextDraw = null;
 
-    private List<ICondition> _conditions = new();
-    public List<ICondition> Conditions {
+    private IEnumerable<ICondition> _conditions = new List<ICondition>();
+    public IEnumerable<ICondition> Conditions {
         get { return _conditions; }
         set {
             if(_conditions != value) {
@@ -126,7 +130,7 @@ unsafe class ConditionEditorColumn : IDisposable {
         return true;
     }
 
-    private List<ICondition> filteredConditions = new();
+    private IEnumerable<ICondition> filteredConditions = new List<ICondition>();
 
     public ConditionEditorColumn() {
         var filterPtr = ImGuiNative.ImGuiTextFilter_ImGuiTextFilter(null);
@@ -142,12 +146,13 @@ unsafe class ConditionEditorColumn : IDisposable {
         if (filter.Draw("")) { RefilterConditions(); };
 
         if (ImGui.BeginListBox("###condition_editor")) {
-            clipper.Begin(filteredConditions.Count);
+            clipper.Begin(filteredConditions.Count());
             while (clipper.Step()) {
-                for (var conditionIndex = clipper.DisplayStart; conditionIndex < clipper.DisplayEnd; ++conditionIndex) {
-                    ImGui.PushID(conditionIndex);
-                    if (conditionIndex < 0) continue;
-                    var condition = filteredConditions[conditionIndex];
+                var conditionRange = filteredConditions
+                    .Skip(clipper.DisplayStart)
+                    .Take(clipper.DisplayEnd - clipper.DisplayStart);
+                foreach (var (condition, cindex) in conditionRange.WithIndex()) {
+                    ImGui.PushID(cindex);
                     if (
                         ImGui.Selectable(
                             condition.NarrowName,

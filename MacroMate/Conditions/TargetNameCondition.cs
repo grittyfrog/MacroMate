@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using MacroMate.Extensions.Dalamaud.Excel;
 using Dalamud.Game.ClientState.Objects.Types;
 using Lumina.Excel.GeneratedSheets;
 using Dalamud.Game.ClientState.Objects.Enums;
+using MacroMate.Extensions.Lumina;
 
 namespace MacroMate.Conditions;
 
@@ -11,11 +11,8 @@ public record class TargetNameCondition(
     ObjectKind TargetKind,
     uint TargetId
 ) : ICondition {
-    string DisplayName => TargetExcelId()?.DisplayName() ?? "<unknown>";
     string ICondition.ValueName => DisplayName;
     string ICondition.NarrowName => DisplayName;
-
-    string? Name => TargetExcelId()?.Name();
 
     bool ICondition.SatisfiedBy(ICondition other) {
         if (other is TargetNameCondition otherTarget) {
@@ -45,30 +42,34 @@ public record class TargetNameCondition(
             return new TargetNameCondition(target.ObjectKind, targetNameId);
         }
 
-        return null;
+        return new TargetNameCondition(target.ObjectKind, target.DataId);
     }
 
-    private ExcelId? TargetExcelId() {
-        return TargetKind switch {
-            ObjectKind.None => null,
-            ObjectKind.Player => null, // Not supported
-            ObjectKind.BattleNpc => new ExcelId<BNpcName>(TargetId),
-            ObjectKind.EventNpc => new ExcelId<ENpcResident>(TargetId),
-            ObjectKind.Treasure => null,
-            ObjectKind.Aetheryte => null,
-            ObjectKind.GatheringPoint => null,
-            ObjectKind.EventObj => null,
-            ObjectKind.MountType => null,
-            ObjectKind.Companion => null, // Minion
-            ObjectKind.Retainer => null,
-            ObjectKind.Area => null,
-            ObjectKind.Housing => null,
-            ObjectKind.Cutscene => null,
-            ObjectKind.CardStand => null,
-            ObjectKind.Ornament => null,
-            _ => null
-        };
-    }
+    public string Name => TargetKind switch {
+        ObjectKind.None => null,
+        ObjectKind.Player => null, // Not supported
+        ObjectKind.BattleNpc =>
+            Env.DataManager.GetExcelSheet<BNpcName>()?.GetRow(TargetId)?.Singular.Text(),
+        ObjectKind.EventNpc =>
+            Env.DataManager.GetExcelSheet<ENpcResident>()?.GetRow(TargetId)?.Singular.Text(),
+        ObjectKind.Treasure => null,
+        ObjectKind.Aetheryte => null,
+        ObjectKind.GatheringPoint => null,
+        ObjectKind.EventObj => null,
+        ObjectKind.MountType => null,
+        ObjectKind.Companion => null, // Minion
+        ObjectKind.Retainer => null,
+        ObjectKind.Area => null,
+        ObjectKind.Housing =>
+            Env.DataManager.GetExcelSheet<HousingFurniture>()
+              ?.GetRow(TargetId)?.Item?.Value?.Name?.Text(),
+        ObjectKind.Cutscene => null,
+        ObjectKind.CardStand => null,
+        ObjectKind.Ornament => null,
+        _ => null
+    } ?? "<unknown>";
+
+    public string DisplayName => $"{Name} ({TargetId}) [{TargetKind}]";
 
     public static ICondition.IFactory Factory = new ConditionFactory();
     ICondition.IFactory ICondition.FactoryRef => Factory;
@@ -79,7 +80,7 @@ public record class TargetNameCondition(
         public ICondition Default() => new TargetNameCondition();
         public ICondition? FromConditions(CurrentConditions conditions) => conditions.targetNpc;
 
-        public List<ICondition> TopLevel() {
+        public IEnumerable<ICondition> TopLevel() {
             var bnpcNames = Env.DataManager.GetExcelSheet<BNpcName>()!
                 .Where(npcName => npcName.Singular != "")
                 .Select(npcName =>
@@ -90,11 +91,10 @@ public record class TargetNameCondition(
             // for identical NPCs. But we still use the IDs under the hood to allow macros to work cross-language.
             var enpcNames = Env.DataManager.GetExcelSheet<ENpcResident>()!
                 .Where(enpc => enpc.Singular != "")
-                .ToList()
-                .DistinctBy(enpc => enpc.Singular)
+                .DistinctBy(enpc => enpc.Singular.Text())
                 .Select(enpc => new TargetNameCondition(ObjectKind.EventNpc, enpc.RowId) as ICondition);
 
-            return bnpcNames.Concat(enpcNames).ToList();
+            return bnpcNames.Concat(enpcNames);
         }
     }
 }

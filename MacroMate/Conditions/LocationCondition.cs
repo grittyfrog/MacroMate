@@ -62,23 +62,22 @@ public record class LocationCondition(
         public ICondition Default() => new LocationCondition();
         public ICondition? FromConditions(CurrentConditions conditions) => conditions.location;
 
-        public List<ICondition> TopLevel() {
+        public IEnumerable<ICondition> TopLevel() {
             return Env.DataManager.GetExcelSheet<TerritoryType>()!
                 .Where(territoryType => territoryType.PlaceName.Row != 0)
                 .DistinctBy(territoryType => territoryType.PlaceName.Row)
                 .Select(territoryType =>
                     new LocationCondition(territoryId: territoryType.RowId) as ICondition
-                )
-                .ToList();
+                );
         }
 
-        public List<ICondition> Narrow(ICondition search) {
+        public IEnumerable<ICondition> Narrow(ICondition search) {
             // We can only narrow conditions of our type
             var locationCondition = search as LocationCondition;
-            if (locationCondition == null) { return new(); }
+            if (locationCondition == null) { return new List<ICondition>(); }
 
             // If we already have a regionOrSubAreaNameId then we can't do any further narrowing.
-            if (locationCondition.regionOrSubAreaName != null) { return new(); }
+            if (locationCondition.regionOrSubAreaName != null) { return new List<ICondition>(); }
 
             // Otherwise, we can fill out the data using Map Markers!
             return Env.DataManager.GetExcelSheet<MapMarker>()!
@@ -89,8 +88,7 @@ public record class LocationCondition(
                 .DistinctBy(mapMarker => mapMarker.PlaceNameSubtext.Row)
                 .Select(mapMarker =>
                     locationCondition with { regionOrSubAreaName = new ExcelId<PlaceName>(mapMarker.PlaceNameSubtext.Row) } as ICondition
-                )
-                .ToList();
+                );
         }
     }
 }

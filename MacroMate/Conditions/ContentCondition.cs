@@ -32,7 +32,7 @@ public record class ContentCondition(
         public ICondition? FromConditions(CurrentConditions conditions) => conditions.content;
         public ICondition Default() => new ContentCondition();
 
-        public List<ICondition> TopLevel() {
+        public IEnumerable<ICondition> TopLevel() {
             var excludedContentTypes = new List<uint>() {
                 1, // Duty Roulette
                 7, // Quest Battles
@@ -41,8 +41,7 @@ public record class ContentCondition(
             };
             return Env.DataManager.GetExcelSheet<ContentFinderCondition>()!
                 .Where(cfc => cfc.Name != "" && cfc.ContentType.Row != 0 && !excludedContentTypes.Contains(cfc.ContentType.Row))
-                .Select(cfc => new ContentCondition(cfc.RowId) as ICondition)
-                .ToList();
+                .Select(cfc => new ContentCondition(cfc.RowId) as ICondition);
         }
     }
 }

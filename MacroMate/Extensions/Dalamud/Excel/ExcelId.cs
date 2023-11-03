@@ -2,6 +2,8 @@ using MacroMate.Extensions.Lumina;
 using Dalamud;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
+using Dalamud.Game.ClientState.Objects.Enums;
+using System.Text;
 
 namespace MacroMate.Extensions.Dalamaud.Excel;
 
@@ -37,16 +39,34 @@ public record class ExcelId<T>(uint Id) : ExcelId where T : ExcelRow {
         if (GameData is ENpcResident eNpc) { return eNpc.Singular.Text(); }
         if (GameData is ContentFinderCondition cfc) { return cfc.Name.Text(); }
         if (GameData is TerritoryType tt) {
-            var pn = tt.PlaceName.Value;
-            if (pn != null) { return pn.Name.Text(); }
+            if (tt.PlaceName.Value is {} pn) { return pn.Name.Text(); }
         }
         if (GameData is PlaceName placeName) { return placeName.Name.Text(); }
         if (GameData is ClassJob job) { return job.Abbreviation.Text(); }
+        if (GameData is HousingFurniture hf) {
+            if (hf.Item.Value is {} hfItem) { return hfItem.Name.Text(); }
+        }
 
         return $"<unknown>";
     }
 
-    public string DisplayName() => $"{Name()} ({Id})";
+    public ObjectKind? ObjKind() {
+        if (GameData is BNpcName) { return ObjectKind.BattleNpc; }
+        if (GameData is ENpcResident) { return ObjectKind.EventNpc; }
+        if (GameData is HousingFurniture) { return ObjectKind.Housing; }
+
+        return null;
+    }
+
+    public string DisplayName() {
+        var sb = new StringBuilder();
+        sb.Append(Name());
+        sb.Append($" ({Id})");
+        if (ObjKind() is {} objKind) {
+            sb.Append($" [{objKind}]");
+        }
+        return sb.ToString();
+    }
 
     public override string ToString() => $"ExcelId({Id})";
 }
