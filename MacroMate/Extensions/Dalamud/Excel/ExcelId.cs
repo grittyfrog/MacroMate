@@ -1,6 +1,3 @@
-using System.Xml;
-using System.Xml.Schema;
-using System.Xml.Serialization;
 using MacroMate.Extensions.Lumina;
 using Dalamud;
 using Lumina.Excel;
@@ -34,26 +31,26 @@ public record class ExcelId<T>(uint Id) : ExcelId where T : ExcelRow {
     /// <returns>The ExcelRow in the specified language.</returns>
     public T? GetWithLanguage(ClientLanguage language) => Env.DataManager.GetExcelSheet<T>(language)?.GetRow(this.Id);
 
+    public string? Name() {
+        if (GameData is BNpcName bNpcName) { return bNpcName.Singular.Text(); }
+        if (GameData is ENpcResident eNpc) { return eNpc.Singular.Text(); }
+        if (GameData is ContentFinderCondition cfc) { return cfc.Name.Text(); }
+        if (GameData is TerritoryType tt) {
+            var pn = tt.PlaceName.Value;
+            if (pn != null) { return pn.Name.Text(); }
+        }
+        if (GameData is PlaceName placeName) { return placeName.Name.Text(); }
+        if (GameData is ClassJob job) { return job.Abbreviation.Text(); }
+
+        return null;
+    }
+
     public string DisplayName() {
-        var npcName = (GameData as BNpcName)?.Singular?.Text();
-        if (npcName != null) { return $"{npcName} ({Id})"; }
-
-        var enpcName = (GameData as ENpcResident)?.Singular?.Text();
-        if (enpcName != null) { return $"{enpcName} ({Id})"; }
-
-        var contentName = (GameData as ContentFinderCondition)?.Name?.Text();
-        if (contentName != null) { return $"{contentName} ({Id})"; }
-
-        var territoryType = (GameData as TerritoryType)?.PlaceName?.Value?.Name?.Text();
-        if (territoryType != null) { return $"{territoryType} ({Id})"; }
-
-        var placeName = (GameData as PlaceName)?.Name?.Text();
-        if (placeName != null) { return $"{placeName} ({Id})"; }
-
-        var jobName = (GameData as ClassJob)?.Abbreviation?.Text();
-        if (jobName != null) { return $"{jobName} ({Id})"; }
-
-        return "$<id:{Id}>";
+        if (Name() is {} name) {
+            return $"{name} ({Id})";
+        } else {
+            return $"<id:{Id}>";
+        }
     }
 
     public override string ToString() => $"ExcelId({Id})";
