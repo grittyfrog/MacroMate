@@ -78,16 +78,13 @@ public class TargetNpcConditionXML : ConditionXML {
         return new TargetNameCondition();
     }
 
-    public static TargetNpcConditionXML From(TargetNameCondition cond) => new() {
-        TargetName = cond.targetName.Match(
-            bNpc => new ExcelIdXML(bNpc),
-            customName => null
-        ),
-        TargetNameCustom = cond.targetName.Match(
-            bNpc => null,
-            customName => customName
-        )
-    };
+    public static TargetNpcConditionXML From(TargetNameCondition cond) {
+        return cond.targetName.Match(
+            npcName => new TargetNpcConditionXML { TargetName = new ExcelIdXML(npcName) },
+            enpcName => new TargetNpcConditionXML { TargetName = new ExcelIdXML(enpcName) },
+            customName => new TargetNpcConditionXML { TargetNameCustom = customName }
+        );
+    }
 }
 
 [XmlType("TargetNameCondition")]
@@ -95,11 +92,16 @@ public class TargetNameConditionXML : ConditionXML {
     [XmlAnyElement("TargetNameComment")]
     public XmlComment? TargetNameComment { get => TargetNameNpc?.Comment; set {} }
     public ExcelIdXML? TargetNameNpc { get; set; }
+    public ExcelIdXML? TargetNameENpc { get; set; }
     public string? TargetNameCustom { get; set; }
 
     public override ICondition ToReal() {
         if (TargetNameNpc != null) {
             return new TargetNameCondition(new ExcelId<BNpcName>(TargetNameNpc.Id));
+        }
+
+        if (TargetNameENpc != null) {
+            return new TargetNameCondition(new ExcelId<ENpcResident>(TargetNameENpc.Id));
         }
 
         if (TargetNameCustom != null) {
@@ -109,16 +111,13 @@ public class TargetNameConditionXML : ConditionXML {
         return new TargetNameCondition();
     }
 
-    public static TargetNameConditionXML From(TargetNameCondition cond) => new() {
-        TargetNameNpc = cond.targetName.Match(
-            bNpc => new ExcelIdXML(bNpc),
-            customName => null
-        ),
-        TargetNameCustom = cond.targetName.Match(
-            bNpc => null,
-            customName => customName
-        )
-    };
+    public static TargetNameConditionXML From(TargetNameCondition cond) {
+        return cond.targetName.Match(
+            npcName => new TargetNameConditionXML { TargetNameNpc = new ExcelIdXML(npcName) },
+            enpcName => new TargetNameConditionXML { TargetNameENpc = new ExcelIdXML(enpcName) },
+            customName => new TargetNameConditionXML { TargetNameCustom = customName }
+        );
+    }
 }
 
 [XmlType("JobCondition")]

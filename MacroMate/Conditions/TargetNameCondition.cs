@@ -1,47 +1,65 @@
 using System.Collections.Generic;
 using System.Linq;
 using MacroMate.Extensions.Dalamaud.Excel;
-using MacroMate.Extensions.Dotnet;
 using Dalamud.Game.ClientState.Objects.Types;
 using Lumina.Excel.GeneratedSheets;
 using OneOf;
+using Dalamud.Game.ClientState.Objects.Enums;
 
 namespace MacroMate.Conditions;
 
 public record class TargetNameCondition(
-    OneOf<ExcelId<BNpcName>, string> targetName
+    OneOf<ExcelId<BNpcName>, ExcelId<ENpcResident>, string> targetName
 ) : ICondition {
-    string Name => targetName.Match(
+    string DisplayName => targetName.Match(
         bNpc => bNpc.DisplayName(),
+        eNpc => eNpc.DisplayName(),
         customName => $"{customName} (Custom)"
     );
-    string ICondition.ValueName => Name;
-    string ICondition.NarrowName => Name;
+    string ICondition.ValueName => DisplayName;
+    string ICondition.NarrowName => DisplayName;
 
-    bool ICondition.SatisfiedBy(ICondition other) => this.Equals(other);
+    string? Name => targetName.Match(
+        bNpc => bNpc.Name(),
+        eNpc => eNpc.Name(),
+        customName => customName
+    );
+    bool ICondition.SatisfiedBy(ICondition other) {
+        if (other is TargetNameCondition otherTarget) {
+            // We check if names are equal by their string representation instead of
+            // their ID. We do this because ENpcResident's can have different IDs but
+            // the same name and we want to treat them as equal.
+            var thisName = this.Name;
+            var otherName = otherTarget.Name;
+            if (thisName == null || otherName == null) { return false; }
+            return thisName.Equals(otherName);
+        }
+
+        return false;
+    }
 
     /// Default: ruins runner
     public TargetNameCondition() : this(new ExcelId<BNpcName>(2)) {}
 
     public static TargetNameCondition? Current() {
         var target = Env.TargetManager.Target;
-        if (target is Character targetCharacter) {
-            var targetNameId = targetCharacter?.NameId;
-            var targetNameExcelId = targetNameId
-                ?.Let(id => new ExcelId<BNpcName>(id))
-                ?.DefaultIf(i => i.Id == 0);
+        if (target == null) { return null; }
 
-            if (targetNameExcelId != null) {
-                return new TargetNameCondition(targetNameExcelId);
+        if (target is Character targetCharacter) {
+            var targetNameId = targetCharacter.NameId;
+            if (targetNameId == 0) { return null; }
+
+            if (target.ObjectKind == ObjectKind.BattleNpc) {
+                return new TargetNameCondition(new ExcelId<BNpcName>(targetNameId));
+            }
+
+            if (target.ObjectKind == ObjectKind.EventNpc) {
+                return new TargetNameCondition(new ExcelId<ENpcResident>(targetNameId));
             }
         }
 
-        if (target != null) {
-            var name = target.Name.ToString();
-            return new TargetNameCondition(name);
-        }
-
-        return null;
+        var name = target.Name.ToString();
+        return new TargetNameCondition(name);
     }
 
     public static ICondition.IFactory Factory = new ConditionFactory();
@@ -54,12 +72,20 @@ public record class TargetNameCondition(
         public ICondition? FromConditions(CurrentConditions conditions) => conditions.targetNpc;
 
         public List<ICondition> TopLevel() {
-            return Env.DataManager.GetExcelSheet<BNpcName>()!
+            var bnpcNames = Env.DataManager.GetExcelSheet<BNpcName>()!
                 .Where(npcName => npcName.Singular != "")
                 .Select(npcName =>
                     new TargetNameCondition(new ExcelId<BNpcName>(npcName.RowId)) as ICondition
-                )
-                .ToList();
+                );
+
+            // We match enpcNames on their string names, since the same name is repeated multiple times
+            // for identical NPCs. But we still use the IDs under the hood to allow macros to work cross-language.
+            var enpcNames = Env.DataManager.GetExcelSheet<ENpcResident>()!
+                .Where(enpc => enpc.Singular != "")
+                .DistinctBy(enpc => enpc.Singular)
+                .Select(enpc => new TargetNameCondition(new ExcelId<ENpcResident>(enpc.RowId)) as ICondition);
+
+            return bnpcNames.Concat(enpcNames).ToList();
         }
     }
 }
