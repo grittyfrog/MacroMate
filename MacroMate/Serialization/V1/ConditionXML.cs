@@ -1,6 +1,7 @@
 using System;
 using System.Xml;
 using System.Xml.Serialization;
+using Dalamud.Game.ClientState.Objects.Enums;
 using Lumina.Excel.GeneratedSheets;
 using MacroMate.Conditions;
 using MacroMate.Extensions.Dalamaud.Excel;
@@ -68,22 +69,14 @@ public class TargetNpcConditionXML : ConditionXML {
 
     public override ICondition ToReal() {
         if (TargetName != null) {
-            return new TargetNameCondition(new ExcelId<BNpcName>(TargetName.Id));
-        }
-
-        if (TargetNameCustom != null) {
-            return new TargetNameCondition(TargetNameCustom);
+            return new TargetNameCondition(ObjectKind.BattleNpc, TargetName.Id);
         }
 
         return new TargetNameCondition();
     }
 
     public static TargetNpcConditionXML From(TargetNameCondition cond) {
-        return cond.targetName.Match(
-            npcName => new TargetNpcConditionXML { TargetName = new ExcelIdXML(npcName) },
-            enpcName => new TargetNpcConditionXML { TargetName = new ExcelIdXML(enpcName) },
-            customName => new TargetNpcConditionXML { TargetNameCustom = customName }
-        );
+        throw new Exception("TargetNpcConditionXML is deprecated and should not be written");
     }
 }
 
@@ -91,32 +84,36 @@ public class TargetNpcConditionXML : ConditionXML {
 public class TargetNameConditionXML : ConditionXML {
     [XmlAnyElement("TargetNameComment")]
     public XmlComment? TargetNameComment { get => TargetNameNpc?.Comment; set {} }
+
+    public uint? TargetId { get; set; }
+    public ObjectKind? TargetKind { get; set; }
+
+    // Old Fields: Deprecated on next version
     public ExcelIdXML? TargetNameNpc { get; set; }
     public ExcelIdXML? TargetNameENpc { get; set; }
     public string? TargetNameCustom { get; set; }
 
     public override ICondition ToReal() {
+        if (TargetId != null && TargetKind != null) {
+            return new TargetNameCondition((ObjectKind)TargetKind, (uint)TargetId);
+        }
+
         if (TargetNameNpc != null) {
-            return new TargetNameCondition(new ExcelId<BNpcName>(TargetNameNpc.Id));
+            return new TargetNameCondition(ObjectKind.BattleNpc, TargetNameNpc.Id);
         }
 
         if (TargetNameENpc != null) {
-            return new TargetNameCondition(new ExcelId<ENpcResident>(TargetNameENpc.Id));
-        }
-
-        if (TargetNameCustom != null) {
-            return new TargetNameCondition(TargetNameCustom);
+            return new TargetNameCondition(ObjectKind.EventNpc, TargetNameENpc.Id);
         }
 
         return new TargetNameCondition();
     }
 
     public static TargetNameConditionXML From(TargetNameCondition cond) {
-        return cond.targetName.Match(
-            npcName => new TargetNameConditionXML { TargetNameNpc = new ExcelIdXML(npcName) },
-            enpcName => new TargetNameConditionXML { TargetNameENpc = new ExcelIdXML(enpcName) },
-            customName => new TargetNameConditionXML { TargetNameCustom = customName }
-        );
+        return new TargetNameConditionXML {
+            TargetId = cond.TargetId,
+            TargetKind = cond.TargetKind
+        };
     }
 }
 
