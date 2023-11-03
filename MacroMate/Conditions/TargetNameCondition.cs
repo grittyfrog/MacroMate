@@ -22,7 +22,7 @@ public record class TargetNameCondition(
             var thisName = this.Name;
             var otherName = otherTarget.Name;
             if (thisName == null || otherName == null) { return false; }
-            return thisName.Equals(otherName);
+            return this.TargetKind == otherTarget.TargetKind && thisName.Equals(otherName);
         }
 
         return false;
@@ -57,7 +57,7 @@ public record class TargetNameCondition(
         ObjectKind.GatheringPoint => null,
         ObjectKind.EventObj => Env.DataManager.GetExcelSheet<EObjName>()?.GetRow(TargetId)?.Singular?.Text(),
         ObjectKind.MountType => null,
-        ObjectKind.Companion => null, // Minion
+        ObjectKind.Companion => Env.DataManager.GetExcelSheet<Companion>()?.GetRow(TargetId)?.Singular?.Text(), // Minion
         ObjectKind.Retainer => null,
         ObjectKind.Area => null,
         ObjectKind.Housing =>
@@ -103,6 +103,11 @@ public record class TargetNameCondition(
                 .Select(eobj => new TargetNameCondition(ObjectKind.EventObj, eobj.RowId))
                 .AsParallel();
 
+            var companionNames = Env.DataManager.GetExcelSheet<Companion>()!
+                .Where(c => c.Singular != "")
+                .Select(c => new TargetNameCondition(ObjectKind.Companion, c.RowId))
+                .AsParallel();
+
             var housingNames = Env.DataManager.GetExcelSheet<HousingFurniture>()!
                 .Select(furniture => new TargetNameCondition(ObjectKind.Housing, furniture.RowId))
                 .AsParallel();
@@ -110,6 +115,7 @@ public record class TargetNameCondition(
             return bnpcNames
                 .Concat(enpcNames)
                 .Concat(eobjNames)
+                .Concat(companionNames)
                 .Concat(housingNames);
         }
     }
