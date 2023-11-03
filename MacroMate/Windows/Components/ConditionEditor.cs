@@ -119,7 +119,7 @@ unsafe class ConditionEditorColumn : IDisposable {
             return false;
         }
 
-        var (matchingCondition, matchingConditionIndex) = Conditions
+        var (matchingCondition, matchingConditionIndex) = filteredConditions
             .WithIndex()
             .FirstOrDefault((conditionAndIndex) => conditionAndIndex.item.SatisfiedBy(selectCondition));
 
