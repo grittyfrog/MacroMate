@@ -39,13 +39,13 @@ public interface ICondition {
         ///
         /// Deeper context-dependent conditions should use a value produced by this function and
         /// pass it to `Narrow`.
-        List<ICondition> TopLevel();
+        IEnumerable<ICondition> TopLevel();
 
         /// Given a chosen condition, offer more "specific" options that are a subset of the
         /// given condition.
         ///
         /// For example: Given a Territory, produce conditions that are regions or sub-areas in that territory.
-        List<ICondition> Narrow(ICondition search) => new();
+        IEnumerable<ICondition> Narrow(ICondition search) => new List<ICondition>();
 
         static IEnumerable<IFactory> All => new IFactory[] {
             ContentCondition.Factory,
