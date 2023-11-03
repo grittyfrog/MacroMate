@@ -49,9 +49,9 @@ public record class TargetNameCondition(
         ObjectKind.None => null,
         ObjectKind.Player => null, // Not supported
         ObjectKind.BattleNpc =>
-            Env.DataManager.GetExcelSheet<BNpcName>()?.GetRow(TargetId)?.Singular.Text(),
+            Env.DataManager.GetExcelSheet<BNpcName>()?.GetRow(TargetId)?.Singular?.Text(),
         ObjectKind.EventNpc =>
-            Env.DataManager.GetExcelSheet<ENpcResident>()?.GetRow(TargetId)?.Singular.Text(),
+            Env.DataManager.GetExcelSheet<ENpcResident>()?.GetRow(TargetId)?.Singular?.Text(),
         ObjectKind.Treasure => null,
         ObjectKind.Aetheryte => null,
         ObjectKind.GatheringPoint => null,
@@ -69,7 +69,7 @@ public record class TargetNameCondition(
         _ => null
     } ?? "<unknown>";
 
-    public string DisplayName => $"{Name} ({TargetId}) [{TargetKind}]";
+    public string DisplayName => $"{Name} ({TargetId} - {TargetKind})";
 
     public static ICondition.IFactory Factory = new ConditionFactory();
     ICondition.IFactory ICondition.FactoryRef => Factory;
@@ -84,17 +84,25 @@ public record class TargetNameCondition(
             var bnpcNames = Env.DataManager.GetExcelSheet<BNpcName>()!
                 .Where(npcName => npcName.Singular != "")
                 .Select(npcName =>
-                    new TargetNameCondition(ObjectKind.BattleNpc, npcName.RowId) as ICondition
-                );
+                    new TargetNameCondition(ObjectKind.BattleNpc, npcName.RowId)
+                )
+                .AsParallel();
 
             // We match enpcNames on their string names, since the same name is repeated multiple times
             // for identical NPCs. But we still use the IDs under the hood to allow macros to work cross-language.
             var enpcNames = Env.DataManager.GetExcelSheet<ENpcResident>()!
                 .Where(enpc => enpc.Singular != "")
                 .DistinctBy(enpc => enpc.Singular.Text())
-                .Select(enpc => new TargetNameCondition(ObjectKind.EventNpc, enpc.RowId) as ICondition);
+                .Select(enpc => new TargetNameCondition(ObjectKind.EventNpc, enpc.RowId))
+                .AsParallel();
 
-            return bnpcNames.Concat(enpcNames);
+            var housingNames = Env.DataManager.GetExcelSheet<HousingFurniture>()!
+                .Select(furniture => new TargetNameCondition(ObjectKind.Housing, furniture.RowId))
+                .AsParallel();
+
+            return bnpcNames
+                .Concat(enpcNames)
+                .Concat(housingNames);
         }
     }
 }

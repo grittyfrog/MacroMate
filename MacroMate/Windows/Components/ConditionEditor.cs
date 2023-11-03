@@ -181,7 +181,10 @@ unsafe class ConditionEditorColumn : IDisposable {
 
     private void RefilterConditions() {
         // We have to pre-filter our data for clipper to work nicely.
-        filteredConditions = Conditions.Where(condition => filter.PassFilter(condition.NarrowName)).ToList();
+        filteredConditions = Conditions
+            .AsParallel()
+            .AsOrdered()
+            .Where(condition => filter.PassFilter(condition.NarrowName)).ToList();
     }
 
     public void Dispose() {
