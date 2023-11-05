@@ -21,7 +21,7 @@ public record class TargetNameCondition(
             // the same name and we want to treat them as equal.
             var thisName = this.Name;
             var otherName = otherTarget.Name;
-            if (thisName == null || otherName == null) { return false; }
+            if (thisName == "<unknown>" || otherName == "<unknown>") { return false; }
             return this.TargetKind == otherTarget.TargetKind && thisName.Equals(otherName);
         }
 
