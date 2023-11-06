@@ -4,6 +4,7 @@ using Dalamud.Game.ClientState.Objects.Types;
 using Lumina.Excel.GeneratedSheets;
 using Dalamud.Game.ClientState.Objects.Enums;
 using MacroMate.Extensions.Lumina;
+using System;
 
 namespace MacroMate.Conditions;
 
@@ -11,6 +12,43 @@ public record class TargetNameCondition(
     ObjectKind TargetKind,
     uint TargetId
 ) : ICondition {
+    private enum ObjectKindSupport {
+        SUPPORTED,
+
+        /**
+         * <summary>
+         * We support targeting this object, but not specific types of this object.
+         *
+         * For example, you can target any "Treasure", but not a specific "Treasure Coffer"
+         * </summary>
+         */
+        KIND_ONLY,
+
+        UNSUPPORTED
+    }
+
+    /**
+     * Defines support levels for targeting different object kinds
+     */
+    private static Dictionary<ObjectKind, ObjectKindSupport> ObjectKindSupportLevel = new() {
+        { ObjectKind.None,           ObjectKindSupport.UNSUPPORTED },
+        { ObjectKind.Player,         ObjectKindSupport.KIND_ONLY   },
+        { ObjectKind.BattleNpc,      ObjectKindSupport.SUPPORTED   },
+        { ObjectKind.EventNpc,       ObjectKindSupport.SUPPORTED   },
+        { ObjectKind.Treasure,       ObjectKindSupport.KIND_ONLY   }, // No table
+        { ObjectKind.Aetheryte,      ObjectKindSupport.KIND_ONLY   }, // Too many spoilers
+        { ObjectKind.GatheringPoint, ObjectKindSupport.KIND_ONLY   }, // No useful table
+        { ObjectKind.EventObj,       ObjectKindSupport.SUPPORTED   },
+        { ObjectKind.MountType,      ObjectKindSupport.UNSUPPORTED },
+        { ObjectKind.Companion,      ObjectKindSupport.SUPPORTED   }, // Minion
+        { ObjectKind.Retainer,       ObjectKindSupport.UNSUPPORTED },
+        { ObjectKind.Area,           ObjectKindSupport.UNSUPPORTED },
+        { ObjectKind.Housing,        ObjectKindSupport.SUPPORTED   },
+        { ObjectKind.Cutscene,       ObjectKindSupport.UNSUPPORTED },
+        { ObjectKind.CardStand,      ObjectKindSupport.UNSUPPORTED }, // Island Sanctuary gathering
+        { ObjectKind.Ornament,       ObjectKindSupport.UNSUPPORTED }
+    };
+
     string ICondition.ValueName {
         get {
             if (TargetId == 0) { return TargetKind.ToString(); }
@@ -49,19 +87,26 @@ public record class TargetNameCondition(
         var target = Env.TargetManager.Target;
         if (target == null) { return null; }
 
+        var objectKindSupport = ObjectKindSupportLevel
+            .GetValueOrDefault(target.ObjectKind); // Default is Unsupported
+
+        if (objectKindSupport == ObjectKindSupport.UNSUPPORTED) { return null; }
+        if (objectKindSupport == ObjectKindSupport.KIND_ONLY) {
+            return new TargetNameCondition(target.ObjectKind, 0);
+        }
+
         // For BNpc's we need to use BNpcName directly since the
         // regular sheet doesn't have a name or link to BNpcName
-        if (target.ObjectKind == ObjectKind.BattleNpc) {
+        if (target.ObjectKind == ObjectKind.BattleNpc || target.ObjectKind == ObjectKind.Treasure) {
             if (target is Character targetCharacter) {
                 var targetNameId = targetCharacter.NameId;
                 if (targetNameId == 0) { return null; }
 
-            return new TargetNameCondition(ObjectKind.BattleNpc, targetNameId);
+                return new TargetNameCondition(ObjectKind.BattleNpc, targetNameId);
             }
         }
 
         // For everything else we assume their usual Data sheet has their name.
-
         return new TargetNameCondition(target.ObjectKind, target.DataId);
     }
 
@@ -72,7 +117,7 @@ public record class TargetNameCondition(
             Env.DataManager.GetExcelSheet<BNpcName>()?.GetRow(TargetId)?.Singular?.Text(),
         ObjectKind.EventNpc =>
             Env.DataManager.GetExcelSheet<ENpcResident>()?.GetRow(TargetId)?.Singular?.Text(),
-        ObjectKind.Treasure => null,
+        ObjectKind.Treasure => null, // Not supported
         ObjectKind.Aetheryte => null,
         ObjectKind.GatheringPoint => null,
         ObjectKind.EventObj => Env.DataManager.GetExcelSheet<EObjName>()?.GetRow(TargetId)?.Singular?.Text(),
@@ -101,15 +146,9 @@ public record class TargetNameCondition(
         public ICondition? FromConditions(CurrentConditions conditions) => conditions.targetNpc;
 
         public IEnumerable<ICondition> TopLevel() {
-            var kinds = new List<ObjectKind>() {
-                ObjectKind.BattleNpc,
-                ObjectKind.EventNpc,
-                ObjectKind.EventObj,
-                ObjectKind.Companion,
-                ObjectKind.Housing
-            };
-
-            return kinds.Select(kind => new TargetNameCondition(kind, 0));
+            var supportedKinds = Enum.GetValues<ObjectKind>()
+                .Where(kind => ObjectKindSupportLevel.GetValueOrDefault(kind) != ObjectKindSupport.UNSUPPORTED);
+            return supportedKinds.Select(kind => new TargetNameCondition(kind, 0));
         }
 
         public IEnumerable<ICondition> Narrow(ICondition search) {
@@ -118,6 +157,12 @@ public record class TargetNameCondition(
 
             // If we already have a target we can't narrow any further
             if (targetCondition.TargetId != 0) {  return new List<ICondition>(); }
+
+            // If our support level for this kind isn't fully SUPPORTED then we can't narrow any further
+            var supportLevel = ObjectKindSupportLevel.GetValueOrDefault(targetCondition.TargetKind);
+            if (supportLevel != ObjectKindSupport.SUPPORTED) {
+                return new List<ICondition>();
+            }
 
             if (targetCondition.TargetKind == ObjectKind.BattleNpc) {
                 return Env.DataManager.GetExcelSheet<BNpcName>()!
