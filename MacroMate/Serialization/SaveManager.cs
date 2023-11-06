@@ -11,6 +11,11 @@ public class SaveManager {
     public FileInfo MacroDataFile {
         get => new FileInfo(Path.Combine(Env.PluginInterface.ConfigDirectory.FullName, "MacroMate.xml"));
     }
+
+    public FileInfo MacroDataSaveAttemptFile {
+        get => new FileInfo(Path.Combine(Env.PluginInterface.ConfigDirectory.FullName, "MacroMate.saveAttempt.xml"));
+    }
+
     public DirectoryInfo MacroBackupFolder {
         get => new DirectoryInfo(Path.Combine(Env.PluginInterface.ConfigDirectory.FullName, "Backups"));
     }
@@ -40,7 +45,13 @@ public class SaveManager {
 
     public void Save(MateNode root) {
         SaveTimedBackup();
-        SaveManagerV1.Write(root, MacroDataFile);
+
+        // Write to an empty file then copy it over the existing one.
+        //
+        // This helps prevent issues when the save fails, since we won't
+        // corrup the users existing save file.
+        SaveManagerV1.Write(root, MacroDataSaveAttemptFile);
+        File.Move(MacroDataSaveAttemptFile.FullName, MacroDataFile.FullName, overwrite: true);
     }
 
     public void SaveTimedBackup() {
