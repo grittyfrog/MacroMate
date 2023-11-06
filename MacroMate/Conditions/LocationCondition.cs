@@ -80,10 +80,17 @@ public record class LocationCondition(
             if (locationCondition.regionOrSubAreaName != null) { return new List<ICondition>(); }
 
             // Otherwise, we can fill out the data using Map Markers!
+            //
+            // First, a territory might have multiple maps (i.e. multiple floors), so we need all of them
+            var locationMaps = Env.DataManager.GetExcelSheet<Map>()!
+                .Where(map => map.TerritoryType.Row == locationCondition.territory.Id);
+            var locationMapMarkerRanges = locationMaps.Select(map => (uint)map.MapMarkerRange).ToHashSet();
+
+            // Now for each of the maps we want to pull all the named sub-locations that are part of
+            // that map
             return Env.DataManager.GetExcelSheet<MapMarker>()!
                 .Where(mapMarker =>
-                    mapMarker.RowId == locationCondition.territory.GameData!.Map.Value!.MapMarkerRange
-                       && mapMarker.PlaceNameSubtext.Row != 0
+                    locationMapMarkerRanges.Contains(mapMarker.RowId) && mapMarker.PlaceNameSubtext.Row != 0
                 )
                 .DistinctBy(mapMarker => mapMarker.PlaceNameSubtext.Row)
                 .Select(mapMarker =>
