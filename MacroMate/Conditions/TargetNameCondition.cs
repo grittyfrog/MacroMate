@@ -11,18 +11,32 @@ public record class TargetNameCondition(
     ObjectKind TargetKind,
     uint TargetId
 ) : ICondition {
-    string ICondition.ValueName => DisplayName;
-    string ICondition.NarrowName => DisplayName;
+    string ICondition.ValueName {
+        get {
+            if (TargetId == 0) { return TargetKind.ToString(); }
+            return  $"{Name} ({TargetId} - {TargetKind})";
+        }
+    }
+    string ICondition.NarrowName {
+        get {
+            if (TargetId == 0) { return TargetKind.ToString(); }
+            return $"{Name} ({TargetId})";
+        }
+    }
 
     bool ICondition.SatisfiedBy(ICondition other) {
         if (other is TargetNameCondition otherTarget) {
+            // If TargetId is 0, assume it is satisfied
+            if (TargetId == 0) { return this.TargetKind.Equals(otherTarget.TargetKind); }
+
             // We check if names are equal by their string representation instead of
             // their ID. We do this because ENpcResident's can have different IDs but
             // the same name and we want to treat them as equal.
             var thisName = this.Name;
             var otherName = otherTarget.Name;
             if (thisName == "<unknown>" || otherName == "<unknown>") { return false; }
-            return this.TargetKind == otherTarget.TargetKind && thisName.Equals(otherName);
+            return this.TargetKind == otherTarget.TargetKind
+                && thisName.ToLowerInvariant().Equals(otherName.ToLowerInvariant());
         }
 
         return false;
@@ -35,12 +49,18 @@ public record class TargetNameCondition(
         var target = Env.TargetManager.Target;
         if (target == null) { return null; }
 
-        if (target is Character targetCharacter) {
-            var targetNameId = targetCharacter.NameId;
-            if (targetNameId == 0) { return null; }
+        // For BNpc's we need to use BNpcName directly since the
+        // regular sheet doesn't have a name or link to BNpcName
+        if (target.ObjectKind == ObjectKind.BattleNpc) {
+            if (target is Character targetCharacter) {
+                var targetNameId = targetCharacter.NameId;
+                if (targetNameId == 0) { return null; }
 
-            return new TargetNameCondition(target.ObjectKind, targetNameId);
+            return new TargetNameCondition(ObjectKind.BattleNpc, targetNameId);
+            }
         }
+
+        // For everything else we assume their usual Data sheet has their name.
 
         return new TargetNameCondition(target.ObjectKind, target.DataId);
     }
@@ -81,42 +101,61 @@ public record class TargetNameCondition(
         public ICondition? FromConditions(CurrentConditions conditions) => conditions.targetNpc;
 
         public IEnumerable<ICondition> TopLevel() {
-            var bnpcNames = Env.DataManager.GetExcelSheet<BNpcName>()!
-                .Where(npcName => npcName.Singular != "")
-                .Select(npcName =>
-                    new TargetNameCondition(ObjectKind.BattleNpc, npcName.RowId)
-                )
-                .AsParallel();
+            var kinds = new List<ObjectKind>() {
+                ObjectKind.BattleNpc,
+                ObjectKind.EventNpc,
+                ObjectKind.EventObj,
+                ObjectKind.Companion,
+                ObjectKind.Housing
+            };
 
-            // We match enpcNames on their string names, since the same name is repeated multiple times
-            // for identical NPCs. But we still use the IDs under the hood to allow macros to work cross-language.
-            var enpcNames = Env.DataManager.GetExcelSheet<ENpcResident>()!
-                .Where(enpc => enpc.Singular != "")
-                .DistinctBy(enpc => enpc.Singular.Text())
-                .Select(enpc => new TargetNameCondition(ObjectKind.EventNpc, enpc.RowId))
-                .AsParallel();
+            return kinds.Select(kind => new TargetNameCondition(kind, 0));
+        }
 
-            // Same as enpc -- identical names, different ids
-            var eobjNames = Env.DataManager.GetExcelSheet<EObjName>()!
-                .Where(eobj => eobj.Singular != "")
-                .DistinctBy(eobj => eobj.Singular.Text())
-                .Select(eobj => new TargetNameCondition(ObjectKind.EventObj, eobj.RowId))
-                .AsParallel();
+        public IEnumerable<ICondition> Narrow(ICondition search) {
+            var targetCondition = search as TargetNameCondition;
+            if (targetCondition == null) { return new List<ICondition>(); }
 
-            var companionNames = Env.DataManager.GetExcelSheet<Companion>()!
-                .Where(c => c.Singular != "")
-                .Select(c => new TargetNameCondition(ObjectKind.Companion, c.RowId))
-                .AsParallel();
+            // If we already have a target we can't narrow any further
+            if (targetCondition.TargetId != 0) {  return new List<ICondition>(); }
 
-            var housingNames = Env.DataManager.GetExcelSheet<HousingFurniture>()!
-                .Select(furniture => new TargetNameCondition(ObjectKind.Housing, furniture.RowId))
-                .AsParallel();
+            if (targetCondition.TargetKind == ObjectKind.BattleNpc) {
+                return Env.DataManager.GetExcelSheet<BNpcName>()!
+                    .Where(npcName => npcName.Singular != "")
+                    .Select(npcName =>
+                        new TargetNameCondition(ObjectKind.BattleNpc, npcName.RowId)
+                    );
+            }
 
-            return bnpcNames
-                .Concat(enpcNames)
-                .Concat(eobjNames)
-                .Concat(companionNames)
-                .Concat(housingNames);
+            if (targetCondition.TargetKind == ObjectKind.EventNpc) {
+                // We match enpcNames on their string names, since the same name is repeated multiple times
+                // for identical NPCs. But we still use the IDs under the hood to allow macros to work cross-language.
+                return Env.DataManager.GetExcelSheet<ENpcResident>()!
+                    .Where(enpc => enpc.Singular != "")
+                    .DistinctBy(enpc => enpc.Singular.Text())
+                    .Select(enpc => new TargetNameCondition(ObjectKind.EventNpc, enpc.RowId));
+            }
+
+            if (targetCondition.TargetKind == ObjectKind.EventObj) {
+                // Same as enpc -- identical names, different ids
+                return Env.DataManager.GetExcelSheet<EObjName>()!
+                    .Where(eobj => eobj.Singular != "")
+                    .DistinctBy(eobj => eobj.Singular.Text())
+                    .Select(eobj => new TargetNameCondition(ObjectKind.EventObj, eobj.RowId));
+            }
+
+            if (targetCondition.TargetKind == ObjectKind.Companion) {
+                return Env.DataManager.GetExcelSheet<Companion>()!
+                    .Where(c => c.Singular != "")
+                    .Select(c => new TargetNameCondition(ObjectKind.Companion, c.RowId));
+            }
+
+            if (targetCondition.TargetKind == ObjectKind.Housing) {
+                return Env.DataManager.GetExcelSheet<HousingFurniture>()!
+                    .Select(furniture => new TargetNameCondition(ObjectKind.Housing, furniture.RowId));
+            }
+
+            return new List<ICondition>();
         }
     }
 }
