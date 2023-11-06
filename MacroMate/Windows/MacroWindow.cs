@@ -171,6 +171,7 @@ public class MacroWindow : Window, IDisposable {
         )) {
             Macro.Lines = lines;
         };
+        InputTextXIVPasteHack();
         edited = edited || ImGui.IsItemDeactivatedAfterEdit();
 
         if (edited) {
@@ -235,5 +236,33 @@ public class MacroWindow : Window, IDisposable {
         }
 
         Env.MacroConfig.NotifyEdit();
+    }
+
+    /**
+     * Hack to make pasting multi-line text from the game work (I.e. the chat log / macro windoow)
+     *
+     * Ideally we'd override the global clipboard handler in ImGui but that seems extreme for
+     * a single plugin, maybe as a Dalamud PR?
+     */
+    private void InputTextXIVPasteHack() {
+        if (ImGui.IsItemFocused()) {
+            var clipboardText = ImGui.GetClipboardText();
+            if (clipboardText.Contains('\r')) {
+                // We want to normalize all line endings to \n so ImGui can accept them
+                // when pasted.
+                //
+                // Line endings from XIV only have '\r'.
+                ImGui.SetClipboardText(clipboardText.ReplaceLineEndings("\n"));
+            }
+        }
+
+        // If we lose focus we want to restore the previous line endings under
+        // the assumption we might be pasting elsewhere
+        if (ImGui.IsItemDeactivated()) {
+            var clipboardText = ImGui.GetClipboardText();
+            if (clipboardText.Contains('\n')) {
+                ImGui.SetClipboardText(clipboardText.ReplaceLineEndings("\r"));
+            }
+        }
     }
 }
