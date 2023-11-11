@@ -33,6 +33,9 @@
           buildInputs = [
             pkgs.omnisharp-roslyn
             dotnet
+
+            # For github workflow
+            pkgs.jq
           ];
 
           DOTNET_ROOT=dotnet;
