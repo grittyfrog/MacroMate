@@ -1,15 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CURRENT_VERSION=$(jq -r .[].AssemblyVersion repo.json)
-
 BUILD_JSON=MacroMate/bin/x64/Release/MacroMate/MacroMate.json
 BUILD_VERSION=$(jq -r .AssemblyVersion $BUILD_JSON)
-
-if [[ "${CURRENT_VERSION}" = "${BUILD_VERSION}" ]]; then
-    echo "Nothing to do"
-    exit 0
-fi
 
 VERSION_URL="https://github.com/grittyfrog/MacroMate/releases/download/v${BUILD_VERSION}/MacroMate.zip"
 

@@ -46,3 +46,15 @@ jobs:
           tag_name: v${{ env.RELEASE_VERSION }}
           files: |
             ./MacroMate/bin/x64/Release/MacroMate/MacroMate.zip
+
+      - name: Update repo.json
+        if: ${{ env.RELEASE_VERSION != '0.0.0.0' }}
+        run: |
+          .github/scripts/update-repo-json.sh
+
+          git config --global user.name "Actions User"
+          git config --global user.email "actions@github.com"
+          git fetch origin master && git checkout master
+          git add repo.json
+          git commit -m "Update repo.json for v${{ env.RELEASE_VERSION }}" || true
+          git push origin master || true
