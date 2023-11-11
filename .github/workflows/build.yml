@@ -1,0 +1,18 @@
+name: MacroMate Build
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v7
+      - name: Cache Nix
+        uses: DeterminateSystems/magic-nix-cache-action@v2
+      - name: Build
+        run: nix develop --command dotnet build --configuration Release
