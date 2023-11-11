@@ -87,7 +87,8 @@ public class IconPicker : EventWindow<uint>, IDisposable {
             ImGui.TableNextColumn();
             ImGui.TableNextColumn();
 
-            if (ImGui.InputTextWithHint("###iconsearch", "Search", ref searchText, 255)) {
+            var searchHint = selectedCategory == null ? "Search" : $"Search {selectedCategory}";
+            if (ImGui.InputTextWithHint("###iconsearch", searchHint, ref searchText, 255)) {
                 RefreshSearch();
             }
 
