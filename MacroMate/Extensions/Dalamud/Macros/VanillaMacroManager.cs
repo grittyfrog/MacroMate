@@ -15,7 +15,6 @@ using MacroMate.Extensions.Dotnet;
 
 namespace MacroMate.Extensions.Dalamud.Macros;
 
-/// No longer used, kept as reference as an alterantive macro management system
 public unsafe class VanillaMacroManager : IDisposable {
     private RaptureShellModule* raptureShellModule;
     private RaptureMacroModule* raptureMacroModule;
