@@ -8,7 +8,6 @@ using MacroMate.MacroTree;
 using MacroMate.Extensions.Dalamud.Macros;
 using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.Dalamud;
-using System.Text.RegularExpressions;
 
 namespace MacroMate.Windows;
 
@@ -256,5 +255,4 @@ public class MacroWindow : Window, IDisposable {
             }
         }
     }
-
 }
