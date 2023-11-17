@@ -147,39 +147,8 @@ public unsafe class VanillaMacroManager : IDisposable {
         SetMacro(macroSet, macroSlot, deletedMacro);
     }
 
-    public void ShowMacroUI() {
-        var ui = (UIModule*)Env.GameGui.GetUIModule();
-
-        var macroAddonAtk  = GetAddonMacro();
-        if (macroAddonAtk != null) {
-            if (macroAddonAtk->IsVisible) {
-                return;
-            }
-        }
-
-        // Execute "User Macros"
-        // See: https://github.com/xivapi/ffxiv-datamining/blob/master/csv/MainCommand.csv
-        ui->ExecuteMainCommand(21);
-    }
-
-    /// <summary>
-    /// Move the Vanilla Macro UIs selection cursor and tab to the given parameters
-    /// </summary>
-    /// <remarks>
-    /// This changes the selection even if the UI isn't currently open.
-    /// </remarks>
-    public void SelectMacroInUI(VanillaMacroSet macroSet, uint macroSlot) {
-        var agentModule = Framework.Instance()->GetUiModule()->GetAgentModule();
-        var agentMacro = (AgentMacro*)agentModule->GetAgentByInternalId(AgentId.Macro);
-        if (agentMacro == null) { return; }
-
-        agentMacro->SelectedMacroSet = (uint)macroSet;
-        agentMacro->SelectedMacroIndex = macroSlot;
-        Env.XIVCSSignatures.AgentMacroReloadSelection!(
-            agentMacro,
-            agentMacro->SelectedMacroIndex,
-            false
-        );
+    public void EditMacroInUI(VanillaMacroSet macroSet, uint macroSlot) {
+        Env.XIVCSSignatures.AgentMacroEditMacroInUI!(agentMacro, (uint)macroSet, macroSlot);
     }
 
     /// When we change the Icon of a macro it doesn't actually refresh the Macro UI when it's open,
