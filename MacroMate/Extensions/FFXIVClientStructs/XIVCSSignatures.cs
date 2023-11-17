@@ -14,7 +14,7 @@ public unsafe class XIVCSSignatures {
     /// <summary>
     /// Applies changes to SelectedMacroSet and SelectedMacroSlot in AgentMacro.
     /// </summary>
-    [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 4D 8B C6 49 8B D7 48 8B CB E8 ?? ?? ?? ?? 4C 8B 05 ")]
+    [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 4D 8B C6 49 8B D7 48 8B CB E8 ?? ?? ?? ?? 4C 8B 05")]
     public AgentMacroReloadSelectionDelegate? AgentMacroReloadSelection { get; init; } = null;
     public delegate void AgentMacroReloadSelectionDelegate(
         AgentMacro* self,
