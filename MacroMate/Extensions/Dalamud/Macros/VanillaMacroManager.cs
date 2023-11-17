@@ -4,11 +4,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.String;
-using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -21,7 +18,6 @@ public unsafe class VanillaMacroManager : IDisposable {
     private RaptureShellModule* raptureShellModule;
     private RaptureMacroModule* raptureMacroModule;
     private RaptureHotbarModule* raptureHotbarModule;
-    private AgentMacro* agentMacro;
 
     private bool macroAddonIsSetup = false;
 
@@ -29,7 +25,6 @@ public unsafe class VanillaMacroManager : IDisposable {
         raptureShellModule = RaptureShellModule.Instance();
         raptureMacroModule = RaptureMacroModule.Instance();
         raptureHotbarModule = RaptureHotbarModule.Instance();
-        agentMacro = XIVCS.GetAgent<AgentMacro>();
 
         Env.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Macro", OnMacroAddonPostSetup);
         Env.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Macro", OnMacroAddonPreFinalise);
@@ -109,9 +104,9 @@ public unsafe class VanillaMacroManager : IDisposable {
         }
 
         var macro = raptureMacroModule->GetMacro((uint)macroSet, macroSlot);
-        var macroNameUtf8 = new Utf8String();
-        macroNameUtf8.SetString(vanillaMacro.Title.Truncate(15));
-        macro->Name = macroNameUtf8;
+        macro->Name.SetString(vanillaMacro.Title.Truncate(15));
+
+        bool iconIdChanged = macro->IconId != vanillaMacro.IconId;
         macro->IconId = vanillaMacro.IconId;
         macro->MacroIconRowId = vanillaMacro.IconRowId;
 
@@ -124,7 +119,9 @@ public unsafe class VanillaMacroManager : IDisposable {
         raptureMacroModule->UserFileEvent.HasChanges = true;
 
         // Update the MacroAddon if it's open (since it doesn't auto-refresh)
-        SetVanillaMacroUISlotIcon(macroSet, macroSlot, vanillaMacro.IconId);
+        if (iconIdChanged) {
+            SetVanillaMacroUISlotIcon(macroSet, macroSlot, vanillaMacro.IconId);
+        }
 
         Env.XIVCSSignatures.RaptureHotbarModuleReloadMacroSlots!(
             raptureHotbarModule, (byte)macroSet, (byte)macroSlot
@@ -148,6 +145,9 @@ public unsafe class VanillaMacroManager : IDisposable {
     }
 
     public void EditMacroInUI(VanillaMacroSet macroSet, uint macroSlot) {
+        var agentMacro = XIVCS.GetAgent<AgentMacro>();
+        if (agentMacro == null) { return; }
+
         Env.XIVCSSignatures.AgentMacroEditMacroInUI!(agentMacro, (uint)macroSet, macroSlot);
     }
 
