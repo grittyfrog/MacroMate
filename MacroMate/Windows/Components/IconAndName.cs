@@ -1,6 +1,9 @@
 
 using System;
+using System.Linq;
 using System.Numerics;
+using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MacroMate.MacroTree;
@@ -30,7 +33,19 @@ public static class IconAndName {
 
         ImGui.SameLine();
         ImGui.BeginGroup();
+        ImGui.AlignTextToFramePadding();
         ImGui.Text("Name");
+
+        if (macro.Link.IsBound()) {
+            ImGui.SameLine();
+            if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowUpRightFromSquare)) {
+                Env.VanillaMacroManager.ShowMacroUI();
+                Env.VanillaMacroManager.SelectMacroInUI(macro.Link.Set, macro.Link.Slots.First());
+            };
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Show this macro in the 'User Macros' UI");
+            }
+        }
 
         ImGui.SetNextItemWidth(
             Math.Clamp(

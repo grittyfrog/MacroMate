@@ -13,6 +13,7 @@ using Dalamud.Plugin.Services;
 using MacroMate.Extensions.Dalamud.Font;
 using MacroMate.Serialization;
 using Dalamud.Game;
+using MacroMate.Extensions.FFXIVClientStructs;
 
 namespace MacroMate;
 
@@ -26,6 +27,7 @@ public class Env {
         FontManager = new FontManager();
         WindowSystem = new("MacroMate");
         Random = new Random();
+        XIVCSSignatures = new XIVCSSignatures();
 
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         PlayerLocationManager = new PlayerLocationManager();
@@ -108,6 +110,8 @@ public class Env {
     public static Random Random { get; private set; } = null!;
 
     public static FontManager FontManager { get; private set; } = null!;
+
+    public static XIVCSSignatures XIVCSSignatures { get; private set; } = null!;
 
     /// ===
     /// MacroMate Injections

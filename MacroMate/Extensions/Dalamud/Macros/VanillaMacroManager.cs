@@ -4,14 +4,16 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Hooking;
-using Dalamud.Utility.Signatures;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.String;
+using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using MacroMate.Extensions.Dotnet;
+using MacroMate.Extensions.FFXIVClientStructs;
 
 namespace MacroMate.Extensions.Dalamud.Macros;
 
@@ -19,44 +21,21 @@ public unsafe class VanillaMacroManager : IDisposable {
     private RaptureShellModule* raptureShellModule;
     private RaptureMacroModule* raptureMacroModule;
     private RaptureHotbarModule* raptureHotbarModule;
+    private AgentMacro* agentMacro;
 
     private bool macroAddonIsSetup = false;
 
-    private delegate void ReloadMacroSlotsDelegate(
-        RaptureHotbarModule* raptureHotbarModule,
-        byte macroSet,
-        byte macroIndex
-    );
-
-    // TODO: Delete this and all related code when https://github.com/aers/FFXIVClientStructs/pull/660 lands
-    [Signature("E8 ?? ?? ?? ?? 8B 83 ?? ?? ?? ?? 39 87", DetourName = nameof(ReloadDetour))]
-    private Hook<ReloadMacroSlotsDelegate>? ReloadMacroSlotsHook { get; init; }
-
-    // Hooks don't hook without a detour :(
-    private void ReloadDetour(RaptureHotbarModule* raptureHotbarModule, byte macroSet, byte macroIndex) {
-        ReloadMacroSlotsHook!.Original(raptureHotbarModule, macroSet, macroIndex);
-    }
-
     public VanillaMacroManager() {
-        Env.GameInteropProvider.InitializeFromAttributes(this);
-
         raptureShellModule = RaptureShellModule.Instance();
         raptureMacroModule = RaptureMacroModule.Instance();
         raptureHotbarModule = RaptureHotbarModule.Instance();
+        agentMacro = XIVCS.GetAgent<AgentMacro>();
 
         Env.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Macro", OnMacroAddonPostSetup);
         Env.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Macro", OnMacroAddonPreFinalise);
-
-        if (ReloadMacroSlotsHook != null) {
-            ReloadMacroSlotsHook.Enable();
-        }
     }
 
     public void Dispose() {
-        if (ReloadMacroSlotsHook != null) {
-            ReloadMacroSlotsHook.Dispose();
-        }
-
         Env.AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, "Macro", OnMacroAddonPostSetup);
         Env.AddonLifecycle.UnregisterListener(AddonEvent.PreFinalize, "Macro", OnMacroAddonPreFinalise);
     }
@@ -147,12 +126,9 @@ public unsafe class VanillaMacroManager : IDisposable {
         // Update the MacroAddon if it's open (since it doesn't auto-refresh)
         SetVanillaMacroUISlotIcon(macroSet, macroSlot, vanillaMacro.IconId);
 
-        // TODO: Uncomment this when FFXIVClientStructs updates
-        // raptureHotbarModule->ReloadMacroSlots((byte)macroSet, (byte)macroSlot);
-        //
-        if (ReloadMacroSlotsHook != null) {
-            ReloadMacroSlotsHook.Original(raptureHotbarModule, (byte)macroSet, (byte)macroSlot);
-        }
+        Env.XIVCSSignatures.RaptureHotbarModuleReloadMacroSlots!(
+            raptureHotbarModule, (byte)macroSet, (byte)macroSlot
+        );
     }
 
     public void DeleteMacro(VanillaMacroSet macroSet, uint macroSlot) {
@@ -171,37 +147,59 @@ public unsafe class VanillaMacroManager : IDisposable {
         SetMacro(macroSet, macroSlot, deletedMacro);
     }
 
+    public void ShowMacroUI() {
+        var ui = (UIModule*)Env.GameGui.GetUIModule();
+
+        var macroAddonAtk  = GetAddonMacro();
+        if (macroAddonAtk != null) {
+            if (macroAddonAtk->IsVisible) {
+                return;
+            }
+        }
+
+        // Execute "User Macros"
+        // See: https://github.com/xivapi/ffxiv-datamining/blob/master/csv/MainCommand.csv
+        ui->ExecuteMainCommand(21);
+    }
+
+    /// <summary>
+    /// Move the Vanilla Macro UIs selection cursor and tab to the given parameters
+    /// </summary>
+    /// <remarks>
+    /// This changes the selection even if the UI isn't currently open.
+    /// </remarks>
+    public void SelectMacroInUI(VanillaMacroSet macroSet, uint macroSlot) {
+        var agentModule = Framework.Instance()->GetUiModule()->GetAgentModule();
+        var agentMacro = (AgentMacro*)agentModule->GetAgentByInternalId(AgentId.Macro);
+        if (agentMacro == null) { return; }
+
+        agentMacro->SelectedMacroSet = (uint)macroSet;
+        agentMacro->SelectedMacroIndex = macroSlot;
+        Env.XIVCSSignatures.AgentMacroReloadSelection!(
+            agentMacro,
+            agentMacro->SelectedMacroIndex,
+            false
+        );
+    }
+
     /// When we change the Icon of a macro it doesn't actually refresh the Macro UI when it's open,
     /// so we need to write the UI values ourself.
     private void SetVanillaMacroUISlotIcon(VanillaMacroSet macroSet, uint macroSlot, uint iconId) {
-        // Update the MacroAddon if it's open (since it doesn't auto-refresh)
-        var macroAddonRaw = Env.GameGui.GetAddonByName("Macro");
-        if (macroAddonRaw == nint.Zero) { return; }
-        var macroAddon = (AtkUnitBase*)macroAddonRaw;
-
-        // We need to make sure the addon is fully initialised (i.e. Setup has finished) before
-        // calling OnRefresh, otherwise things crash.
-        if (macroAddon->RootNode == null) { return; }
-        if (macroAddon->RootNode->ChildNode == null) { return; }
-
-        // Just for double extra safety we also make sure we've seen a full setup event.
-        //
-        // This should be redundant given the above checks on RootNode and ChildNode, but lets check it
-        // anyway to be sure.
-        if (!macroAddonIsSetup) { return; }
+        var addonMacro = GetAddonMacro();
+        if (addonMacro == null) { return; }
 
         // We only want to update the screen if it's visible, since otherwise we'll be writing
         // shared icons into individual and vice-versa.
-        var addonMacroSet = (VanillaMacroSet)macroAddon->AtkValues[05].Int; // Individual / Shared
+        var addonMacroSet = (VanillaMacroSet)addonMacro->AtkValues[05].Int; // Individual / Shared
         if (macroSet == addonMacroSet) {
             // This sets the active selection of the macro window. It's a bit of a hack but
             // I couldn't see any other way to "target" the slot.
-            macroAddon->AtkValues[04].Int = (int)macroSlot;
+            addonMacro->AtkValues[04].Int = (int)macroSlot;
 
             // This sets the icon of the active selection
-            macroAddon->AtkValues[12].Int = (int)iconId;
+            addonMacro->AtkValues[12].Int = (int)iconId;
 
-            macroAddon->OnRefresh(macroAddon->AtkValuesCount, macroAddon->AtkValues);
+            addonMacro->OnRefresh(addonMacro->AtkValuesCount, addonMacro->AtkValues);
         }
     }
 
@@ -209,8 +207,26 @@ public unsafe class VanillaMacroManager : IDisposable {
         macroAddonIsSetup = true;
     }
 
-
     private void OnMacroAddonPreFinalise(AddonEvent type, AddonArgs args) {
         macroAddonIsSetup = false;
+    }
+
+    private AtkUnitBase* GetAddonMacro() {
+        var macroAddonRaw = Env.GameGui.GetAddonByName("Macro");
+        if (macroAddonRaw == nint.Zero) { return null; }
+        var macroAddon = (AtkUnitBase*)macroAddonRaw;
+
+        // We need to make sure the addon is fully initialised (i.e. Setup has finished) before
+        // calling OnRefresh, otherwise things crash.
+        if (macroAddon->RootNode == null) { return null; }
+        if (macroAddon->RootNode->ChildNode == null) { return null; }
+
+        // Just for double extra safety we also make sure we've seen a full setup event.
+        //
+        // This should be redundant given the above checks on RootNode and ChildNode, but lets check it
+        // anyway to be sure.
+        if (!macroAddonIsSetup) { return null; }
+
+        return macroAddon;
     }
 }
