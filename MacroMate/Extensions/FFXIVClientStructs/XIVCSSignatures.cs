@@ -12,14 +12,17 @@ public unsafe class XIVCSSignatures {
     public delegate void UpdateDelegate(AgentMacro* self);
 
     /// <summary>
-    /// Applies changes to SelectedMacroSet and SelectedMacroSlot in AgentMacro.
+    /// Show the Macro UI and select the given Set and Index
     /// </summary>
-    [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 4D 8B C6 49 8B D7 48 8B CB E8 ?? ?? ?? ?? 4C 8B 05")]
-    public AgentMacroReloadSelectionDelegate? AgentMacroReloadSelection { get; init; } = null;
-    public delegate void AgentMacroReloadSelectionDelegate(
+    /// <remarks>
+    /// This is the same behaviour as "Right click on Macro" > "Edit Macro"
+    /// </remarks>
+    [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 48 8B 49 ?? 0F B7 9E ")]
+    public AgentMacroEditMacroInUIDelegate? AgentMacroEditMacroInUI { get; init; } = null;
+    public delegate void AgentMacroEditMacroInUIDelegate(
         AgentMacro* self,
-        uint selectedMacroIndex,
-        bool unkBool
+        uint selectedMacroSet,
+        uint selectedMacroIndex
     );
 
     // TODO: Replace with https://github.com/aers/FFXIVClientStructs/pull/660
@@ -30,6 +33,8 @@ public unsafe class XIVCSSignatures {
         byte macroSet,
         byte macroIndex
     );
+
+
 
     public XIVCSSignatures() {
         Env.GameInteropProvider.InitializeFromAttributes(this);

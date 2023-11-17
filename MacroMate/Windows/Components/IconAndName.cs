@@ -39,8 +39,7 @@ public static class IconAndName {
         if (macro.Link.IsBound()) {
             ImGui.SameLine();
             if (ImGuiComponents.IconButton(FontAwesomeIcon.ArrowUpRightFromSquare)) {
-                Env.VanillaMacroManager.ShowMacroUI();
-                Env.VanillaMacroManager.SelectMacroInUI(macro.Link.Set, macro.Link.Slots.First());
+                Env.VanillaMacroManager.EditMacroInUI(macro.Link.Set, macro.Link.Slots.First());
             };
             if (ImGui.IsItemHovered()) {
                 ImGui.SetTooltip("Show this macro in the 'User Macros' UI");
