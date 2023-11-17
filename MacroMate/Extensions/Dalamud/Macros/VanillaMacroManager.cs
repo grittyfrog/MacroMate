@@ -3,6 +3,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.String;
@@ -22,14 +23,22 @@ public unsafe class VanillaMacroManager : IDisposable {
     private RaptureHotbarModule* raptureHotbarModule;
     private AgentMacro* agentMacro;
 
+    private bool macroAddonIsSetup = false;
+
     public VanillaMacroManager() {
         raptureShellModule = RaptureShellModule.Instance();
         raptureMacroModule = RaptureMacroModule.Instance();
         raptureHotbarModule = RaptureHotbarModule.Instance();
         agentMacro = XIVCS.GetAgent<AgentMacro>();
+
+        Env.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "Macro", OnMacroAddonPostSetup);
+        Env.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, "Macro", OnMacroAddonPreFinalise);
     }
 
-    public void Dispose() {}
+    public void Dispose() {
+        Env.AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, "Macro", OnMacroAddonPostSetup);
+        Env.AddonLifecycle.UnregisterListener(AddonEvent.PreFinalize, "Macro", OnMacroAddonPreFinalise);
+    }
 
     public VanillaMacro GetMacro(VanillaMacroSet macroSet, uint macroNumber) {
         if (macroNumber < 0 || macroNumber > 99) {
@@ -194,6 +203,14 @@ public unsafe class VanillaMacroManager : IDisposable {
         }
     }
 
+    private void OnMacroAddonPostSetup(AddonEvent type, AddonArgs args) {
+        macroAddonIsSetup = true;
+    }
+
+    private void OnMacroAddonPreFinalise(AddonEvent type, AddonArgs args) {
+        macroAddonIsSetup = false;
+    }
+
     private AtkUnitBase* GetAddonMacro() {
         var macroAddonRaw = Env.GameGui.GetAddonByName("Macro");
         if (macroAddonRaw == nint.Zero) { return null; }
@@ -203,6 +220,12 @@ public unsafe class VanillaMacroManager : IDisposable {
         // calling OnRefresh, otherwise things crash.
         if (macroAddon->RootNode == null) { return null; }
         if (macroAddon->RootNode->ChildNode == null) { return null; }
+
+        // Just for double extra safety we also make sure we've seen a full setup event.
+        //
+        // This should be redundant given the above checks on RootNode and ChildNode, but lets check it
+        // anyway to be sure.
+        if (!macroAddonIsSetup) { return null; }
 
         return macroAddon;
     }
