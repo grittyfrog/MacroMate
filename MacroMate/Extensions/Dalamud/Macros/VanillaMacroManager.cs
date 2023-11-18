@@ -123,9 +123,7 @@ public unsafe class VanillaMacroManager : IDisposable {
             SetVanillaMacroUISlotIcon(macroSet, macroSlot, vanillaMacro.IconId);
         }
 
-        Env.XIVCSSignatures.RaptureHotbarModuleReloadMacroSlots!(
-            raptureHotbarModule, (byte)macroSet, (byte)macroSlot
-        );
+        raptureHotbarModule->ReloadMacroSlots((byte)macroSet, (byte)macroSlot);
     }
 
     public void DeleteMacro(VanillaMacroSet macroSet, uint macroSlot) {
