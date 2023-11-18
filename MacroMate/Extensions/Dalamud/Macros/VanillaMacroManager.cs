@@ -148,7 +148,7 @@ public unsafe class VanillaMacroManager : IDisposable {
         var agentMacro = XIVCS.GetAgent<AgentMacro>();
         if (agentMacro == null) { return; }
 
-        Env.XIVCSSignatures.AgentMacroEditMacroInUI!(agentMacro, (uint)macroSet, macroSlot);
+        Env.XIVCSSignatures.AgentMacroOpenMacro!(agentMacro, (uint)macroSet, macroSlot);
     }
 
     /// When we change the Icon of a macro it doesn't actually refresh the Macro UI when it's open,
