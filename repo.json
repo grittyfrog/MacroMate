@@ -14,7 +14,7 @@
     "LoadPriority": 0,
     "Punchline": "Store and run an unlimited number of macros. Bind them to normal macro slots.",
     "AcceptsFeedback": true,
-    "IconUrl": "https://raw.githubusercontent.com/grittyfrog/MacroMate/v1.0.2.0/MacroMate/Images/icon.png",
+    "IconUrl": "https://raw.githubusercontent.com/grittyfrog/MacroMate/v1.0.5.4/MacroMate/Images/icon.png",
     "DownloadLinkInstall": "https://github.com/grittyfrog/MacroMate/releases/download/v1.0.5.4/MacroMate.zip",
     "DownloadLinkTesting": "https://github.com/grittyfrog/MacroMate/releases/download/v1.0.5.4/MacroMate.zip",
     "DownloadLinkUpdate": "https://github.com/grittyfrog/MacroMate/releases/download/v1.0.5.4/MacroMate.zip"
