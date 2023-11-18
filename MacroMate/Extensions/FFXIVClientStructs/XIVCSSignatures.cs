@@ -1,5 +1,4 @@
 using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 
 namespace MacroMate.Extensions.FFXIVClientStructs;
 
@@ -20,15 +19,6 @@ public unsafe class XIVCSSignatures {
         AgentMacro* self,
         uint selectedMacroSet,
         uint selectedMacroIndex
-    );
-
-    // TODO: Replace with https://github.com/aers/FFXIVClientStructs/pull/660
-    [Signature("E8 ?? ?? ?? ?? 8B 83 ?? ?? ?? ?? 39 87")]
-    public RaptureHotbarModuleReloadMacroSlotsDelegate? RaptureHotbarModuleReloadMacroSlots { get; init; } = null;
-    public delegate void RaptureHotbarModuleReloadMacroSlotsDelegate(
-        RaptureHotbarModule* raptureHotbarModule,
-        byte macroSet,
-        byte macroIndex
     );
 
     public XIVCSSignatures() {
