@@ -35,6 +35,7 @@
     <PackageReference Include="System.Collections.Immutable" Version="7.0.0" />
     <PackageReference Include="XSerializer" Version="0.4.4" />
     <Reference Include="FFXIVClientStructs">
+      <!-- Remove Private when setting HintPath to a local FFXIVClientStructs build -->
       <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
       <Private>false</Private>
     </Reference>

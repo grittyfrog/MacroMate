@@ -5,6 +5,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace MacroMate.Extensions.FFXIVClientStructs;
 
+// TODO: Replace with https://github.com/aers/FFXIVClientStructs/pull/706 (once available in Dalamud)
 [Agent(AgentId.Macro)]
 [StructLayout(LayoutKind.Explicit, Size = 0xbf0)]
 public unsafe partial struct AgentMacro {
@@ -16,7 +17,4 @@ public unsafe partial struct AgentMacro {
 
     [FieldOffset(0x6bc)]
     public uint SelectedMacroIndex;
-
-    public static string UpdateSignature = "40 53 48 83 EC ?? 48 83 B9 ?? ?? ?? ?? ?? 48 8B D9 0F 29 74 24 ?? 75";
-    public delegate void UpdateDelegate(AgentMacro* self);
 }

@@ -7,10 +7,7 @@ namespace MacroMate.Extensions.FFXIVClientStructs;
 /// Signatures that should eventually move into client structs
 /// </summary>
 public unsafe class XIVCSSignatures {
-    [Signature("40 53 48 83 EC ?? 48 83 B9 ?? ?? ?? ?? ?? 48 8B D9 0F 29 74 24 ?? 75")]
-    public UpdateDelegate? AgentMacroUpdate { get; init; } = null;
-    public delegate void UpdateDelegate(AgentMacro* self);
-
+    // TODO: Replace with https://github.com/aers/FFXIVClientStructs/pull/706 (once available in Dalamud)
     /// <summary>
     /// Show the Macro UI and select the given Set and Index
     /// </summary>
@@ -18,8 +15,8 @@ public unsafe class XIVCSSignatures {
     /// This is the same behaviour as "Right click on Macro" > "Edit Macro"
     /// </remarks>
     [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 48 8B 49 ?? 0F B7 9E ")]
-    public AgentMacroEditMacroInUIDelegate? AgentMacroEditMacroInUI { get; init; } = null;
-    public delegate void AgentMacroEditMacroInUIDelegate(
+    public AgentMacroOpenMacroDelegate? AgentMacroOpenMacro { get; init; } = null;
+    public delegate void AgentMacroOpenMacroDelegate(
         AgentMacro* self,
         uint selectedMacroSet,
         uint selectedMacroIndex
@@ -33,8 +30,6 @@ public unsafe class XIVCSSignatures {
         byte macroSet,
         byte macroIndex
     );
-
-
 
     public XIVCSSignatures() {
         Env.GameInteropProvider.InitializeFromAttributes(this);
