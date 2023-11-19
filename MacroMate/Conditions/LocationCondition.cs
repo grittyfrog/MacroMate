@@ -46,11 +46,20 @@ public record class LocationCondition(
         var otherLocation = other as LocationCondition;
         if (otherLocation == null) { return false; }
 
-        // If regionOrSubAreaName is null, assume it is satisfied
-        if (regionOrSubAreaName == null) { return this.territory.Equals(otherLocation.territory); }
+        // We check if the names are equal by their string representation instead of their ID.
+        // We do this because some areas have many ids mapping to the same name, and we only really care
+        // that the name is the same (since we don't want a giant location list filled with 100's of "Mist" entries)
 
-        // Otherwise, we need the whole thing to be equal
-        return this.Equals(otherLocation);
+        bool territoryEqual = this.territory.Name().Equals(otherLocation.territory.Name());
+        if (!territoryEqual) {
+            return false;
+        }
+
+        // If regionOrSubAreaName is null, assume we are satisfied (since we know the territory is equal)
+        if (regionOrSubAreaName == null) { return true; }
+
+        bool regionOrSubAreaEqual = this.regionOrSubAreaName.Name().Equals(otherLocation.regionOrSubAreaName?.Name());
+        return regionOrSubAreaEqual;
     }
 
     public static ICondition.IFactory Factory = new ConditionFactory();
