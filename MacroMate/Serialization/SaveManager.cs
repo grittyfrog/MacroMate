@@ -55,7 +55,7 @@ public class SaveManager {
     }
 
     public void SaveTimedBackup() {
-        if (!MacroDataFile.Exists) { return; }
+        if (!CanBackup()) { return; }
 
         var currentTimedBackupFiles = GetCurrentTimedBackupFiles().ToList();
         var lastBackupTime = currentTimedBackupFiles.Count > 0
@@ -83,7 +83,7 @@ public class SaveManager {
     }
 
     public FileInfo? SaveBackup(string postamble) {
-        if (!MacroDataFile.Exists) { return null; }
+        if (!CanBackup()) { return null; }
 
         // Write the backup
         MacroBackupFolder.Create();
@@ -94,7 +94,10 @@ public class SaveManager {
         return new FileInfo(backupFile);
     }
 
+    /// We can't backup if there's nothing to backup
+    public bool CanBackup() => MacroDataFile.Exists;
 
+    public bool CanLoad() => MacroDataFile.Exists;
     public MateNode? Load() => LoadFrom(MacroDataFile);
 
     public MateNode? LoadFrom(FileInfo file) {

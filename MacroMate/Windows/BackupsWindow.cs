@@ -27,23 +27,29 @@ public class BackupWindow : Window {
 
     private void DrawMenuBar() {
         if (ImGui.BeginMenuBar()) {
-            if (ImGui.MenuItem("Create Backup")) {
+            if (ConditionalMenuItem("Create Backup", Env.SaveManager.CanBackup(), disabledTooltip: "No data to backup")) {
                 Env.SaveManager.SaveBackup();
             }
 
-            if (ImGui.MenuItem("Open Backup Folder")) {
+            if (ConditionalMenuItem(
+                "Open Backup Folder",
+                Env.SaveManager.MacroBackupFolder.Exists,
+                disabledTooltip: "Backup folder doesn't exist yet!"
+            )) {
                 Process.Start(startInfo: new ProcessStartInfo {
                     FileName = Env.SaveManager.MacroBackupFolder.FullName,
                     UseShellExecute = true
                 });
             }
 
-            if (ImGui.MenuItem("Reload Config File")) {
+            if (ConditionalMenuItem(
+                "Reload Config File",
+                Env.MacroMate.CanLoadConfig(),
+                "Reload the current MacroMate.xml config file",
+                "Config file doesn't exist yet!"
+            )) {
                 Env.MacroMate.LoadConfig();
                 Env.ChatGui.Print("Macro Mate config reloaded");
-            }
-            if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip("Reload the current MacroMate.xml config file");
             }
 
             ImGui.EndMenuBar();
@@ -117,5 +123,30 @@ public class BackupWindow : Window {
         }
 
         return loadPopupId;
+    }
+
+    /// <summary>
+    /// Draw a menu item that is only enabled conditionally
+    /// </summary>
+    private bool ConditionalMenuItem(
+        string label,
+        bool enabled,
+        string enabledTooltip = "",
+        string disabledTooltip = ""
+    ) {
+        if (!enabled) { ImGui.BeginDisabled(); }
+
+        bool menuItemClicked = ImGui.MenuItem(label);
+
+        if (!enabled) { ImGui.EndDisabled(); }
+
+        var tooltip = enabled ? enabledTooltip : disabledTooltip;
+        if (tooltip != "") {
+            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+                ImGui.SetTooltip(tooltip);
+            }
+        }
+
+        return enabled && menuItemClicked;
     }
 }

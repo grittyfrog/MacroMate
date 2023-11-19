@@ -22,6 +22,8 @@ public class MacroMate {
         Refresh(Env.ConditionManager.CurrentConditions());
     }
 
+    public bool CanLoadConfig() => Env.SaveManager.CanLoad();
+
     public void LoadConfig() {
         var savedRoot = Env.SaveManager.Load();
         if (savedRoot != null) {
