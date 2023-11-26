@@ -49,9 +49,10 @@ public interface ICondition {
 
         static IEnumerable<IFactory> All => new IFactory[] {
             ContentCondition.Factory,
+            JobCondition.Factory,
             LocationCondition.Factory,
-            TargetNameCondition.Factory,
-            JobCondition.Factory
+            PvpStateCondition.Factory,
+            TargetNameCondition.Factory
         };
     }
 }

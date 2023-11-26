@@ -2,9 +2,7 @@ using System;
 using System.Xml;
 using System.Xml.Serialization;
 using Dalamud.Game.ClientState.Objects.Enums;
-using Lumina.Excel.GeneratedSheets;
 using MacroMate.Conditions;
-using MacroMate.Extensions.Dalamaud.Excel;
 using MacroMate.Extensions.Dotnet;
 
 namespace MacroMate.Serialization.V1;
@@ -14,6 +12,7 @@ namespace MacroMate.Serialization.V1;
 [XmlInclude(typeof(TargetNpcConditionXML))]
 [XmlInclude(typeof(TargetNameConditionXML))]
 [XmlInclude(typeof(JobConditionXML))]
+[XmlInclude(typeof(PvpStateConditionXML))]
 public abstract class ConditionXML {
     public abstract ICondition ToReal();
 
@@ -22,6 +21,7 @@ public abstract class ConditionXML {
         LocationCondition cond => LocationConditionXML.From(cond),
         TargetNameCondition cond => TargetNameConditionXML.From(cond),
         JobCondition cond => JobConditionXML.From(cond),
+        PvpStateCondition cond => PvpStateConditionXML.From(cond),
         _ => throw new Exception($"Unexpected condition {condition}")
     };
 }
@@ -127,5 +127,34 @@ public class JobConditionXML : ConditionXML {
 
     public static JobConditionXML From(JobCondition cond) => new() {
         Job = new ExcelIdXML(cond.Job)
+    };
+}
+
+[XmlType("PvPStateCondition")]
+public class PvpStateConditionXML : ConditionXML {
+    public enum StateXML {
+        IN_PVP,
+        IN_PVP_NO_WOLVES_DEN,
+        NOT_IN_PVP
+    }
+
+    public required StateXML PvpState { get; set; }
+
+    public override ICondition ToReal() => new PvpStateCondition(
+        PvpState switch {
+            StateXML.IN_PVP => PvpStateCondition.State.IN_PVP,
+            StateXML.IN_PVP_NO_WOLVES_DEN => PvpStateCondition.State.IN_PVP_NO_WOLVES_DEN,
+            StateXML.NOT_IN_PVP => PvpStateCondition.State.NOT_IN_PVP,
+            _ => PvpStateCondition.State.IN_PVP
+        }
+    );
+
+    public static PvpStateConditionXML From(PvpStateCondition cond) => new() {
+        PvpState = cond.state switch {
+            PvpStateCondition.State.IN_PVP => StateXML.IN_PVP,
+            PvpStateCondition.State.IN_PVP_NO_WOLVES_DEN => StateXML.IN_PVP_NO_WOLVES_DEN,
+            PvpStateCondition.State.NOT_IN_PVP => StateXML.NOT_IN_PVP,
+            _ => throw new ArgumentException($"Unknown Pvp state {cond.state}")
+        }
     };
 }

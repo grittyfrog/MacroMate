@@ -46,7 +46,8 @@ public class ConditionManager : IDisposable {
             content: ContentCondition.Current(),
             location: LocationCondition.Current(),
             targetNpc: TargetNameCondition.Current(),
-            job: JobCondition.Current()
+            job: JobCondition.Current(),
+            pvpState: PvpStateCondition.Current()
         );
     }
 
