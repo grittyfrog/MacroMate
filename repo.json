@@ -3,7 +3,7 @@
     "Author": "grittyfrog",
     "Name": "Macro Mate (alpha)",
     "InternalName": "MacroMateAlpha",
-    "AssemblyVersion": "1.0.6.0",
+    "AssemblyVersion": "1.0.6.1",
     "Description": "Macro Mate lets you store and run an unlimited number of macros. You can also bind macros to normal macro slots.\n\nFor example, you can:\n\n- Automatically swap in the correct raid macro when you enter an instance\n- Store longer macros and automatically split them across multiple macro slots.\n- Use almost any icon in the game for your Macros",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/grittyfrog/MacroMate",
@@ -14,9 +14,9 @@
     "LoadPriority": 0,
     "Punchline": "Store and run an unlimited number of macros. Bind them to normal macro slots.",
     "AcceptsFeedback": true,
-    "IconUrl": "https://raw.githubusercontent.com/grittyfrog/MacroMate/v1.0.6.0/MacroMate/Images/icon.png",
-    "DownloadLinkInstall": "https://github.com/grittyfrog/MacroMate/releases/download/v1.0.6.0/MacroMateAlpha.zip",
-    "DownloadLinkTesting": "https://github.com/grittyfrog/MacroMate/releases/download/v1.0.6.0/MacroMateAlpha.zip",
-    "DownloadLinkUpdate": "https://github.com/grittyfrog/MacroMate/releases/download/v1.0.6.0/MacroMateAlpha.zip"
+    "IconUrl": "https://raw.githubusercontent.com/grittyfrog/MacroMate/v1.0.6.1/MacroMate/Images/icon.png",
+    "DownloadLinkInstall": "https://github.com/grittyfrog/MacroMate/releases/download/v1.0.6.1/MacroMateAlpha.zip",
+    "DownloadLinkTesting": "https://github.com/grittyfrog/MacroMate/releases/download/v1.0.6.1/MacroMateAlpha.zip",
+    "DownloadLinkUpdate": "https://github.com/grittyfrog/MacroMate/releases/download/v1.0.6.1/MacroMateAlpha.zip"
   }
 ]
