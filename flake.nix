@@ -36,6 +36,7 @@
 
             # For github workflow
             pkgs.jq
+            pkgs.zip
           ];
 
           DOTNET_ROOT=dotnet;

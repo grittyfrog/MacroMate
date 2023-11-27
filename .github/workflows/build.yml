@@ -26,17 +26,19 @@ jobs:
       - name: Build
         run: nix develop --command dotnet build --configuration Release /p:Platform=x64
 
-      - name: Upload Artifact
+      - name: Create Alpha Release
+        run: nix develop --command .github/scripts/prepare-alpha.sh
+
+      - name: Upload Alpha Artifact
         uses: actions/upload-artifact@v3
         with:
           name: MacroMate-release-${{ github.sha }}
           path: |
-            MacroMate/bin/x64/Release
-            !MacroMate/bin/x64/Release/MacroMate
+            MacroMate/bin/x64/ReleaseAlpha
+            !MacroMate/bin/x64/ReleaseAlpha/MacroMateAlpha.zip
 
-      - name: Prepare Release
+      - name: Query Release Version
         run: |
-          mv MacroMate/bin/x64/Release/MacroMate/latest.zip MacroMate/bin/x64/Release/MacroMate/MacroMate.zip
           echo "RELEASE_VERSION=$(.github/scripts/release-version.sh)" >> "$GITHUB_ENV"
 
       - name: Create Release
@@ -46,12 +48,12 @@ jobs:
           name: MacroMate ${{ env.RELEASE_VERSION }}
           tag_name: v${{ env.RELEASE_VERSION }}
           files: |
-            ./MacroMate/bin/x64/Release/MacroMate/MacroMate.zip
+            ./MacroMate/bin/x64/ReleaseAlpha/MacroMateAlpha.zip
 
       - name: Update repo.json
         if: ${{ env.RELEASE_VERSION != '0.0.0.0' }}
         run: |
-          .github/scripts/update-repo-json.sh
+          nix develop --command .github/scripts/update-repo-json.sh
 
           git config --global user.name "Actions User"
           git config --global user.email "actions@github.com"
