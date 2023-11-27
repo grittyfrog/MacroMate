@@ -33,12 +33,12 @@ public class Env {
         PlayerLocationManager = new PlayerLocationManager();
         ConditionManager = new ConditionManager();
         VanillaMacroManager = new VanillaMacroManager();
-        PluginCommandManager = new PluginCommandManager();
-        PluginWindowManager = new PluginWindowManager();
         SaveManager = new SaveManager();
         MacroConfig = new MacroConfig();
-
         MacroMate = new MacroMate();
+
+        PluginCommandManager = new PluginCommandManager();
+        PluginWindowManager = new PluginWindowManager();
     }
 
     public static void Dispose() {

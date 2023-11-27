@@ -136,6 +136,8 @@ public abstract class MateNode : TreeNode<MateNode> {
             return VanillaMacroLinks().Zip(paddedVanillaMacros);
         }
 
+        public bool HasLink => AlwaysLinked || Link.Slots.Count > 0;
+
         public bool SatisfiedBy(CurrentConditions conditions) {
             return AlwaysLinked || ConditionExpr.SatisfiedBy(conditions);
         }

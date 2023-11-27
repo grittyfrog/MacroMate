@@ -13,6 +13,8 @@ using MacroMate.Windows.Components;
 using System.Linq;
 using Dalamud.Interface.Utility;
 using System.Text;
+using System.Collections.Immutable;
+using System.Globalization;
 
 namespace MacroMate.Windows;
 
@@ -24,18 +26,49 @@ public class MainWindow : Window, IDisposable {
     private bool editMode = false;
     private HashSet<Guid> editModeMacroSelection = new();
 
+    private enum SearchFilter { ALL, ACTIVE, LINKED, UNLINKED }
+    private string searchText = "";
+    private SearchFilter searchFilter = SearchFilter.ALL;
+    private ISet<Guid> searchedNodeIds = new HashSet<Guid>();
+
+    private bool IsTextSearching => searchText != "";
+    private bool IsSearching => IsTextSearching || searchFilter != SearchFilter.ALL;
+
+    // We track these explicitly because the expansion rules for searching/non-searching are tricky.
+    //
+    // We want:
+    //
+    // 1. To expand all nodes when switching from non-search to search (so you can see your searched nodes)
+    // 2. To return to the previous state when swhtcing from non-search to search (so you don't have every single group
+    //    expanded whenever you search)
+    //
+    // To do this we need to explicitly track the expansion in both states
+    private class GroupNodeExpansion {
+        public bool expanded = false;
+        public bool expandedForTextSearch = true;
+    }
+    private Dictionary<Guid, GroupNodeExpansion> GroupNodeExpanded = new();
+
     public MainWindow() : base(NAME, ImGuiWindowFlags.MenuBar) {
         this.SizeConstraints = new WindowSizeConstraints {
             MinimumSize = new Vector2(375, 330),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
         };
+
+        RefreshSearch();
+        Env.MacroConfig.ConfigChange += OnConfigChange;
     }
 
     public void Dispose() { }
 
+    private void OnConfigChange() {
+        RefreshSearch();
+    }
+
     public override void Draw() {
         DrawMenuBar();
         DrawEditModeActions();
+        DrawSearchBar();
 
         if (ImGui.BeginTable("main_window_layout_table", 3, ImGuiTableFlags.Hideable)) {
             ImGui.TableSetupColumn("Node", ImGuiTableColumnFlags.WidthStretch);
@@ -132,7 +165,88 @@ public class MainWindow : Window, IDisposable {
         }
     }
 
+    private void DrawSearchBar() {
+        ImGui.SetNextItemWidth(90);
+        var searchFilterName = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(searchFilter.ToString().ToLower());
+        if (ImGui.BeginCombo("###searchcombo", searchFilterName)) {
+            foreach (var searchFilterOption in Enum.GetValues<SearchFilter>()) {
+                bool isSelected = searchFilterOption == searchFilter;
+                var searchFilterOptionName = CultureInfo.InvariantCulture.TextInfo
+                    .ToTitleCase(searchFilterOption.ToString().ToLower());
+                if (ImGui.Selectable(searchFilterOptionName, isSelected)) {
+                    searchFilter = searchFilterOption;
+                    RefreshSearch();
+                }
+                if (isSelected) { ImGui.SetItemDefaultFocus(); }
+
+                if (ImGui.IsItemHovered()) {
+                    if (searchFilterOption == SearchFilter.ALL) {
+                        ImGui.SetTooltip("Show all macros");
+                    } else if (searchFilterOption == SearchFilter.ACTIVE) {
+                        ImGui.SetTooltip("Only show macros that are currently bound to a vanilla macro slot");
+                    } else if (searchFilterOption == SearchFilter.LINKED) {
+                        ImGui.SetTooltip("Only show macros that are linked to a vanilla macro slot");
+                    } else if (searchFilterOption == SearchFilter.UNLINKED) {
+                        ImGui.SetTooltip("Only show macros that do not have any links to a vanilla macro slot");
+                    }
+                }
+            }
+            ImGui.EndCombo();
+        }
+
+        ImGui.SameLine();
+
+        if (ImGui.InputTextWithHint("###mainwindow_macrosearch", "Search", ref searchText, 255)) {
+            RefreshSearch();
+        }
+
+        if (searchText != "") {
+            ImGui.SameLine();
+            if (ImGuiComponents.IconButton(FontAwesomeIcon.Times)) {
+                searchText = "";
+                RefreshSearch();
+            }
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Clear search text");
+            }
+        }
+    }
+
+    private void RefreshSearch() {
+        Func<MateNode, bool>? textPredicate = searchText != ""
+            ? (node) => node.Name.ToLowerInvariant().Contains(searchText.ToLowerInvariant())
+            : null;
+
+        Func<MateNode, bool>? filterPredicate = searchFilter switch {
+            SearchFilter.ALL => null,
+            SearchFilter.ACTIVE => (node) => Env.MacroConfig.ActiveMacros.Contains(node),
+            SearchFilter.LINKED => (node) => node is MateNode.Macro macro && macro.HasLink,
+            SearchFilter.UNLINKED => (node) => node is MateNode.Macro macro && !macro.HasLink,
+            _ => null
+        };
+
+        // If we have text in the text predicate then we want to expand all the search nodes to make
+        // sure you can see what you searched for
+        if (textPredicate != null) {
+            foreach (var expansionState in GroupNodeExpanded.Values) {
+                expansionState.expandedForTextSearch = true;
+            }
+        }
+
+        if (textPredicate != null || filterPredicate != null) {
+            Func<MateNode, bool> textPredicateOrDefault = textPredicate ?? (_ => true);
+            Func<MateNode, bool> filterPredicateOrDefault = filterPredicate ?? (_ => true);
+            Func<MateNode, bool> predicate = (node) => textPredicateOrDefault(node) && filterPredicateOrDefault!(node);
+            searchedNodeIds = Env.MacroConfig.Root.Search(predicate).Select(node => node.Id).ToHashSet();
+        } else {
+            searchedNodeIds = new HashSet<Guid>();
+        }
+    }
+
     private void DrawNode(MateNode node, int index) {
+        // If we are searching we only want to draw matching nodes
+        if (IsSearching && !searchedNodeIds.Contains(node.Id)) { return; }
+
         ImGui.PushID(index);
         ImGui.TableNextRow();
         switch (node) {
@@ -149,7 +263,18 @@ public class MainWindow : Window, IDisposable {
 
     private void DrawGroupNode(MateNode.Group group) {
         ImGui.TableNextColumn();
+
+        var expandedState = GroupNodeExpanded.GetOrAdd(group.Id, () => new());
+        var expandedStateFlag = IsTextSearching ? expandedState.expandedForTextSearch : expandedState.expanded;
+        ImGui.SetNextItemOpen(expandedStateFlag);
         bool groupOpen = ImGui.CollapsingHeader($"{group.Name}###{group.Id}");
+        if (ImGui.IsItemToggledOpen()) {
+            if (IsTextSearching) {
+                expandedState.expandedForTextSearch = !expandedState.expandedForTextSearch;
+            } else {
+                expandedState.expanded = !expandedState.expanded;
+            }
+        }
 
         var nodeActionsPopupId = DrawNodeActionsPopup(group);
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {

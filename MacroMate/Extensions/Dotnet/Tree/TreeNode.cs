@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using MacroMate.MacroTree;
 
 /// Pretend the Dotnet standard library has a useful tree implementation
 namespace MacroMate.Extensions.Dotnet.Tree;
@@ -48,6 +49,13 @@ public abstract class TreeNode<T> where T : TreeNode<T> {
             foreach (var descendant in child.Descendants()) {
                 yield return descendant;
             }
+        }
+    }
+
+    public IEnumerable<T> SelfAndAncestors() {
+        yield return (T)this;
+        foreach (var ancestor in Ancestors()) {
+            yield return ancestor;
         }
     }
 
@@ -159,6 +167,28 @@ public abstract class TreeNode<T> where T : TreeNode<T> {
 
     public void Delete(Guid nodeId) {
         Walk(update: node => node.Id == nodeId ? WalkBehaviour.DELETE : WalkBehaviour.CONTINUE);
+    }
+
+    /// Search the tree for nodes that match [predicate] or are an ancestor or child of a matching node.
+    public IEnumerable<T> Search(Func<T, bool> predicate) {
+        // If we match we want to return ourself and all our children (regardless of a match)
+        if (predicate((T)this)) {
+            foreach (var node in this.SelfAndDescendants()) {
+                yield return node;
+            }
+        } else {
+            // If we don't match, then our children still might match. If they do we should also be included
+            var matchingChildren = this.Children
+                .SelectMany(child => child!.Search(predicate));
+
+            if (matchingChildren.Count() > 0) {
+                yield return (T)this;
+            }
+
+            foreach (var child in matchingChildren) {
+                yield return child;
+            }
+        }
     }
 
     /// Move Subtree `source` into subtree `target`
