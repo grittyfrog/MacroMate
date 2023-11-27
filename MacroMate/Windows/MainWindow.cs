@@ -595,8 +595,10 @@ public class MainWindow : Window, IDisposable {
     }
 
     private bool EditModeIsSelected(MateNode node) {
-        // If we are a group then we are selected if all our descendants are selected.
+        // If we are a group then we are selected if all our descendants are selected. (Unless we are empty)
         if (node is MateNode.Group) {
+            if (node.Children.Count == 0) { return false; }
+
             return node.Descendants()
                 .OfType<MateNode.Macro>()
                 .All(macro => editModeMacroSelection.Contains(macro.Id));
