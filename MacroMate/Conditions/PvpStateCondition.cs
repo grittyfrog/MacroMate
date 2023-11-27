@@ -13,7 +13,7 @@ public record class PvpStateCondition(PvpStateCondition.State state) : IConditio
 
     public string ValueName => state switch {
         State.IN_PVP => "In PvP",
-        State.IN_PVP_NO_WOLVES_DEN => "In PvP (exclude Wovles Den)",
+        State.IN_PVP_NO_WOLVES_DEN => "In PvP (exclude Wolves' Den)",
         State.NOT_IN_PVP => "Not in PvP",
         _ => "???"
     };
