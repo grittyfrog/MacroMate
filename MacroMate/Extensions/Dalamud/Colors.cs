@@ -11,4 +11,11 @@ public static class Colors {
         156.0f / 255.0f,
         1.0f
     );
+
+    public static Vector4 ErrorRed = new(
+        255.0f / 255.0f,
+        0.0f / 255.0f,
+        0.0f / 255.0f,
+        1.0f
+    );
 }

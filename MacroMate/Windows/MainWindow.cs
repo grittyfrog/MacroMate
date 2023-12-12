@@ -16,6 +16,7 @@ using System.Text;
 using System.Collections.Immutable;
 using System.Globalization;
 using MacroMate.Serialization.V1;
+using MacroMate.Extensions.Dalamud;
 
 namespace MacroMate.Windows;
 
@@ -609,11 +610,17 @@ public class MainWindow : Window, IDisposable {
     }
 
     private string importCode = "";
+    private bool lastImportWasError = false;
     private uint DrawImportPopup(MateNode node) {
         var importPopupName = $"Import###mainwindow/import_popup/{node.Id}";
         var importPopupId = ImGui.GetID(importPopupName);
 
         if (ImGui.BeginPopup(importPopupName)) {
+            // Make everything red if the import is an error
+            if (lastImportWasError) {
+                ImGui.PushStyleColor(ImGuiCol.Text, Colors.ErrorRed);
+            }
+
             ImGui.AlignTextToFramePadding();
             ImGui.Text("Import Code");
             ImGui.SameLine();
@@ -633,17 +640,41 @@ public class MainWindow : Window, IDisposable {
             ) {
                 finished = true;
             }
+            if (ImGui.IsItemEdited()) {
+                lastImportWasError = false;
+            }
+
             ImGui.SameLine();
-            if (ImGui.Button("Import")) {
-                finished = true;
+
+            if (!lastImportWasError) {
+                if (ImGui.Button("Import")) {
+                    finished = true;
+                }
+            } else {
+                ImGui.PushFont(UiBuilder.IconFont);
+                ImGui.Text(FontAwesomeIcon.ExclamationTriangle.ToIconString());
+                ImGui.PopFont();
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip("Preset string is invalid");
+                }
+            }
+
+            if (lastImportWasError) {
+                ImGui.PopStyleColor();
             }
 
             if (finished) {
                 var importedNode = MacroMateSerializerV1.Import(importCode);
-                importCode = "";
-                node.Attach(importedNode);
-                Env.MacroConfig.NotifyEdit();
-                ImGui.CloseCurrentPopup();
+                if (importedNode != null) {
+                    importCode = "";
+                    lastImportWasError = false;
+
+                    node.Attach(importedNode);
+                    Env.MacroConfig.NotifyEdit();
+                    ImGui.CloseCurrentPopup();
+                } else {
+                    lastImportWasError = true;
+                }
             }
             ImGui.EndPopup();
         }

@@ -21,16 +21,16 @@ public static class MacroMateSerializerV1 {
         }
     }
 
-    public static MateNode Import(string importString) {
+    public static MateNode? Import(string importString) {
         try {
             var xmlBytes = Convert.FromBase64String(importString);
             using (var xmlStream = new MemoryStream(xmlBytes)) {
                 var xml = (MacroMateV1XML)xmlSerializer.Deserialize(xmlStream)!;
                 return xml.ToReal();
             }
-        } catch (Exception) {
-            Env.ChatGui.PrintError("Could not import Macro Mate tree");
-            throw;
+        } catch (Exception e) {
+            Env.PluginLog.Error(e, "Could not import Macro Mate preset");
+            return null;
         }
     }
 
