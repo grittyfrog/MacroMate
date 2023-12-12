@@ -50,7 +50,7 @@ public class SaveManager {
         //
         // This helps prevent issues when the save fails, since we won't
         // corrup the users existing save file.
-        SaveManagerV1.Write(root, MacroDataSaveAttemptFile);
+        MacroMateSerializerV1.Write(root, MacroDataSaveAttemptFile);
         File.Move(MacroDataSaveAttemptFile.FullName, MacroDataFile.FullName, overwrite: true);
     }
 
@@ -102,6 +102,6 @@ public class SaveManager {
 
     public MateNode? LoadFrom(FileInfo file) {
         if (!file.Exists) { return null; }
-        return SaveManagerV1.Read(file);
+        return MacroMateSerializerV1.Read(file);
     }
 }
