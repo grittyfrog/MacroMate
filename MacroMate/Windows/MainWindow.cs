@@ -15,6 +15,7 @@ using Dalamud.Interface.Utility;
 using System.Text;
 using System.Collections.Immutable;
 using System.Globalization;
+using MacroMate.Serialization.V1;
 
 namespace MacroMate.Windows;
 
@@ -88,6 +89,7 @@ public class MainWindow : Window, IDisposable {
 
     private void DrawMenuBar() {
         var newGroupPopupId = DrawNewGroupPopup(Env.MacroConfig.Root);
+        var importPopupId = DrawImportPopup(Env.MacroConfig.Root);
 
         if (ImGui.BeginMenuBar()) {
             if (ImGui.BeginMenu("New")) {
@@ -96,6 +98,9 @@ public class MainWindow : Window, IDisposable {
                 }
                 if (ImGui.MenuItem("Macro")) {
                     Env.MacroConfig.CreateMacro(Env.MacroConfig.Root);
+                }
+                if (ImGui.MenuItem("Import")) {
+                    ImGui.OpenPopup(importPopupId);
                 }
                 ImGui.EndMenu();
             }
@@ -480,6 +485,7 @@ public class MainWindow : Window, IDisposable {
 
         var newGroupPopupId = DrawNewGroupPopup(node);
         var renamePopupId = DrawRenamePopup(node);
+        var importPopupId = DrawImportPopup(node);
         var deletePopupId = DrawDeletePopupModal(node);
 
         if (ImGui.BeginPopup(nodeActionsPopupName)) {
@@ -519,6 +525,23 @@ public class MainWindow : Window, IDisposable {
 
             if (ImGui.Selectable("Delete")) {
                 ImGui.OpenPopup(deletePopupId);
+            }
+
+            if (node is MateNode.Group) {
+                if (ImGui.Selectable("Import Here")) {
+                    ImGui.OpenPopup(importPopupId);
+                }
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip("Import a Macro Mate preset into this group");
+                }
+            }
+
+            if (ImGui.Selectable("Export to Clipboard")) {
+                var preset = MacroMateSerializerV1.Export(node);
+                ImGui.SetClipboardText(preset);
+            }
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Export this item to the clipboard as a Macro Mate preset");
             }
 
             ImGui.EndPopup();
@@ -583,6 +606,49 @@ public class MainWindow : Window, IDisposable {
         }
 
         return deletePopupId;
+    }
+
+    private string importCode = "";
+    private uint DrawImportPopup(MateNode node) {
+        var importPopupName = $"Import###mainwindow/import_popup/{node.Id}";
+        var importPopupId = ImGui.GetID(importPopupName);
+
+        if (ImGui.BeginPopup(importPopupName)) {
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text("Import Code");
+            ImGui.SameLine();
+
+            bool finished = false;
+
+            // These can get reasonably big, so we just allocate a 16mb buffer and be done with it.
+            var maxSize = 16u * 1024u * 1024u;
+            if (
+                ImGui.InputTextWithHint(
+                    "###import_code",
+                    "Paste a preset here and click 'Import'",
+                    ref importCode,
+                    maxSize,
+                    ImGuiInputTextFlags.EnterReturnsTrue
+                )
+            ) {
+                finished = true;
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Import")) {
+                finished = true;
+            }
+
+            if (finished) {
+                var importedNode = MacroMateSerializerV1.Import(importCode);
+                importCode = "";
+                node.Attach(importedNode);
+                Env.MacroConfig.NotifyEdit();
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+
+        return importPopupId;
     }
 
     private void EditModeSetEnabled(bool enabled) {
