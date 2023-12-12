@@ -9,7 +9,7 @@ public class ExcelIdXML {
     public ExcelIdXML() { Id = 0; }
 
     public ExcelIdXML(ExcelId excelId) {
-        Comment = new XmlDocument().CreateComment(excelId.DisplayName());
+        Comment = new XmlDocument { XmlResolver = null }.CreateComment(excelId.DisplayName());
         Id = excelId.Id;
     }
 
