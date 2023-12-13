@@ -1,7 +1,7 @@
 using System;
 using System.IO;
-using System.Text;
 using System.Xml.Serialization;
+using Dalamud.Utility;
 using MacroMate.MacroTree;
 
 namespace MacroMate.Serialization.V1;
@@ -14,17 +14,19 @@ public static class MacroMateSerializerV1 {
 
         using (var stringWriter = new StringWriter()) {
             xmlSerializer.Serialize(stringWriter, xml);
+            var xmlString = stringWriter.ToString();
 
-            var xmlBytes = Encoding.Unicode.GetBytes(stringWriter.ToString());
-            var xmlBase64 = Convert.ToBase64String(xmlBytes);
-            return xmlBase64;
+            var compressed = Util.CompressString(xmlString);
+            var compressedBase64 = Convert.ToBase64String(compressed);
+            return compressedBase64;
         }
     }
 
-    public static MateNode? Import(string importString) {
+    public static MateNode? Import(string compressedBase64) {
         try {
-            var xmlBytes = Convert.FromBase64String(importString);
-            using (var xmlStream = new MemoryStream(xmlBytes)) {
+            var compressed = Convert.FromBase64String(compressedBase64);
+            var xmlString = Util.DecompressString(compressed);
+            using (var xmlStream = new StringReader(xmlString)) {
                 var xml = (MacroMateV1XML)xmlSerializer.Deserialize(xmlStream)!;
                 return xml.ToReal();
             }
