@@ -18,7 +18,7 @@ public static class MacroRunMenuItem {
                 Env.VanillaMacroManager.ExecuteMacro(vanillaMacros.First());
             }
             if (ImGui.IsItemHovered() && showLinesOnSingleRunHover) {
-                ImGui.SetTooltip(vanillaMacros.First().Lines.Value);
+                ImGui.SetTooltip(vanillaMacros.First().Lines.Value.TextValue);
             }
         } else {
             if (ImGui.BeginMenu("Run")) {
@@ -28,7 +28,7 @@ public static class MacroRunMenuItem {
                     }
 
                     if (ImGui.IsItemHovered() && showLinesOnMultiRunHover) {
-                        ImGui.SetTooltip(vanillaMacro.Lines.Value);
+                        ImGui.SetTooltip(vanillaMacro.Lines.Value.TextValue);
                     }
                 }
                 ImGui.EndMenu();

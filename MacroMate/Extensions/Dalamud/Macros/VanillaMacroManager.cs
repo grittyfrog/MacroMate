@@ -4,6 +4,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -42,12 +44,12 @@ public unsafe class VanillaMacroManager : IDisposable {
 
         var macro = raptureMacroModule->GetMacro((uint)macroSet, macroNumber);
         var lineCount = raptureMacroModule->GetLineCount(macro);
-        var lazyLines = new Lazy<string>(() => {
-            var lines = macro->LinesSpan
+        var lazyLines = new Lazy<SeString>(() => {
+            return macro->LinesSpan
                 .ToArray()
                 .Take((int)lineCount)
-                .Select(line => line.ToString());
-            return string.Join("\n", lines);
+                .Select(line => SeString.Parse(line))
+                .Let(lines => SeStringEx.JoinFromLines(lines));
         });
 
         return new VanillaMacro(
@@ -61,25 +63,23 @@ public unsafe class VanillaMacroManager : IDisposable {
 
     public void ExecuteMacro(VanillaMacro vanillaMacro) {
         var macroText = vanillaMacro.Lines.Value;
-        if (macroText.Count(c => c == '\n') > 15) {
+        if (macroText.CountNewlines() > 15) {
             Env.ChatGui.PrintError($"Macro has too many lines (max 15)");
             return;
         }
 
-        var macroPtr = IntPtr.Zero;
         try {
-            macroPtr = Marshal.AllocHGlobal(Macro.size);
-            var macro = new Macro(macroPtr, string.Empty, macroText.Split("\n"));
-            Marshal.StructureToPtr(macro, macroPtr, false);
+            var macro = new RaptureMacroModule.Macro();
 
-            raptureShellModule->ExecuteMacro((RaptureMacroModule.Macro*)Unsafe.AsRef(ref macroPtr));
-            macro.Dispose();
+            foreach (var (line, index) in macroText.SplitIntoLines().WithIndex()) {
+                macro.LinesSpan[index].SetString(line.Encode());
+            }
+
+            raptureShellModule->ExecuteMacro(&macro);
         } catch (Exception e) {
             Env.PluginLog.Error($"Failed to execute macro {e}");
             Env.ChatGui.PrintError($"Failed to execute macro");
         }
-
-        Marshal.FreeHGlobal(macroPtr);
     }
 
     public void SetMacro(VanillaMacroLink link, VanillaMacro vanillaMacro) {
@@ -98,7 +98,7 @@ public unsafe class VanillaMacroManager : IDisposable {
 
         var macroText = vanillaMacro.Lines.Value;
 
-        if (macroText.Count(c => c == '\n') > 15) {
+        if (macroText.CountNewlines() > 15) {
             Env.ChatGui.PrintError($"Macro {macroSlot} has too many lines (max 15)");
             return;
         }
@@ -110,7 +110,7 @@ public unsafe class VanillaMacroManager : IDisposable {
         macro->IconId = vanillaMacro.IconId;
         macro->MacroIconRowId = vanillaMacro.IconRowId;
 
-        var macroTextUtf8 = Utf8String.FromString(macroText);
+        var macroTextUtf8 = Utf8String.FromSequence(macroText.Encode());
         raptureMacroModule->ReplaceMacroLines(macro, macroTextUtf8);
         macroTextUtf8->Dtor();
         IMemorySpace.Free(macroTextUtf8);

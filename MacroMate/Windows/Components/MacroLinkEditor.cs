@@ -118,7 +118,7 @@ public static class MacroLinkEditor {
                 tooltipSb.AppendLine(vanillaMacro.Title.IfEmpty("<Unnamed>"));
 
                 var macroText = vanillaMacro.Lines.Value;
-                if (macroText != "") {
+                if (macroText.IsNotEmpty()) {
                     tooltipSb.Append("\n");
                     tooltipSb.Append(macroText);
                 }

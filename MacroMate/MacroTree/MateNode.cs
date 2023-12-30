@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Dalamud.Game.Text.SeStringHandling;
 using MacroMate.Conditions;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Macros;
@@ -20,7 +21,7 @@ public abstract class MateNode : TreeNode<MateNode> {
         public MacroLink Link = new();
         public bool LinkWithMacroChain = false;
 
-        public string Lines { get; set; } = "";
+        public SeString Lines { get; set; } = "";
 
         /** <summary>If true: ignore `ConditionExpr` and always link this macro</summary> */
         public bool AlwaysLinked { get; set; } = false;
@@ -41,10 +42,10 @@ public abstract class MateNode : TreeNode<MateNode> {
         /// Each block of 15 lines in this Macro will produce one Vanilla macro
         public IEnumerable<VanillaMacro> VanillaMacros() {
             var lineChunks = Lines
-                .Split("\n")
+                .SplitIntoLines()
                 .Let(lines => MaybeInsertMacroChainCommands(lines))
                 .Chunk(15)
-                .Select(chunkLines => string.Join('\n', chunkLines))
+                .Select(chunkLines => SeStringEx.JoinFromLines(chunkLines))
                 .ToList();
 
             foreach (var (chunk, index) in lineChunks.WithIndex()) {
@@ -54,14 +55,14 @@ public abstract class MateNode : TreeNode<MateNode> {
                 yield return new VanillaMacro(
                     IconId: this.IconId,
                     Title: title,
-                    LineCount: (uint)chunk.Count(c => c == '\n'),
+                    LineCount: (uint)chunk.CountNewlines(),
                     Lines: new(() => chunk),
                     IconRowId: 1
                 );
             }
         }
 
-        private IEnumerable<string> MaybeInsertMacroChainCommands(string[] lines) {
+        private IEnumerable<SeString> MaybeInsertMacroChainCommands(IEnumerable<SeString> lines) {
             if (!LinkWithMacroChain) { return lines; }
             if (!Env.PluginInterface.MacroChainPluginIsLoaded()) { return lines; }
 
@@ -75,7 +76,7 @@ public abstract class MateNode : TreeNode<MateNode> {
             //
             // If all of our links don't meet this criteria then there's no point and this setting should be ignored.
 
-            var newLines = new List<string>();
+            var newLines = new List<SeString>();
             var lineChunks = lines.Chunk(14).Lookahead(2);
             var linkSlots = Link.Slots.Lookahead(2);
             foreach (var (lineChunkWindow, linkWindow) in lineChunks.ZipWithDefault(linkSlots)) {
