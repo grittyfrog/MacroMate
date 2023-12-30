@@ -156,7 +156,7 @@ public class MacroWindow : Window, IDisposable {
             edited = true;
         }
 
-        var lines = Macro!.Lines;
+        var lines = Macro!.Lines.TextValue;
         if (ImGui.InputTextMultiline(
             $"###macro-lines",
             ref lines,
@@ -169,6 +169,7 @@ public class MacroWindow : Window, IDisposable {
             ImGuiInputTextFlags.CallbackCharFilter,
             ImGuiExt.CallbackCharFilterFn(_ => lines.MaxLineLength() < VanillaMacro.MaxLineLength)
         )) {
+            // TODO: Parse this in a way that doesn't lose some payloads (i.e. auto-translate)
             Macro.Lines = lines;
         };
         InputTextXIVPasteHack();

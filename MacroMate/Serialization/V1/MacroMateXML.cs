@@ -77,7 +77,7 @@ public class MacroXML : MateNodeXML {
             Slots = MacroSlots ?? new()
         },
         LinkWithMacroChain = LinkWithMacroChain ?? false,
-        Lines = Lines ?? "",
+        Lines = Lines ?? "", // TODO: Read in a way that preserves some payloads.
         AlwaysLinked = AlwaysLinked ?? false,
         ConditionExpr = OrCondition?.ToReal() ?? ConditionExpr.Or.Empty
     };
@@ -88,7 +88,7 @@ public class MacroXML : MateNodeXML {
         MacroSet = macro.Link.Set,
         MacroSlots = macro.Link.Slots,
         LinkWithMacroChain = macro.LinkWithMacroChain,
-        Lines = macro.Lines,
+        Lines = macro.Lines.TextValue, // TODO: Save in a way that preserves some payloads (I.e. auto-translate)
         AlwaysLinked = macro.AlwaysLinked,
         OrCondition = OrConditionXML.From(macro.ConditionExpr)
     };

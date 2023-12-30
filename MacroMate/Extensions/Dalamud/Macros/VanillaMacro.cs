@@ -1,4 +1,5 @@
 using System;
+using Dalamud.Game.Text.SeStringHandling;
 
 namespace MacroMate.Extensions.Dalamud.Macros;
 
@@ -6,7 +7,7 @@ public record class VanillaMacro(
     uint IconId,
     string Title,
     uint LineCount,
-    Lazy<string> Lines,
+    Lazy<SeString> Lines,
 
     /// MacroIcon, exclusive of /micon or similar. Oddly, off by one from Lumina's table.
     uint IconRowId = 1  // Must be set to non-zero for the macro to be "active"
