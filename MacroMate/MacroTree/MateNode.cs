@@ -21,7 +21,11 @@ public abstract class MateNode : TreeNode<MateNode> {
         public MacroLink Link = new();
         public bool LinkWithMacroChain = false;
 
-        public SeString Lines { get; set; } = "";
+        private SeString _lines = "";
+        public SeString Lines {
+            get { return _lines; }
+            set { _lines = value.NormalizeNewlines(); }
+        }
 
         /** <summary>If true: ignore `ConditionExpr` and always link this macro</summary> */
         public bool AlwaysLinked { get; set; } = false;

@@ -1,12 +1,16 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 
 namespace MacroMate.Extensions.Dalamud;
 
 public static class SeStringEx {
+    /// <summary>Normalize all newline characters to actual NewLinePayloads</summary>
+    public static SeString NormalizeNewlines(this SeString self) {
+        return SeStringEx.JoinFromLines(self.SplitIntoLines());
+    }
+
     public static int CountNewlines(this SeString self) =>
         self.Payloads.Count(p => p.Type == PayloadType.NewLine);
 
