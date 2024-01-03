@@ -41,10 +41,7 @@ public static class SeStringEx {
                     chunk = new SeString();
                 }
             } else if (payload is TextPayload textPayload && textPayload.Text != null) {
-                var splits = textPayload.Text.Split(
-                    new char[] { '\n', '\r' },
-                    System.StringSplitOptions.RemoveEmptyEntries
-                );
+                var splits = textPayload.Text.Split(new string[] { "\r\n", "\n", "\r" }, System.StringSplitOptions.None);
                 foreach (var split in splits) {
                     chunk.Append(split);
                     yield return chunk;
@@ -82,42 +79,4 @@ public static class SeStringEx {
 
         return builder.Build();
     }
-
-
-    /// <summary>
-    /// Encodes SeString payloads that are also ITextProviders into a C# UTF-16 string.
-    /// </summary>
-    // ///
-    // /// <example>
-    // /// For example:
-    // /// <code>
-    // /// var seString = new SeStringBuilder()
-    // ///   .Append("Hello ")
-    // ///   .Append(new AutoTranslatePayload(0, 0))
-    // /// </code>
-    // /// Produces "Hello {0,0}"
-    // /// </example>
-    // public static string EncodeToMacroString(this SeString seString) {
-    //     return seString.Payloads
-    //         .SelectNonNull(payload => {
-    //             if (payload.Type == PayloadType.AutoTranslateText) {
-    //                 // TODO: Try to get these made public in Dalamud so we can stop using reflection here
-    //                 var group = payload.GetFieldValue<uint>("group");
-    //                 var key = payload.GetFieldValue<uint>("key");
-    //                 return $"{(char)SeIconChar.AutoTranslateOpen}{group},{key}{(char)SeIconChar.AutoTranslateClose}";
-    //             } else if (payload is ITextProvider textPayload){
-    //                 return textPayload.Text;
-    //             } else {
-    //                 return null;
-    //             }
-    //         })
-    //         .Let(texts => string.Join("", texts));
-    // }
-
-    // /// <summary>
-    // /// Construct a SeString from a string build using [SeString.TextValue]. This can reconstruct payloads that
-    // /// implement [ITextProvider] (such as [AutoTranslatePayload])
-    // /// </summary>
-    // public static SeString DecodeFromMacroString(string s) {
-    // }
 }
