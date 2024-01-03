@@ -1,11 +1,9 @@
 using System;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Memory;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -110,10 +108,20 @@ public unsafe class VanillaMacroManager : IDisposable {
         macro->IconId = vanillaMacro.IconId;
         macro->MacroIconRowId = vanillaMacro.IconRowId;
 
-        var macroTextUtf8 = Utf8String.FromSequence(macroText.Encode());
-        raptureMacroModule->ReplaceMacroLines(macro, macroTextUtf8);
-        macroTextUtf8->Dtor();
-        IMemorySpace.Free(macroTextUtf8);
+        // We don't want to use NewLinePayload since it encodes to an extra newline, instead we just encode everything to '\r'.
+        // We also don't use macro-LineSpan[index] = ... here since it causes memory access errors
+        var macroLinePayload = new SeString(macroText.Payloads.Select(payload => {
+            if (payload is NewLinePayload) {
+                return new TextPayload("\r");
+            } else {
+                return payload;
+            }
+        }).ToList());
+
+        var macroLinePayloadUtf8 = Utf8String.FromSequence(macroLinePayload.Encode());
+        raptureMacroModule->ReplaceMacroLines(macro, macroLinePayloadUtf8);
+        macroLinePayloadUtf8->Dtor();
+        IMemorySpace.Free(macroLinePayloadUtf8);
 
         raptureMacroModule->SetSavePendingFlag(true, (uint)macroSet);
         raptureMacroModule->UserFileEvent.HasChanges = true;
