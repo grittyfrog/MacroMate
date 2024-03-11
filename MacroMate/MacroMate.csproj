@@ -32,6 +32,7 @@
   <ItemGroup>
     <PackageReference Include="DalamudPackager" Version="2.1.12" />
     <PackageReference Include="OneOf" Version="3.0.263" />
+    <PackageReference Include="Pidgin" Version="3.2.3" />
     <PackageReference Include="System.Collections.Immutable" Version="7.0.0" />
     <PackageReference Include="XSerializer" Version="0.4.4" />
     <Reference Include="FFXIVClientStructs">
