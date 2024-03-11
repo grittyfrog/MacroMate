@@ -14,12 +14,6 @@
         "resolved": "3.0.263",
         "contentHash": "2xXFnUxkAA0rJ2sJz9FPeW/gzJIBvyj+xIvfTIkz42pz9JlcYse4/rwRnkmCsYxw6osy1whnBO6Ox6HBKEqDMw=="
       },
-      "Pidgin": {
-        "type": "Direct",
-        "requested": "[3.2.3, )",
-        "resolved": "3.2.3",
-        "contentHash": "/1Q/f9asEZH7bogARG4EUxYT3LGB+mNC19db4unmx8gL04kkPzkg1VuX/BFk4UMJsqVopYComG/ydCrj1flCww=="
-      },
       "Sprache": {
         "type": "Direct",
         "requested": "[2.3.1, )",
