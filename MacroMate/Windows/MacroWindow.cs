@@ -8,6 +8,7 @@ using MacroMate.MacroTree;
 using MacroMate.Extensions.Dalamud.Macros;
 using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.Dalamud;
+using MacroMate.Extensions.Dalamaud.Interface.Components;
 
 namespace MacroMate.Windows;
 
@@ -17,6 +18,7 @@ public class MacroWindow : Window, IDisposable {
     public MateNode.Macro? Macro { get; set; }
 
     private ConditionExprEditor conditionExprEditor = new();
+    private SeStringInputTextMultiline seStringInputTextMultiline = new();
 
     private bool showLinkMacros = false;
     private bool showLinkConditions = false;
@@ -156,8 +158,8 @@ public class MacroWindow : Window, IDisposable {
             edited = true;
         }
 
-        var lines = Macro!.Lines.TextValue;
-        if (ImGui.InputTextMultiline(
+        var lines = Macro!.Lines;
+        if (seStringInputTextMultiline.Draw(
             $"###macro-lines",
             ref lines,
             ushort.MaxValue, // Allow for many lines, since we chunk them by blocks of 15 for execution/bindingn.
@@ -169,10 +171,8 @@ public class MacroWindow : Window, IDisposable {
             ImGuiInputTextFlags.CallbackCharFilter,
             ImGuiExt.CallbackCharFilterFn(_ => lines.MaxLineLength() < VanillaMacro.MaxLineLength)
         )) {
-            // TODO: Parse this in a way that doesn't lose some payloads (i.e. auto-translate)
             Macro.Lines = lines;
-        };
-        InputTextXIVPasteHack();
+        }
         edited = edited || ImGui.IsItemDeactivatedAfterEdit();
 
         if (edited) {
