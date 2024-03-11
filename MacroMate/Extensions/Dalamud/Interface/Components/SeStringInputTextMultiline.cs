@@ -1,10 +1,13 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
+using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Str;
 
 namespace MacroMate.Extensions.Dalamaud.Interface.Components;
@@ -49,16 +52,10 @@ public class SeStringInputTextMultiline {
 
                 // We've finished supressing the paste events
                 if (processingPasteEvent && !isPasting) {
-                    SeString? payloadEnabledClipboardText = null;
-                    unsafe {
-                        var atkStage = AtkStage.GetSingleton();
-                        if (atkStage != null) {
-                            var clipboardText = atkStage->AtkInputManager->TextInput->CopyBufferRaw;
-                            payloadEnabledClipboardText = SeString.Parse(clipboardText);
-                        }
-                    }
+                    var clipboardUtf8 = ClipboardEx.GetPayloadEnabledClipboardString();
+                    if (clipboardUtf8 != null) {
+                        var payloadEnabledClipboardText = SeString.Parse(clipboardUtf8.Value);
 
-                    if (payloadEnabledClipboardText != null) {
                         IndexPayloads(payloadEnabledClipboardText);
 
                         var ptr = new ImGuiInputTextCallbackDataPtr(data);
