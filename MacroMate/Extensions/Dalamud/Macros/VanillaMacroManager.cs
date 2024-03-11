@@ -9,6 +9,7 @@ using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using MacroMate.Extensions.Dalamud.Str;
 using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.FFXIVClientStructs;
 

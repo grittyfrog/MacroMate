@@ -6,6 +6,7 @@ using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Macros;
+using MacroMate.Extensions.Dalamud.Str;
 using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.Imgui;
 using MacroMate.MacroTree;

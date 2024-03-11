@@ -3,9 +3,9 @@ using System.Linq;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 
-namespace MacroMate.Extensions.Dalamud;
+namespace MacroMate.Extensions.Dalamud.Str;
 
-public static class SeStringEx {
+public static partial class SeStringEx {
     /// <summary>Normalize all newline characters to actual NewLinePayloads</summary>
     public static SeString NormalizeNewlines(this SeString self) {
         return SeStringEx.JoinFromLines(self.SplitIntoLines());

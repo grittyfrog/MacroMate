@@ -5,6 +5,8 @@ using System.Linq;
 using System.Xml.Serialization;
 using MacroMate.Conditions;
 using MacroMate.Extensions.Dalamud.Macros;
+using MacroMate.Extensions.Dalamud.Str;
+using MacroMate.Extensions.Dotnet;
 using MacroMate.MacroTree;
 
 namespace MacroMate.Serialization.V1;
@@ -77,19 +79,21 @@ public class MacroXML : MateNodeXML {
             Slots = MacroSlots ?? new()
         },
         LinkWithMacroChain = LinkWithMacroChain ?? false,
-        Lines = Lines ?? "", // TODO: Read in a way that preserves some payloads.
+        Lines = Lines?.Let(lines => SeStringEx.ParseFromText(lines)) ?? "",
         AlwaysLinked = AlwaysLinked ?? false,
         ConditionExpr = OrCondition?.ToReal() ?? ConditionExpr.Or.Empty
     };
 
-    public static MacroXML FromMacro(MateNode.Macro macro) => new MacroXML {
-        Name = macro.Name,
-        IconId = macro.IconId,
-        MacroSet = macro.Link.Set,
-        MacroSlots = macro.Link.Slots,
-        LinkWithMacroChain = macro.LinkWithMacroChain,
-        Lines = macro.Lines.TextValue, // TODO: Save in a way that preserves some payloads (I.e. auto-translate)
-        AlwaysLinked = macro.AlwaysLinked,
-        OrCondition = OrConditionXML.From(macro.ConditionExpr)
-    };
+    public static MacroXML FromMacro(MateNode.Macro macro) {
+        return new MacroXML {
+            Name = macro.Name,
+            IconId = macro.IconId,
+            MacroSet = macro.Link.Set,
+            MacroSlots = macro.Link.Slots,
+            LinkWithMacroChain = macro.LinkWithMacroChain,
+            Lines = macro.Lines.Unparse(),
+            AlwaysLinked = macro.AlwaysLinked,
+            OrCondition = OrConditionXML.From(macro.ConditionExpr)
+        };
+    }
 }

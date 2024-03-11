@@ -8,6 +8,7 @@ using MacroMate.MacroTree;
 using MacroMate.Extensions.Dalamud.Macros;
 using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.Dalamud;
+using MacroMate.Extensions.Dalamud.Str;
 using MacroMate.Extensions.Dalamaud.Interface.Components;
 
 namespace MacroMate.Windows;
