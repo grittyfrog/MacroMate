@@ -25,6 +25,7 @@ public static class SeStringEx {
 
     /// <summary>Get the length of the longest line in this string</summary>
     public static int MaxLineLength(this SeString self) {
+        if (self.Payloads.Count == 0) { return 0; }
         return Enumerable.Max(self.SplitIntoLines().Select(s => s.Length()));
     }
 
@@ -42,10 +43,11 @@ public static class SeStringEx {
                 }
             } else if (payload is TextPayload textPayload && textPayload.Text != null) {
                 var splits = textPayload.Text.Split(new string[] { "\r\n", "\n", "\r" }, System.StringSplitOptions.None);
-                foreach (var split in splits) {
-                    chunk.Append(split);
+                chunk.Append(splits[0]);
+                foreach (var split in splits.Skip(1)) {
                     yield return chunk;
                     chunk = new SeString();
+                    chunk.Append(split);
                 }
             } else {
                 chunk.Payloads.Add(payload);
