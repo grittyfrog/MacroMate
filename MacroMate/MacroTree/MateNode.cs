@@ -5,6 +5,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using MacroMate.Conditions;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Macros;
+using MacroMate.Extensions.Dalamud.Str;
 using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.Dotnet.Tree;
 

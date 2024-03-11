@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -6,9 +5,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
-using Pidgin;
-using static Pidgin.Parser;
-using static Pidgin.Parser<char>;
+using MacroMate.Extensions.Dalamud.Str;
 
 namespace MacroMate.Extensions.Dalamaud.Interface.Components;
 
@@ -84,10 +81,7 @@ public class SeStringInputTextMultiline {
             decoratedCallback
         );
         if (result) {
-            var chunks = SeStringChunk.Of(text);
-            var payloads = chunks.Select(chunk => FromChunk(chunk)).ToList();
-            var seString = new SeString(payloads);
-            input = seString;
+            input = SeStringEx.ParseFromText(text, knownTranslationPayloads);
             edited = true;
         }
 
@@ -97,50 +91,7 @@ public class SeStringInputTextMultiline {
     private void IndexPayloads(SeString s) {
         // We need to pre-index the existing auto translate payloads in our input so we can recognise them later on
         foreach (var atPayload in s.Payloads.OfType<AutoTranslatePayload>()) {
-            knownTranslationPayloads[atPayload.Text] = atPayload;
+            knownTranslationPayloads[atPayload.RawText()] = atPayload;
         }
-    }
-
-    private Payload FromChunk(SeStringChunk chunk) {
-        switch (chunk) {
-            case SeStringChunk.Text textChunk: return new TextPayload(textChunk.text);
-            case SeStringChunk.AutoTranslate atChunk:
-                if (knownTranslationPayloads.TryGetValue(atChunk.activeLanguageText, out var atPayload)) {
-                    return atPayload;
-                } else {
-                    return new TextPayload(atChunk.activeLanguageText);
-                }
-            default: throw new Exception("Unrecognised chunk type");
-        }
-    }
-
-    internal interface SeStringChunk {
-        public record class Text(string text) : SeStringChunk {}
-        public record class AutoTranslate(string activeLanguageText) : SeStringChunk {}
-
-        private static readonly char AutoTranslateStart = '\uE040';
-        private static readonly char AutoTranslateEnd = '\uE041';
-
-        private static readonly Parser<char, char> autoTranslateStart = Char(AutoTranslateStart);
-        private static readonly Parser<char, char> autoTranslateEnd = Char(AutoTranslateEnd);
-
-        private static readonly Parser<char, SeStringChunk> autoTranslatePayload =
-            Token(c => c != AutoTranslateEnd)
-                .ManyString()
-                .Between(Char(AutoTranslateStart), Char(AutoTranslateEnd))
-                .Select<SeStringChunk>(s => new SeStringChunk.AutoTranslate(AutoTranslateStart + s + AutoTranslateEnd));
-
-        private static readonly Parser<char, SeStringChunk> textPayload =
-            Token(c => c != AutoTranslateStart)
-                .AtLeastOnceString()
-                .Select<SeStringChunk>(s => new SeStringChunk.Text(s.ToString()));
-
-        private static readonly Parser<char, SeStringChunk> payload = Try(autoTranslatePayload).Or(textPayload);
-
-        private static readonly Parser<char, IEnumerable<SeStringChunk>> seStringPayloadParser =
-            payload.Many();
-
-        public static List<SeStringChunk> Of(string text) =>
-            payload.Many().ParseOrThrow(text).ToList();
     }
 }

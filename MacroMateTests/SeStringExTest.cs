@@ -1,6 +1,6 @@
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using MacroMate.Extensions.Dalamud;
+using MacroMate.Extensions.Dalamud.Str;
 using Xunit.Abstractions;
 
 namespace MacroMateTests;
