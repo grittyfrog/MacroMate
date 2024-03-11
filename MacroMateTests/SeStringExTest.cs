@@ -53,6 +53,23 @@ public class SeStringExTest {
     }
 
     [Fact]
+    public void SplitIntoLinesShouldNotSplitMixedTextPayloadsThatAreNotNewlines() {
+        var input = new SeStringBuilder()
+            .Append("Hello\nWorld")
+            .Add(new SeHyphenPayload())
+            .Append("More text")
+            .Add(new NewLinePayload())
+            .Append("Goodbye")
+            .Build();
+
+        var splits = input.SplitIntoLines().ToList();
+        splits[0].TextValue.ShouldBe("Hello");
+        splits[1].TextValue.ShouldBe("World–More text");
+        splits[2].TextValue.ShouldBe("Goodbye");
+    }
+
+
+    [Fact]
     public void JoinFromLines() {
         var input = new List<SeString> {
             (SeString)"Hello",
@@ -114,6 +131,8 @@ public class SeStringExTest {
     public void NormalizeNewlines_RenormalizeShouldDoNothing() {
         var input = new SeStringBuilder()
             .Append("Hello\nWorld")
+            .Add(new SeHyphenPayload())
+            .Append("More text")
             .Add(new NewLinePayload())
             .Append("Goodbye")
             .Build();
@@ -121,11 +140,15 @@ public class SeStringExTest {
         var normalized = input.NormalizeNewlines().NormalizeNewlines().NormalizeNewlines();
 
         // None of our text payloads should contain newline characters.
-        normalized.Payloads[0].ShouldBeOfType<TextPayload>().Text.ShouldBe("Hello");
-        normalized.Payloads[1].ShouldBeOfType<NewLinePayload>();
-        normalized.Payloads[2].ShouldBeOfType<TextPayload>().Text.ShouldBe("World");
-        normalized.Payloads[3].ShouldBeOfType<NewLinePayload>();
-        normalized.Payloads[4].ShouldBeOfType<TextPayload>().Text.ShouldBe("Goodbye");
-        normalized.Payloads.Count.ShouldBe(5); // There shouldn't be any more payloads
+        var expected = new SeStringBuilder()
+            .Append("Hello")
+            .Add(new NewLinePayload())
+            .Append("World")
+            .Add(new SeHyphenPayload())
+            .Append("More text")
+            .Add(new NewLinePayload())
+            .Append("Goodbye")
+            .Build();
+        normalized.TextValue.ShouldBe(expected.TextValue);
     }
 }
