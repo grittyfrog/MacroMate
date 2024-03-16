@@ -12,7 +12,7 @@ public static partial class SeStringEx {
     /// Parse a SeString from a string, we assume the string is the result of calling `SeString.TextValue` and
     /// attempt to reconstruct the recognisable payloads (currently just Auto Translate).
     ///
-    /// This function also recognises MacroMate generated auto-translate payloads of the form {@0,100} (where {} are auto translate start/end).
+    /// This function also recognises MacroMate generated auto-translate payloads of the form {My translation|0,100} (where {} are auto translate start/end).
     /// These are usually used by the plugin config files.
     ///
     /// Only Auto-Translate payloads that are included in [knownTranslationPayloads] will be recognised.
