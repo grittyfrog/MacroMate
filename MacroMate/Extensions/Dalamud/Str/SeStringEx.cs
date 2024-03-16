@@ -11,6 +11,16 @@ public static partial class SeStringEx {
         return SeStringEx.JoinFromLines(self.SplitIntoLines());
     }
 
+    public static SeString ReplaceNewlinesWithCR(this SeString self) {
+        return new SeString(self.Payloads.Select(payload => {
+            if (payload is NewLinePayload) {
+                return new TextPayload("\r");
+            } else {
+                return payload;
+            }
+        }).ToList());
+    }
+
     public static int CountNewlines(this SeString self) =>
         self.Payloads.Count(p => p.Type == PayloadType.NewLine);
 

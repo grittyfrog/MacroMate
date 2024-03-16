@@ -1,10 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using FFXIVClientStructs.FFXIV.Client.System.Memory;
+using FFXIVClientStructs.FFXIV.Client.System.String;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Str;
@@ -36,6 +40,13 @@ public class SeStringInputTextMultiline {
         var shiftInsPressed = (ImGui.GetIO().KeyMods == ImGuiModFlags.Shift) && ImGui.IsKeyPressed(ImGuiKey.Insert, false);
         var isPasting = ctrlVPressed || shiftInsPressed;
 
+        var ctrlXPressed = (ImGui.GetIO().KeyMods == ImGuiModFlags.Ctrl) && ImGui.IsKeyPressed(ImGuiKey.X, false);
+        var shiftDelPressed = (ImGui.GetIO().KeyMods == ImGuiModFlags.Shift) && ImGui.IsKeyPressed(ImGuiKey.Delete, false);
+        var isCut = ctrlXPressed || shiftDelPressed;
+
+        var ctrlCPressed = (ImGui.GetIO().KeyMods == ImGuiModFlags.Ctrl) && ImGui.IsKeyPressed(ImGuiKey.C, false);
+        var ctrlInsertPressed = (ImGui.GetIO().KeyMods == ImGuiModFlags.Ctrl) && ImGui.IsKeyPressed(ImGuiKey.Insert, false);
+        var isCopy = ctrlCPressed || ctrlInsertPressed;
 
         var inputCopy = input;
         ImGuiInputTextCallback decoratedCallback;
@@ -72,6 +83,25 @@ public class SeStringInputTextMultiline {
                 var (adjSelectStart, adjSelectEnd) = ExpandSelectionAcrossAutoTranslate(inputCopy, data->SelectionStart, data->SelectionEnd);
                 data->SelectionStart = adjSelectStart;
                 data->SelectionEnd = adjSelectEnd;
+
+                // If we are cutting or copying we should let ImGui handle the text manipulation, but we should
+                // also copy the relevant SeString parts to the in-game clipboard so they can be pasted to
+                // SeStringInputTextMultiline or in-game windows.
+                if (isCut || isCopy) {
+                    var lower = data->SelectionStart <= data->SelectionEnd ? data->SelectionStart : data->SelectionEnd;
+                    var higher = data->SelectionStart <= data->SelectionEnd ? data->SelectionEnd : data->SelectionStart;
+                    var selectionLength = higher - lower;
+
+                    var bytes = new Span<byte>(data->Buf, data->BufTextLen);
+                    var selectedBytes = bytes.Slice(lower, selectionLength);
+                    var selectedText = Encoding.UTF8.GetString(selectedBytes);
+                    var selectedSeString = SeStringEx
+                        .ParseFromText(selectedText, knownTranslationPayloads)
+                        .NormalizeNewlines()
+                        .ReplaceNewlinesWithCR();
+                    ClipboardEx.SetClipboardSeString(selectedSeString);
+                }
+
                 return result;
             };
         };
@@ -109,7 +139,7 @@ public class SeStringInputTextMultiline {
                 var startOffset = textOffset;
                 var endOffset = textOffset + new StringInfo(atPayload.Text).LengthInTextElements;
                 yield return new InputTextDecoration.TextColor(startOffset, startOffset + 1, ImGui.ColorConvertFloat4ToU32(Colors.AutoTranslateStartGreen));
-                yield return new InputTextDecoration.TextColor(endOffset -1, endOffset, ImGui.ColorConvertFloat4ToU32(Colors.AutoTranslateEndRed));
+                yield return new InputTextDecoration.TextColor(endOffset - 1, endOffset, ImGui.ColorConvertFloat4ToU32(Colors.AutoTranslateEndRed));
 
                 textOffset = endOffset;
             } else if (payload is ITextProvider textPayload) {

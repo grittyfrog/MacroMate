@@ -118,14 +118,7 @@ public unsafe class VanillaMacroManager : IDisposable {
 
         // We don't want to use NewLinePayload since it encodes to an extra newline, instead we just encode everything to '\r'.
         // We also don't use macro-LineSpan[index] = ... here since it causes memory access errors
-        var macroLinePayload = new SeString(macroText.Payloads.Select(payload => {
-            if (payload is NewLinePayload) {
-                return new TextPayload("\r");
-            } else {
-                return payload;
-            }
-        }).ToList());
-
+        var macroLinePayload = macroText.ReplaceNewlinesWithCR();
         var macroLinePayloadUtf8 = Utf8String.FromSequence(macroLinePayload.Encode());
         raptureMacroModule->ReplaceMacroLines(macro, macroLinePayloadUtf8);
         macroLinePayloadUtf8->Dtor();
