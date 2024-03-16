@@ -1,20 +1,22 @@
-using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
+using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+using Dalamud.Interface;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Str;
+using MacroMate.Extensions.Imgui;
 
 namespace MacroMate.Extensions.Dalamaud.Interface.Components;
 
 public class SeStringInputTextMultiline {
     private bool processingPasteEvent = false;
     private Dictionary<string, AutoTranslatePayload> knownTranslationPayloads = new();
+    private InputTextDecorator textDecorator = new();
 
     public bool Draw(
         string label,
@@ -77,6 +79,8 @@ public class SeStringInputTextMultiline {
             flags,
             decoratedCallback
         );
+        var decorations = GetDecorations(input);
+        textDecorator.DecorateInputText(label, textCursorPosition, ref text, size, decorations);
         if (result) {
             input = SeStringEx.ParseFromText(text, knownTranslationPayloads);
             edited = true;
@@ -90,5 +94,28 @@ public class SeStringInputTextMultiline {
         foreach (var atPayload in s.Payloads.OfType<AutoTranslatePayload>()) {
             knownTranslationPayloads[atPayload.RawText()] = atPayload;
         }
+    }
+
+    private IEnumerable<InputTextDecoration> GetDecorations(SeString input) {
+        var textOffset = 0;
+        foreach (var payload in input.Payloads) {
+            if (payload is AutoTranslatePayload atPayload) {
+                var startOffset = textOffset;
+                var endOffset = textOffset + new StringInfo(atPayload.Text).LengthInTextElements;
+                yield return new InputTextDecoration.TextColor(startOffset, startOffset + 1, ImGui.ColorConvertFloat4ToU32(Colors.AutoTranslateStartGreen));
+                yield return new InputTextDecoration.TextColor(endOffset -1, endOffset, ImGui.ColorConvertFloat4ToU32(Colors.AutoTranslateEndRed));
+
+                textOffset = endOffset;
+            } else if (payload is ITextProvider textPayload) {
+                var textInfo = new StringInfo(textPayload.Text);
+                textOffset += textInfo.LengthInTextElements;
+            }
+        }
+    }
+
+    private void UpdateScrollX() {
+        var size = ImGui.GetItemRectSize();
+        var scrollIncrementX = size.X * 0.25f;
+        var visibleWidth = size.X - ImGui.GetStyle().FramePadding.X;
     }
 }
