@@ -42,9 +42,9 @@ public class InputTextDecorator {
         foreach (var decoration in decorations) {
             // Figure out the position of this decoration
             var posInText = InputTextCalcText2dPos(text, decoration.StartIndex);
-            var startIndex = Math.Max(decoration.StartIndex, 0);
-            var endIndex = Math.Min(decoration.EndIndex, text.Length);
-            DrawDecoration(drawList, posInText, text[decoration.StartIndex..endIndex], decoration);
+            var startIndex = Math.Clamp(decoration.StartIndex, 0, text.Length);
+            var endIndex = Math.Clamp(decoration.EndIndex, 0, text.Length);
+            DrawDecoration(drawList, posInText, text[startIndex..endIndex], decoration);
         }
 
         drawList.PopClipRect();
