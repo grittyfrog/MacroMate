@@ -19,7 +19,6 @@ public class InputTextDecorator {
     /// Assumes no overlapping decorations
     public void DecorateInputText(
         string label,
-        int? cursorPos,
         ref string text,
         Vector2 size,
         IEnumerable<InputTextDecoration> decorations
