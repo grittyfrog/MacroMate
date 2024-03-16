@@ -101,49 +101,6 @@ public class InputTextDecorator {
 
         return textSize;
     }
-
-    /// Adapted from imgui_widgets.cpp
-    private Vector2 InputTextCalcTextSizeW(
-        string text,
-        int textBegin,
-        int textEnd,
-        bool stopOnNewLine = false
-    ) {
-        var font = ImGui.GetFont();
-        float lineHeight = ImGui.GetFontSize();
-        float scale = lineHeight / font.FontSize;
-
-        Vector2 textSize = new Vector2(0, 0);
-        float lineWidth = 0.0f;
-
-        int sIndex = textBegin;
-        while (sIndex < textEnd)
-        {
-            char c = text[sIndex++];
-            if (c == '\n')
-            {
-                textSize.X = Math.Max(textSize.X, lineWidth);
-                textSize.Y += lineHeight;
-                lineWidth = 0.0f;
-                if (stopOnNewLine)
-                    break;
-                continue;
-            }
-            if (c == '\r')
-                continue;
-
-            float charWidth = font.GetCharAdvance(c) * scale;
-            lineWidth += charWidth;
-        }
-
-        if (textSize.X < lineWidth)
-            textSize.X = lineWidth;
-
-        if (lineWidth > 0 || textSize.Y == 0.0f) // whereas size.y will ignore the trailing \n
-            textSize.Y += lineHeight;
-
-        return textSize;
-    }
 }
 
 public interface InputTextDecoration {
