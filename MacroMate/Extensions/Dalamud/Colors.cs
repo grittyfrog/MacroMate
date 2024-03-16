@@ -18,4 +18,18 @@ public static class Colors {
         0.0f / 255.0f,
         1.0f
     );
+
+    public static Vector4 AutoTranslateStartGreen = new(
+        96.0f / 255.0f,
+        223.0f / 255.0f,
+        46.0f / 255.0f,
+        1.0f
+    ); // #60DF2E
+
+    public static Vector4 AutoTranslateEndRed = new(
+        221 / 255.0f,
+        54 / 255.0f,
+        54 / 255.0f,
+        1.0f
+    ); // #DD3636
 }
