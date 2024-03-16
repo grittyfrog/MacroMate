@@ -3,12 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using System.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using FFXIVClientStructs.FFXIV.Client.System.Memory;
-using FFXIVClientStructs.FFXIV.Client.System.String;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Str;
@@ -20,6 +17,10 @@ public class SeStringInputTextMultiline {
     private bool processingPasteEvent = false;
     private Dictionary<string, AutoTranslatePayload> knownTranslationPayloads = new();
     private InputTextDecorator textDecorator = new();
+    private int? previousCursorPos = null;
+
+    private unsafe ImGuiInputTextState* TextState =>
+        (ImGuiInputTextState*)(ImGui.GetCurrentContext() + ImGuiInputTextState.TextStateOffset);
 
     public bool Draw(
         string label,
@@ -34,7 +35,6 @@ public class SeStringInputTextMultiline {
         bool edited = false;
 
         flags |= ImGuiInputTextFlags.CallbackAlways;
-        int? textCursorPosition = null;
 
         var ctrlVPressed = (ImGui.GetIO().KeyMods == ImGuiModFlags.Ctrl) && ImGui.IsKeyPressed(ImGuiKey.V, false);
         var shiftInsPressed = (ImGui.GetIO().KeyMods == ImGuiModFlags.Shift) && ImGui.IsKeyPressed(ImGuiKey.Insert, false);
@@ -48,14 +48,10 @@ public class SeStringInputTextMultiline {
         var ctrlInsertPressed = (ImGui.GetIO().KeyMods == ImGuiModFlags.Ctrl) && ImGui.IsKeyPressed(ImGuiKey.Insert, false);
         var isCopy = ctrlCPressed || ctrlInsertPressed;
 
-        var inputCopy = input;
         ImGuiInputTextCallback decoratedCallback;
         unsafe {
             decoratedCallback = (data) => {
                 var result = callback(data);
-
-                // We need the cursor pos for later in this function to determine where to paste to.
-                textCursorPosition = data->CursorPos;
 
                 // We supress all ImGui pasting so we can manually do it ourself later in this function.
                 // This will be called once for every charcter that is pasted, and will supress them all.
@@ -77,12 +73,6 @@ public class SeStringInputTextMultiline {
                         processingPasteEvent = false;
                     }
                 }
-
-                // If the selection overlaps a AutoTranslateText, increase the selection so the entire payload is
-                // selected (similar to what the in-game macro window does)
-                var (adjSelectStart, adjSelectEnd) = ExpandSelectionAcrossAutoTranslate(inputCopy, data->SelectionStart, data->SelectionEnd);
-                data->SelectionStart = adjSelectStart;
-                data->SelectionEnd = adjSelectEnd;
 
                 // If we are cutting or copying we should let ImGui handle the text manipulation, but we should
                 // also copy the relevant SeString parts to the in-game clipboard so they can be pasted to
@@ -116,11 +106,14 @@ public class SeStringInputTextMultiline {
             decoratedCallback
         );
         var decorations = GetDecorations(input);
-        textDecorator.DecorateInputText(label, textCursorPosition, ref text, size, decorations);
+        textDecorator.DecorateInputText(label, ref text, size, decorations);
         if (result) {
             input = SeStringEx.ParseFromText(text, knownTranslationPayloads);
             edited = true;
         }
+
+        // We apply cursor/selection adjustment after parsing `input` in case it has changed.
+        ApplyAutoTranslateCursorAndSelectionBehaviour(input);
 
         return edited;
     }
@@ -155,30 +148,54 @@ public class SeStringInputTextMultiline {
         var visibleWidth = size.X - ImGui.GetStyle().FramePadding.X;
     }
 
-    private (int, int) ExpandSelectionAcrossAutoTranslate(SeString input, int startPos, int endPos) {
-        // Note: Start/End are bi-directional and depend on the direction of selection when dragging
+    /// Mimic the vanilla behaviour of the selection/cursor.
+    /// Returns the new cursor position, selection start and selection end respectively
+    private unsafe void ApplyAutoTranslateCursorAndSelectionBehaviour(SeString input) {
+        var textState = TextState;
+        if (textState->Edited) {
+            previousCursorPos = textState->Stb.Cursor;
+            return;
+        }
+
+        // These are counted in wchar-positions, rather then UTF8 positions
+        var (startPos, endPos, cursor) = textState->SelectionTuple;
+
         var lower = startPos <= endPos ? startPos : endPos;
         var higher = startPos <= endPos ? endPos : startPos;
 
         var textOffset = 0;
         foreach (var payload in input.Payloads) {
-            // We count UTF-8 bytes since ImGui's selection startPos and endPos seem to be straight char counts.
-            // We can't just use `.Count` because C# strings are UTF-16.
+            // We can count UTF-16 bytes here since ImGui uses wchar for the internal InputText state which
+            // matches C#'s encoding.
+            //
+            // If we were using the data from the callback event we'd need to count UTF-8, since that's what
+            // it (and most of ImGui) uses
             if (payload is ITextProvider textPayload) {
-                var textLength = Encoding.UTF8.GetByteCount(textPayload.Text.ReplaceLineEndings("\n"));
+                var textLength = textPayload.Text.ReplaceLineEndings("\n").Length;
 
                 var payloadStart = textOffset;
                 var payloadEnd = textOffset + textLength;
 
                 if (payload is AutoTranslatePayload) {
-                    var lowerInPayload = lower >= (payloadStart + 1) && lower < payloadEnd;
+                    var lowerInPayload = lower >= (payloadStart + 2) && lower < payloadEnd;
                     if (lowerInPayload) {
                         lower = payloadStart;
                     }
 
-                    var higherInPayload = higher >= (payloadStart + 1) && higher < payloadEnd;
+                    var higherInPayload = higher >= (payloadStart + 2) && higher < payloadEnd;
                     if (higherInPayload) {
                         higher = payloadEnd;
+                    }
+
+                    // Move the cursor fully to the start/end of the payload
+                    var cursorInPayload = cursor >= (payloadStart + 1) && cursor < payloadEnd;
+                    if (cursorInPayload) {
+                        var cursorMovingForward = previousCursorPos == null || cursor > previousCursorPos;
+                        if (cursorMovingForward) {
+                            textState->Stb.Cursor = payloadEnd;
+                        } else {
+                            textState->Stb.Cursor = payloadStart;
+                        }
                     }
                 }
 
@@ -186,7 +203,14 @@ public class SeStringInputTextMultiline {
             }
         }
 
-        if (startPos <= endPos) { return (lower, higher); }
-        else { return (higher, lower); }
+        previousCursorPos = textState->Stb.Cursor;
+
+        if (startPos <= endPos) {
+            textState->Stb.SelectStart = lower;
+            textState->Stb.SelectEnd = higher;
+        } else {
+            textState->Stb.SelectStart = higher;
+            textState->Stb.SelectEnd = lower;
+        }
     }
 }
