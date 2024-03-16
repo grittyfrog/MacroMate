@@ -71,7 +71,14 @@ public unsafe class VanillaMacroManager : IDisposable {
             var macro = new RaptureMacroModule.Macro();
 
             foreach (var (line, index) in macroText.SplitIntoLines().WithIndex()) {
-                macro.LinesSpan[index].SetString(line.Encode());
+                var encoded = line.Encode();
+                if (encoded.Length == 0) {
+                    // Vanilla macros stop on empty lines, and so will we.
+                    //
+                    // (Also attempting to run an empty line causes a memory access violation)
+                    break;
+                }
+                macro.LinesSpan[index].SetString(encoded);
             }
 
             raptureShellModule->ExecuteMacro(&macro);
