@@ -3,7 +3,6 @@ using System.Linq;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -71,11 +70,13 @@ public unsafe class VanillaMacroManager : IDisposable {
             var macro = new RaptureMacroModule.Macro();
 
             foreach (var (line, index) in macroText.SplitIntoLines().WithIndex()) {
+                // If we run into an empty or invalid line we just stop.
+                if (line.Payloads.Count == 0 || line.Encode().Length == 0) {
+                    break;
+                }
+
                 var encoded = line.Encode();
-                if (encoded.Length == 0) {
-                    // Vanilla macros stop on empty lines, and so will we.
-                    //
-                    // (Also attempting to run an empty line causes a memory access violation)
+                if (encoded.Length == 0 || encoded.Any(c => c == 0)) {
                     break;
                 }
                 macro.LinesSpan[index].SetString(encoded);
