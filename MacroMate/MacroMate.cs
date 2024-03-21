@@ -25,17 +25,17 @@ public class MacroMate {
     public bool CanLoadConfig() => Env.SaveManager.CanLoad();
 
     public void LoadConfig() {
-        var savedRoot = Env.SaveManager.Load();
-        if (savedRoot != null) {
-            Env.MacroConfig.Root = savedRoot;
+        var savedConfig = Env.SaveManager.Load();
+        if (savedConfig != null) {
+            Env.MacroConfig.OverwiteFrom(savedConfig);
         }
     }
 
     public void LoadBackup(FileInfo backup) {
-        var backupRoot = Env.SaveManager.LoadFrom(backup);
-        if (backupRoot != null) {
-            Env.MacroConfig.Root = backupRoot;
-            Env.SaveManager.Save(Env.MacroConfig.Root);
+        var backupConfig = Env.SaveManager.LoadFrom(backup);
+        if (backupConfig != null) {
+            Env.MacroConfig.OverwiteFrom(backupConfig);
+            Env.SaveManager.Save(Env.MacroConfig);
             Refresh(Env.ConditionManager.CurrentConditions());
         }
     }
@@ -60,7 +60,7 @@ public class MacroMate {
             // We want to bind any inactive macro links to something so the button doesn't disappear off
             // the hotbar,
             var inactiveMacro = new VanillaMacro(
-                IconId: VanillaMacro.InactiveIconId,
+                IconId: Env.MacroConfig.LinkPlaceholderIconId,
                 Title: "Inactive",
                 LineCount: 1,
                 Lines: new(() => "/echo No active macro")
@@ -89,7 +89,7 @@ public class MacroMate {
     }
 
     private void OnConfigChange() {
-        Env.SaveManager.Save(Env.MacroConfig.Root);
+        Env.SaveManager.Save(Env.MacroConfig);
 
         Refresh(Env.ConditionManager.CurrentConditions());
     }

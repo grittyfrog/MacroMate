@@ -43,14 +43,14 @@ public class SaveManager {
             .ToList();
     }
 
-    public void Save(MateNode root) {
+    public void Save(MacroConfig config) {
         SaveTimedBackup();
 
         // Write to an empty file then copy it over the existing one.
         //
         // This helps prevent issues when the save fails, since we won't
         // corrup the users existing save file.
-        MacroMateSerializerV1.Write(root, MacroDataSaveAttemptFile);
+        MacroMateSerializerV1.Write(config, MacroDataSaveAttemptFile);
         File.Move(MacroDataSaveAttemptFile.FullName, MacroDataFile.FullName, overwrite: true);
     }
 
@@ -98,9 +98,9 @@ public class SaveManager {
     public bool CanBackup() => MacroDataFile.Exists;
 
     public bool CanLoad() => MacroDataFile.Exists;
-    public MateNode? Load() => LoadFrom(MacroDataFile);
+    public MacroConfig? Load() => LoadFrom(MacroDataFile);
 
-    public MateNode? LoadFrom(FileInfo file) {
+    public MacroConfig? LoadFrom(FileInfo file) {
         if (!file.Exists) { return null; }
         return MacroMateSerializerV1.Read(file);
     }

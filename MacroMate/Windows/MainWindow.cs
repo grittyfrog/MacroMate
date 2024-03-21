@@ -17,6 +17,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using MacroMate.Serialization.V1;
 using MacroMate.Extensions.Dalamud;
+using MacroMate.Extensions.Dalamud.Macros;
 
 namespace MacroMate.Windows;
 
@@ -91,6 +92,7 @@ public class MainWindow : Window, IDisposable {
     private void DrawMenuBar() {
         var newGroupPopupId = DrawNewGroupPopup(Env.MacroConfig.Root);
         var importPopupId = DrawImportPopup(Env.MacroConfig.Root);
+        var linkPlaceholderIconScope = LinkPlaceholderIconPicker();
 
         if (ImGui.BeginMenuBar()) {
             if (ImGui.BeginMenu("New")) {
@@ -112,6 +114,28 @@ public class MainWindow : Window, IDisposable {
             if (ImGui.IsItemHovered()) {
                 var editModeState = editMode ? "Enabled" : "Disabled";
                 ImGui.SetTooltip($"Toggle Edit Mode, which can be used to to edit multiple macros at once ({editModeState})");
+            }
+
+            if (ImGui.BeginMenu("Settings")) {
+                ImGui.BeginGroup();
+                if (ImGui.MenuItem("Link Placeholder Icon")) {
+                    Env.PluginWindowManager.IconPicker.ShowOrFocus(linkPlaceholderIconScope);
+                }
+                ImGui.SameLine();
+                var macroIcon = Env.TextureProvider.GetIcon(Env.MacroConfig.LinkPlaceholderIconId);
+                if (macroIcon != null) {
+                    ImGui.Image(macroIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(ImGui.GetTextLineHeight()));
+                    ImGui.SameLine();
+                }
+                ImGui.EndGroup();
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip("Select the icon used for macro slots that are managed by Macro Mate but currently unlinked (right click to reset to default)");
+                }
+                if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
+                    Env.MacroConfig.LinkPlaceholderIconId = VanillaMacro.InactiveIconId;
+                }
+
+                ImGui.EndMenu();
             }
 
             if (ImGui.MenuItem("Backups")) {
@@ -722,5 +746,16 @@ public class MainWindow : Window, IDisposable {
                 editModeMacroSelection.Remove(nodeId);
             }
         }
+    }
+
+    private string LinkPlaceholderIconPicker() {
+        var iconPicker = Env.PluginWindowManager.IconPicker;
+        var iconPickerScope = "main_window_link_placeholder_icon_picker";
+
+        while (iconPicker.TryDequeueEvent(iconPickerScope, out uint selectedIconId)) {
+            Env.MacroConfig.LinkPlaceholderIconId = selectedIconId;
+        }
+
+        return iconPickerScope;
     }
 }

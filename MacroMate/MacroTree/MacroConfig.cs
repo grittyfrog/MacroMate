@@ -12,6 +12,16 @@ namespace MacroMate.MacroTree;
  * Provides the mechanism to add/query/save contextual macros.
  */
 public class MacroConfig {
+    /// The icon used by inactive placeholder macros
+    private uint _linkPlaceholderIconId = VanillaMacro.InactiveIconId;
+    public uint LinkPlaceholderIconId {
+        get { return _linkPlaceholderIconId; }
+        set {
+            _linkPlaceholderIconId = value;
+            NotifyEdit();
+        }
+    }
+
     private MateNode _root;
     public MateNode Root {
         get { return _root; }
@@ -28,6 +38,13 @@ public class MacroConfig {
 
     public MacroConfig() {
         _root = new MateNode.Group { Name = "Root" };
+    }
+
+    /// We want to update in place to not break other parts of the tree
+    public void OverwiteFrom(MacroConfig other) {
+        this._linkPlaceholderIconId = other.LinkPlaceholderIconId;
+        this._root = other.Root;
+        NotifyEdit();
     }
 
     /// Update ActiveMacros to reflect the current conditions

@@ -14,14 +14,20 @@ public class MacroMateV1XML {
     [XmlAttribute]
     public int ConfigVersion { get; set; } = 1;
 
+    public required uint? LinkPlaceholderIconId { get; set; } = VanillaMacro.InactiveIconId;
+
     [XmlElement("Root", typeof(GroupXML))]
     [XmlElement("RootMacro", typeof(MacroXML))]
     public required MateNodeXML Root { get; set; }
 
-    public MateNode ToReal() => Root.ToReal();
+    public MacroConfig ToReal() => new MacroConfig {
+        LinkPlaceholderIconId = LinkPlaceholderIconId ?? VanillaMacro.InactiveIconId,
+        Root = Root.ToReal(),
+    };
 
-    public static MacroMateV1XML From(MateNode root) => new() {
-        Root = MateNodeXML.From(root)
+    public static MacroMateV1XML From(MacroConfig config) => new() {
+        LinkPlaceholderIconId = config.LinkPlaceholderIconId,
+        Root = MateNodeXML.From(config.Root)
     };
 }
 
