@@ -72,7 +72,7 @@ public unsafe class VanillaMacroManager : IDisposable {
             var macro = new Macro(macroPtr, string.Empty, macroText.Split("\n"));
             Marshal.StructureToPtr(macro, macroPtr, false);
 
-            raptureShellModule->ExecuteMacro((RaptureMacroModule.Macro*)Unsafe.AsRef(macroPtr));
+            raptureShellModule->ExecuteMacro((RaptureMacroModule.Macro*)Unsafe.AsRef(ref macroPtr));
             macro.Dispose();
         } catch (Exception e) {
             Env.PluginLog.Error($"Failed to execute macro {e}");

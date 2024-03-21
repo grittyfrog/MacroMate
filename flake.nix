@@ -21,7 +21,7 @@
           stdenv = pkgs.clangStdenv;
         };
 
-        dotnet = pkgs.dotnet-sdk_7;
+        dotnet = pkgs.dotnet-sdk_8;
 
         # Once nix flakes support zip files with top-level folders we can remove this and just point
         # the flake straight at the zip file.
