@@ -33,7 +33,7 @@ public class MacroConfig {
     /// Update ActiveMacros to reflect the current conditions
     public void ActivateMacrosForConditions(CurrentConditions conditions) {
         var newActiveMacros = new List<MateNode.Macro>();
-        var allocatedSlots = new List<uint>();
+        var allocatedLinks = new List<VanillaMacroLink>();
 
         var macroNodes = Root.Values().SelectNonNull(node => node as MateNode.Macro);
         foreach (var macroNode in macroNodes) {
@@ -41,13 +41,13 @@ public class MacroConfig {
             if (macroNode.Link.IsUnbound()) { continue; }
 
             // If we've already linked a macro in any of the slots this macro wants, skip it
-            if (macroNode.Link.Slots.Any(slot => allocatedSlots.Contains(slot))) {
+            if (macroNode.Link.VanillaMacroLinks().Any(link => allocatedLinks.Contains(link))) {
                 continue;
             }
 
             if (macroNode.SatisfiedBy(conditions)) {
                 newActiveMacros.Add(macroNode);
-                allocatedSlots.AddRange(macroNode.Link.Slots);
+                allocatedLinks.AddRange(macroNode.Link.VanillaMacroLinks());
             }
         }
 
