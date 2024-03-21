@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using Dalamud.Interface.GameFonts;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud;
@@ -51,13 +52,11 @@ public static class MacroLinkEditor {
                 ImGui.TableNextRow();
                 foreach (var col in Enumerable.Range(1, iconColumns)) {
                     ImGui.TableNextColumn();
-                    ImGui.PushFont(Env.FontManager.Axis18.ImFont);
+                    using var _font = Env.FontManager.Axis18.Push();
 
                     if (DrawMacroButtion(macroSlot, ref macroLink)) {
                         edited = true;
                     }
-
-                    ImGui.PopFont();
 
                     macroSlot += 1;
                 }
