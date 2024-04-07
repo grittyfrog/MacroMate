@@ -17,7 +17,7 @@ public class SeStringInputTextMultiline {
     private bool processingPasteEvent = false;
     private Dictionary<string, AutoTranslatePayload> knownTranslationPayloads = new();
     private InputTextDecorator textDecorator = new();
-    private int? previousCursorPos = null;
+    private StbTextEditState? previousCursorState = null;
 
     private unsafe ImGuiInputTextState* TextState =>
         (ImGuiInputTextState*)(ImGui.GetCurrentContext() + ImGuiInputTextState.TextStateOffset);
@@ -159,12 +159,20 @@ public class SeStringInputTextMultiline {
     private unsafe void ApplyAutoTranslateCursorAndSelectionBehaviour(SeString input) {
         var textState = TextState;
         if (textState->Edited) {
-            previousCursorPos = textState->Stb.Cursor;
+            previousCursorState = textState->Stb;
             return;
         }
 
         // These are counted in wchar-positions, rather then UTF8 positions
         var (startPos, endPos, cursor) = textState->SelectionTuple;
+
+        // If our previous selection hasn't changed then we don't need to re-run this logic.
+        //
+        // This also seems to prevent the "backspacing near auto-translate causes it to auto-select" bug, though
+        // I didn't dig deep enough to be sure of why
+        if (previousCursorState != null && previousCursorState.Value.Cursor == cursor &&
+            previousCursorState.Value.SelectStart == startPos && previousCursorState.Value.SelectEnd == endPos
+        ) { return; }
 
         var lower = startPos <= endPos ? startPos : endPos;
         var higher = startPos <= endPos ? endPos : startPos;
@@ -196,7 +204,7 @@ public class SeStringInputTextMultiline {
                     // Move the cursor fully to the start/end of the payload
                     var cursorInPayload = cursor >= (payloadStart + 1) && cursor < payloadEnd;
                     if (cursorInPayload) {
-                        var cursorMovingForward = previousCursorPos == null || cursor > previousCursorPos;
+                        var cursorMovingForward = previousCursorState == null || cursor > previousCursorState.Value.Cursor;
                         if (cursorMovingForward) {
                             textState->Stb.Cursor = payloadEnd;
                         } else {
@@ -209,7 +217,7 @@ public class SeStringInputTextMultiline {
             }
         }
 
-        previousCursorPos = textState->Stb.Cursor;
+        previousCursorState = textState->Stb;
 
         if (startPos <= endPos) {
             textState->Stb.SelectStart = lower;
