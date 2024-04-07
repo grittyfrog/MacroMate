@@ -60,6 +60,12 @@ public class SeStringInputTextMultiline {
                     processingPasteEvent = true;
                 }
 
+                // ImGui "Start" and "End" can be in either direction depending on the direction of selection,
+                // so we normalize it to make the cut/copy/paste code easier
+                var lower = data->SelectionStart <= data->SelectionEnd ? data->SelectionStart : data->SelectionEnd;
+                var higher = data->SelectionStart <= data->SelectionEnd ? data->SelectionEnd : data->SelectionStart;
+                var selectionLength = higher - lower;
+
                 // We've finished supressing the paste events
                 if (processingPasteEvent && !isPasting) {
                     var clipboardUtf8 = ClipboardEx.GetPayloadEnabledClipboardString();
@@ -69,6 +75,10 @@ public class SeStringInputTextMultiline {
                         IndexPayloads(payloadEnabledClipboardText);
 
                         var ptr = new ImGuiInputTextCallbackDataPtr(data);
+
+                        if (selectionLength > 0) {
+                            ptr.DeleteChars(lower, selectionLength);
+                        }
                         ptr.InsertChars(data->CursorPos, payloadEnabledClipboardText.TextValue.ReplaceLineEndings("\n"));
                         processingPasteEvent = false;
                     }
@@ -78,10 +88,6 @@ public class SeStringInputTextMultiline {
                 // also copy the relevant SeString parts to the in-game clipboard so they can be pasted to
                 // SeStringInputTextMultiline or in-game windows.
                 if (isCut || isCopy) {
-                    var lower = data->SelectionStart <= data->SelectionEnd ? data->SelectionStart : data->SelectionEnd;
-                    var higher = data->SelectionStart <= data->SelectionEnd ? data->SelectionEnd : data->SelectionStart;
-                    var selectionLength = higher - lower;
-
                     var bytes = new Span<byte>(data->Buf, data->BufTextLen);
                     var selectedBytes = bytes.Slice(lower, selectionLength);
                     var selectedText = Encoding.UTF8.GetString(selectedBytes);
