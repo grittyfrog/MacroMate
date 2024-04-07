@@ -16,7 +16,7 @@ public record class VanillaMacro(
     public static uint MaxNameLength = 20;
 
     public static uint DefaultIconId = 66001; // Default "M" Icon
-    public static uint InactiveIconId = 60861; // A red cross
+    public static uint InactiveIconId = 60042; // A subtle grey question mark
 
     public static VanillaMacro Empty => new VanillaMacro(
         IconId: DefaultIconId,
