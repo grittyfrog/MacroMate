@@ -111,12 +111,14 @@ public class SeStringInputTextMultiline {
             flags,
             decoratedCallback
         );
-        var decorations = GetDecorations(input);
-        textDecorator.DecorateInputText(label, ref text, size, decorations);
+
         if (result) {
             input = SeStringEx.ParseFromText(text, knownTranslationPayloads);
             edited = true;
         }
+
+        var decorations = GetDecorations(input);
+        textDecorator.DecorateInputText(label, ref text, size, decorations);
 
         // We apply cursor/selection adjustment after parsing `input` in case it has changed.
         ApplyAutoTranslateCursorAndSelectionBehaviour(input);
@@ -158,10 +160,6 @@ public class SeStringInputTextMultiline {
     /// Returns the new cursor position, selection start and selection end respectively
     private unsafe void ApplyAutoTranslateCursorAndSelectionBehaviour(SeString input) {
         var textState = TextState;
-        if (textState->Edited) {
-            previousCursorState = textState->Stb;
-            return;
-        }
 
         // These are counted in wchar-positions, rather then UTF8 positions
         var (startPos, endPos, cursor) = textState->SelectionTuple;
@@ -170,9 +168,13 @@ public class SeStringInputTextMultiline {
         //
         // This also seems to prevent the "backspacing near auto-translate causes it to auto-select" bug, though
         // I didn't dig deep enough to be sure of why
-        if (previousCursorState != null && previousCursorState.Value.Cursor == cursor &&
-            previousCursorState.Value.SelectStart == startPos && previousCursorState.Value.SelectEnd == endPos
-        ) { return; }
+        //
+        // If we've release the mouse button we also want to keep going, since we might have released in the middle
+        // of an auto-translate and now want to widen our selection (which we supressed earlier to avoid a "bouncy" selection)
+        var cursorOrSelectionChanged = previousCursorState == null || previousCursorState.Value.Cursor != cursor && previousCursorState.Value.SelectStart != startPos && previousCursorState.Value.SelectEnd != endPos;
+        if (!cursorOrSelectionChanged && !ImGui.IsMouseReleased(ImGuiMouseButton.Left)) {
+            return;
+        }
 
         var lower = startPos <= endPos ? startPos : endPos;
         var higher = startPos <= endPos ? endPos : startPos;
@@ -200,17 +202,6 @@ public class SeStringInputTextMultiline {
                     if (higherInPayload) {
                         higher = payloadEnd;
                     }
-
-                    // Move the cursor fully to the start/end of the payload
-                    var cursorInPayload = cursor >= (payloadStart + 1) && cursor < payloadEnd;
-                    if (cursorInPayload) {
-                        var cursorMovingForward = previousCursorState == null || cursor > previousCursorState.Value.Cursor;
-                        if (cursorMovingForward) {
-                            textState->Stb.Cursor = payloadEnd;
-                        } else {
-                            textState->Stb.Cursor = payloadStart;
-                        }
-                    }
                 }
 
                 textOffset = payloadEnd;
@@ -222,9 +213,11 @@ public class SeStringInputTextMultiline {
         if (startPos <= endPos) {
             textState->Stb.SelectStart = lower;
             textState->Stb.SelectEnd = higher;
+            textState->Stb.Cursor = higher;
         } else {
             textState->Stb.SelectStart = higher;
             textState->Stb.SelectEnd = lower;
+            textState->Stb.Cursor = lower;
         }
     }
 }
