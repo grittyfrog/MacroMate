@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Text;
 using Dalamud.Interface.Windowing;
@@ -56,7 +55,13 @@ executed in 15-line chunks, and longer macros will need to be linked to multiple
 Macro Mate is not designed for conditional combat actions. Conditions that are primarily
 used for dynamically swapping combat actions are out of scope and will not be introduced in this
 plugin.
-        ");
+
+
+Auto Translation
+===
+Auto translate text can be copied/pasted from the base game into Macro Mate, and from Macro Mate into the base game.
+
+At this time tab completion is not supported, it may be supported in a future update.");
     }
 
     /**
@@ -75,7 +80,7 @@ plugin.
 
         // Find all the double-newlines and replace them with "\n" so we don't
         // need to do any lookahead in our normal loop
-        var linesCollapsed = lines.Zip(lines.Skip(1), (line, nextLine) => line == "" && nextLine == "" ? "\n" : line);
+        var linesCollapsed = lines.Zip(lines.Skip(1).Append(""), (line, nextLine) => line == "" && nextLine == "" ? "\n" : line);
 
         var currentText = new StringBuilder(); // Accumulate text until we hit a newline or special char
         foreach (var line in linesCollapsed) {
