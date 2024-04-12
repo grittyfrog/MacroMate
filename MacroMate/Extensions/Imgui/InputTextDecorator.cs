@@ -30,6 +30,20 @@ public class InputTextDecorator {
             ImGui.EndChild();
         }
 
+        // Prevent showing misplaced decorations when:
+        //
+        // 1. Put a decoration on some horizontally off-screen text (i.e. later in a long line)
+        // 2. Scroll so the decoration is visible
+        // 3. Click off the window
+        //
+        // Without this code, the scroll will be reset but the decoration will still be drawn. This
+        // is because the scroll position in TextState remains set when unfocused, but the actual
+        // visible scroll is reset.
+        if (!ImGui.IsItemFocused()) {
+            scroll.X = 0;
+        }
+
+
         ImGui.BeginChild(label);
         var drawList = ImGui.GetWindowDrawList();
         ImGui.EndChild();
