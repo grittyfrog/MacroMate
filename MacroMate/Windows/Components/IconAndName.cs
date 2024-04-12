@@ -23,12 +23,11 @@ public static class IconAndName {
         if (icon != null) {
             ImGui.Image(icon.ImGuiHandle, iconSize);
             if (ImGui.IsItemClicked()) {
-                iconPicker.ShowOrFocus(macro.Id.ToString(), macro.IconId);
+                Env.PluginWindowManager.IconPicker.Open(macro.IconId, selectedIconId => {
+                    macro.IconId = selectedIconId;
+                    Env.MacroConfig.NotifyEdit();
+                });
             }
-        }
-        while (iconPicker.TryDequeueEvent(macro.Id.ToString(), out uint selectedIconId)) {
-            macro.IconId = selectedIconId;
-            edited = true;
         }
 
         ImGui.SameLine();

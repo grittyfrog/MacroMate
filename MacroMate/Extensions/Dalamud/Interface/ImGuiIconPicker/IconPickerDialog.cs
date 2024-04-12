@@ -2,19 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Windowing;
 using ImGuiNET;
-using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Icons;
 using MacroMate.Extensions.Dalamud.Texture;
 
-namespace MacroMate.Windows;
+namespace MacroMate.Extensions.Dalamud.Interface.ImGuiIconPicker;
 
 /// Class to pick the icon for a macro.
 ///
 /// Inspirations:
 /// - QoLBar's IconBrowser: https://github.com/UnknownX7/QoLBar/blob/f80d64ab064e4e7574a42b2efc678beebdcb1af9/UI/IconBrowserUI.cs
 /// - Dalamud's IconBrowserWidget: https://github.com/goatcorp/Dalamud/blob/deef16cdd742ca9faa403e388602795e9d3b54e9/Dalamud/Interface/Internal/Windows/Data/Widgets/IconBrowserWidget.cs#L16
-public class IconPicker : EventWindow<uint>, IDisposable {
+public class IconPickerDialog : Window, IDisposable {
     private record struct IconTab(
         string Name,
         List<IconGroup> IconGroups
@@ -22,6 +22,7 @@ public class IconPicker : EventWindow<uint>, IDisposable {
 
     public static readonly string NAME = "Icon Picker";
 
+    private Action<uint>? Callback { get; set; }
     private uint? CurrentIconId { get; set; }
 
     private TextureCache TextureCache = new(Env.TextureProvider);
@@ -41,7 +42,7 @@ public class IconPicker : EventWindow<uint>, IDisposable {
 
     private bool showIconNames = false;
 
-    public IconPicker() : base(NAME, ImGuiWindowFlags.NoScrollbar) {
+    public IconPickerDialog() : base(NAME, ImGuiWindowFlags.NoScrollbar) {
         this.SizeConstraints = new WindowSizeConstraints {
             MinimumSize = new Vector2(375, 330),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
@@ -65,10 +66,15 @@ public class IconPicker : EventWindow<uint>, IDisposable {
         TextureCache.Clear();
     }
 
-    public void ShowOrFocus(string scopeName, uint? initialIcon = null) {
+    public void Open(Action<uint> callback) => Open(null, callback);
+    public void Open(uint? initialIcon, Action<uint> callback) {
         CurrentIconId = initialIcon;
-        CurrentEventScope = scopeName;
-        Env.PluginWindowManager.ShowOrFocus(this);
+        Callback = callback;
+        if (!IsOpen) {
+            IsOpen = true;
+        } else {
+            ImGui.SetWindowFocus(WindowName);
+        }
     }
 
     public void Dispose() {
@@ -77,7 +83,6 @@ public class IconPicker : EventWindow<uint>, IDisposable {
 
     public override void Draw() {
         float iconSize = 48 * ImGuiHelpers.GlobalScale;
-
 
         if (ImGui.BeginTable("icon_picker_layout_table", 2, ImGuiTableFlags.Resizable)) {
             ImGui.TableSetupColumn("CategoryTree", ImGuiTableColumnFlags.WidthFixed, 150.0f);
@@ -201,9 +206,10 @@ public class IconPicker : EventWindow<uint>, IDisposable {
                 }
                 ImGui.EndTooltip();
             }
-            if (ImGui.IsItemClicked() && CurrentEventScope != null) {
+            if (ImGui.IsItemClicked() && Callback != null) {
                 CurrentIconId = namedIcon.IconId;
-                EnqueueEvent(namedIcon.IconId);
+                Callback(namedIcon.IconId);
+                this.Callback = null;
                 this.IsOpen = false;
             }
         }, columns, lineHeight);

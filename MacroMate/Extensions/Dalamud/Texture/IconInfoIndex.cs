@@ -256,6 +256,12 @@ public class IconInfoIndex {
     }
 
     private void ApplyGamedataIconInfo() {
+        // Ignored: Addon / AddonTransient
+        // Ignored: "AnimaWeaponIcon"?
+        // Ignored: "CharaMakeCustomize"
+        // Ignored: "EventCustomIconType"
+        // Ignored: "Frontline03"
+
         ApplyIconNamesFrom<FFXIVAction>(
             (row) => row.Icon,
             (row) => new[] { row.Name, row.ClassJob.Value?.Name, row.ActionCategory.Value?.Name }
@@ -594,11 +600,6 @@ public class IconInfoIndex {
     }
 
     private void IndexWeird() {
-        // TODO: Addon / AddonTransient (parse the strings?)
-        // TODO: "AnimaWeaponIcon"?
-        // TODO: "CharaMakeCustomize" (maybe)
-        // TODO: "EventCustomIconType"
-        // TODO: "Frontline03" (maybe)
     }
 
 

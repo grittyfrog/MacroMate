@@ -92,7 +92,6 @@ public class MainWindow : Window, IDisposable {
     private void DrawMenuBar() {
         var newGroupPopupId = DrawNewGroupPopup(Env.MacroConfig.Root);
         var importPopupId = DrawImportPopup(Env.MacroConfig.Root);
-        var linkPlaceholderIconScope = LinkPlaceholderIconPicker();
 
         if (ImGui.BeginMenuBar()) {
             if (ImGui.BeginMenu("New")) {
@@ -119,7 +118,9 @@ public class MainWindow : Window, IDisposable {
             if (ImGui.BeginMenu("Settings")) {
                 ImGui.BeginGroup();
                 if (ImGui.MenuItem("Link Placeholder Icon")) {
-                    Env.PluginWindowManager.IconPicker.ShowOrFocus(linkPlaceholderIconScope);
+                    Env.PluginWindowManager.IconPicker.Open(Env.MacroConfig.LinkPlaceholderIconId, selectedIconId => {
+                        Env.MacroConfig.LinkPlaceholderIconId = selectedIconId;
+                    });
                 }
                 ImGui.SameLine();
                 var macroIcon = Env.TextureProvider.GetIcon(Env.MacroConfig.LinkPlaceholderIconId);
@@ -151,16 +152,20 @@ public class MainWindow : Window, IDisposable {
     }
 
     private void DrawEditModeActions() {
-        var iconPicker = Env.PluginWindowManager.IconPicker;
-        var iconPickerScope = "main_window_edit_mode_icon_picker";
-
         var macroLinkPicker = Env.PluginWindowManager.MacroLinkPicker;
         var macroLinkPickerScope = "main_window_edit_mode_macro_link_picker";
 
         // Edit Buttons (if in edit mode)
         if (editMode) {
             if (ImGui.Button("Set Icon")) {
-                iconPicker.ShowOrFocus(iconPickerScope);
+                Env.PluginWindowManager.IconPicker.Open(selectedIconId => {
+                    foreach (var macro in Env.MacroConfig.Root.Values().OfType<MateNode.Macro>()) {
+                        if (editModeMacroSelection.Contains(macro.Id)) {
+                            macro.IconId = selectedIconId;
+                        }
+                    }
+                    Env.MacroConfig.NotifyEdit();
+                });
             };
             if (ImGui.IsItemHovered()) {
                 ImGui.SetTooltip("Set the icon of all selected macros");
@@ -174,15 +179,6 @@ public class MainWindow : Window, IDisposable {
             if (ImGui.IsItemHovered()) {
                 ImGui.SetTooltip("Set the link of all selected macros");
             }
-        }
-
-        while (iconPicker.TryDequeueEvent(iconPickerScope, out uint selectedIconId)) {
-            foreach (var macro in Env.MacroConfig.Root.Values().OfType<MateNode.Macro>()) {
-                if (editModeMacroSelection.Contains(macro.Id)) {
-                    macro.IconId = selectedIconId;
-                }
-            }
-            Env.MacroConfig.NotifyEdit();
         }
 
         while (macroLinkPicker.TryDequeueEvent(macroLinkPickerScope, out MacroLink? link)) {
@@ -746,16 +742,5 @@ public class MainWindow : Window, IDisposable {
                 editModeMacroSelection.Remove(nodeId);
             }
         }
-    }
-
-    private string LinkPlaceholderIconPicker() {
-        var iconPicker = Env.PluginWindowManager.IconPicker;
-        var iconPickerScope = "main_window_link_placeholder_icon_picker";
-
-        while (iconPicker.TryDequeueEvent(iconPickerScope, out uint selectedIconId)) {
-            Env.MacroConfig.LinkPlaceholderIconId = selectedIconId;
-        }
-
-        return iconPickerScope;
     }
 }
