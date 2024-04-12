@@ -80,8 +80,8 @@ public class InputTextDecorator {
         int textPos
     ) {
         var font = ImGui.GetFont();
+        var fontScale = ImGui.GetIO().FontGlobalScale;
         float lineHeight = ImGui.GetFontSize();
-        float scale = lineHeight / font.FontSize;
 
         Vector2 textSize = new Vector2(0, 0);
         float lineWidth = 0.0f;
@@ -104,7 +104,7 @@ public class InputTextDecorator {
             // ImGui.NET doesn't allow us to pass 32-bit wchar like the native implementation does, so instead
             // we need to account for surrogate pairs ourselves or the width gets misaligned
             // 0xE0F0 0x00BB   0xE0F00BB
-            float charWidth = font.GetCharAdvance((ushort)c);
+            float charWidth = font.GetCharAdvance((ushort)c) * fontScale;
             lineWidth += charWidth;
         }
 
