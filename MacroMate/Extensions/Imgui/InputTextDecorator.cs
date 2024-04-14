@@ -39,10 +39,9 @@ public class InputTextDecorator {
         // Without this code, the scroll will be reset but the decoration will still be drawn. This
         // is because the scroll position in TextState remains set when unfocused, but the actual
         // visible scroll is reset.
-        if (!ImGui.IsItemFocused()) {
+        if (!ImGui.IsItemActive()) {
             scroll.X = 0;
         }
-
 
         ImGui.BeginChild(label);
         var drawList = ImGui.GetWindowDrawList();
