@@ -16,7 +16,7 @@ namespace MacroMate.Extensions.Dalamud.Interface.ImGuiIconPicker;
 ///
 /// The sheets for this index are hand-selected so it may not be exhaustive,
 /// but it covers most of the game icons.
-public class IconInfoIndex {
+public class IconPickerIndex {
     /// The full range of icons that we will try and explore.
     private List<int> iconRange = Enumerable.Range(0, 200000).ToList();
 
@@ -34,7 +34,7 @@ public class IconInfoIndex {
 
     public IndexState State { get; private set; } = IndexState.UNINDEXED;
 
-    public IconInfoIndex() {}
+    public IconPickerIndex() {}
 
     public void StartIndexing(System.Action onFinish) {
         if (State != IndexState.UNINDEXED) { return; }

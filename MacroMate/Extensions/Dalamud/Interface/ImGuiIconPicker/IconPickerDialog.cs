@@ -19,7 +19,7 @@ public class IconPickerDialog : Window, IDisposable {
     private uint? CurrentIconId { get; set; }
 
     private IconPickerConcurrentIconLoader TextureLoader = new(Env.TextureProvider);
-    private IconInfoIndex iconInfoIndex = new();
+    private IconPickerIndex iconInfoIndex = new();
 
     private string searchText = "";
     private List<IconInfo> searchedIconInfo = new();
@@ -116,7 +116,7 @@ public class IconPickerDialog : Window, IDisposable {
             ImGui.TableNextColumn();
             ImGui.BeginChild("Search##IconList");
             var columns = (int)((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().WindowPadding.X) / (iconSize + ImGui.GetStyle().ItemSpacing.X));
-            if (iconInfoIndex.State == IconInfoIndex.IndexState.INDEXED) {
+            if (iconInfoIndex.State == IconPickerIndex.IndexState.INDEXED) {
                 DrawSearchResults(iconSize, columns);
             } else {
                 var spinner = "|/-\\"[(int)(ImGui.GetTime() / 0.05f) % 3];
