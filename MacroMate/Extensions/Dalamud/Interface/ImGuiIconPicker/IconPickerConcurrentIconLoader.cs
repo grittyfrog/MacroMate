@@ -6,7 +6,12 @@ using Dalamud.Plugin.Services;
 
 namespace MacroMate.Extensions.Dalamud;
 
-public class IconPickerTextureCache : IDisposable {
+/// Loading more then a handlful of icons in the same frame causes UI lag when scrolling
+///
+/// This class can be used to load icons in a buffered way, making the UI experience smoother
+///
+/// Probably won't be needed after https://github.com/goatcorp/Dalamud/pull/1676
+public class IconPickerConcurrentIconLoader : IDisposable {
     private ITextureProvider textureProvider;
 
     /// The number of active loading tasks.
@@ -18,7 +23,7 @@ public class IconPickerTextureCache : IDisposable {
     private readonly ConcurrentDictionary<uint, bool> loading = new();
     private readonly ConcurrentDictionary<uint, IDalamudTextureWrap> icons = new();
 
-    public IconPickerTextureCache(ITextureProvider textureProvider) {
+    public IconPickerConcurrentIconLoader(ITextureProvider textureProvider) {
         this.textureProvider = textureProvider;
         Env.Framework.Update += Update;
     }
@@ -77,6 +82,6 @@ public class IconPickerTextureCache : IDisposable {
             return icon;
         }
 
-        return textureProvider.GetIcon(defaultValue, keepAlive: true);
+        return textureProvider.GetIcon(defaultValue);
     }
 }

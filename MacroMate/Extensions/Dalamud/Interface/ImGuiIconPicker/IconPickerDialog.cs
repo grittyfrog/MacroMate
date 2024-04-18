@@ -24,7 +24,7 @@ public class IconPickerDialog : Window, IDisposable {
     private Action<uint>? Callback { get; set; }
     private uint? CurrentIconId { get; set; }
 
-    private IconPickerTextureCache TextureCache = new(Env.TextureProvider);
+    private IconPickerConcurrentIconLoader TextureLoader = new(Env.TextureProvider);
     private IconInfoIndex iconInfoIndex = new();
 
     private string searchText = "";
@@ -62,7 +62,7 @@ public class IconPickerDialog : Window, IDisposable {
 
     public override void OnClose() {
         base.OnClose();
-        TextureCache.Clear();
+        TextureLoader.Clear();
     }
 
     public void Open(Action<uint> callback) => Open(null, callback);
@@ -77,7 +77,7 @@ public class IconPickerDialog : Window, IDisposable {
     }
 
     public void Dispose() {
-        TextureCache.Dispose();
+        TextureLoader.Dispose();
     }
 
     public override void Draw() {
@@ -172,7 +172,7 @@ public class IconPickerDialog : Window, IDisposable {
     private void DrawSearchResults(float iconSize, int columns) {
         var lineHeight = iconSize + ImGui.GetStyle().ItemSpacing.Y;
         ImGuiClip.ClippedDraw(searchedIconInfo, (namedIcon) => {
-            var icon = TextureCache.GetIcon(namedIcon.IconId)!;
+            var icon = TextureLoader.GetIcon(namedIcon.IconId)!;
             ImGui.Image(
                 icon.ImGuiHandle,
                 new Vector2(iconSize),
