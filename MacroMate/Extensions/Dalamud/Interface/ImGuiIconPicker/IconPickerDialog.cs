@@ -4,7 +4,6 @@ using System.Numerics;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
-using MacroMate.Extensions.Dalamud.Icons;
 
 namespace MacroMate.Extensions.Dalamud.Interface.ImGuiIconPicker;
 
@@ -14,11 +13,6 @@ namespace MacroMate.Extensions.Dalamud.Interface.ImGuiIconPicker;
 /// - QoLBar's IconBrowser: https://github.com/UnknownX7/QoLBar/blob/f80d64ab064e4e7574a42b2efc678beebdcb1af9/UI/IconBrowserUI.cs
 /// - Dalamud's IconBrowserWidget: https://github.com/goatcorp/Dalamud/blob/deef16cdd742ca9faa403e388602795e9d3b54e9/Dalamud/Interface/Internal/Windows/Data/Widgets/IconBrowserWidget.cs#L16
 public class IconPickerDialog : Window, IDisposable {
-    private record struct IconTab(
-        string Name,
-        List<IconGroup> IconGroups
-    ) {}
-
     public static readonly string NAME = "Icon Picker";
 
     private Action<uint>? Callback { get; set; }
