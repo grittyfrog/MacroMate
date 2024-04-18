@@ -6,7 +6,7 @@ using Dalamud.Plugin.Services;
 
 namespace MacroMate.Extensions.Dalamud;
 
-public class TextureCache : IDisposable {
+public class IconPickerTextureCache : IDisposable {
     private ITextureProvider textureProvider;
 
     /// The number of active loading tasks.
@@ -18,7 +18,7 @@ public class TextureCache : IDisposable {
     private readonly ConcurrentDictionary<uint, bool> loading = new();
     private readonly ConcurrentDictionary<uint, IDalamudTextureWrap> icons = new();
 
-    public TextureCache(ITextureProvider textureProvider) {
+    public IconPickerTextureCache(ITextureProvider textureProvider) {
         this.textureProvider = textureProvider;
         Env.Framework.Update += Update;
     }

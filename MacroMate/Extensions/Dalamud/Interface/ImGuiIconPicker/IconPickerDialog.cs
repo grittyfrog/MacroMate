@@ -25,7 +25,7 @@ public class IconPickerDialog : Window, IDisposable {
     private Action<uint>? Callback { get; set; }
     private uint? CurrentIconId { get; set; }
 
-    private TextureCache TextureCache = new(Env.TextureProvider);
+    private IconPickerTextureCache TextureCache = new(Env.TextureProvider);
     private IconInfoIndex iconInfoIndex = new();
 
     private string searchText = "";
