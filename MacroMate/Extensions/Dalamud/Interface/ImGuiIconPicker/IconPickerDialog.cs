@@ -5,7 +5,6 @@ using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud.Icons;
-using MacroMate.Extensions.Dalamud.Texture;
 
 namespace MacroMate.Extensions.Dalamud.Interface.ImGuiIconPicker;
 

@@ -10,7 +10,7 @@ using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.Lumina;
 using FFXIVAction = Lumina.Excel.GeneratedSheets.Action;
 
-namespace MacroMate.Extensions.Dalamud.Texture;
+namespace MacroMate.Extensions.Dalamud.Interface.ImGuiIconPicker;
 
 /// Stores an index of most "Named" icons.
 ///
