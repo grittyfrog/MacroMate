@@ -105,6 +105,10 @@ public class Env {
     [RequiredVersion("1.0")]
     public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
 
+    [PluginService]
+    [RequiredVersion("1.0")]
+    public static Dalamud.Plugin.Services.ICondition PlayerCondition { get; private set; } = null!;
+
     public static WindowSystem WindowSystem { get; private set; } = null!;
 
     public static Random Random { get; private set; } = null!;

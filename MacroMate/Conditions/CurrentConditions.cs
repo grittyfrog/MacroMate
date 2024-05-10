@@ -7,7 +7,8 @@ public record CurrentConditions(
     LocationCondition? location = null,
     TargetNameCondition? targetNpc = null,
     JobCondition? job = null,
-    PvpStateCondition? pvpState = null
+    PvpStateCondition? pvpState = null,
+    PlayerConditionCondition? playerCondition = null
 ) {
     public static CurrentConditions Empty => new CurrentConditions();
 
@@ -17,6 +18,6 @@ public record CurrentConditions(
         if (targetNpc != null) { yield return targetNpc; }
         if (job != null) { yield return job; }
         if (pvpState != null) { yield return pvpState; }
+        if (playerCondition != null) { yield return playerCondition; }
     }
 }
-

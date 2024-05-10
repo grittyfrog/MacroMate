@@ -21,8 +21,6 @@ public record class PvpStateCondition(PvpStateCondition.State state) : IConditio
 
     public PvpStateCondition() : this(State.IN_PVP) {}
 
-    public ICondition.IFactory FactoryRef => throw new System.NotImplementedException();
-
     public bool SatisfiedBy(ICondition other) {
         var otherPvpState = other as PvpStateCondition;
         if (otherPvpState == null) { return false; }

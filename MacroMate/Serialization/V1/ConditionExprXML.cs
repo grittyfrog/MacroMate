@@ -28,6 +28,7 @@ public class AndConditionXML {
     [XmlElement("TargetNpcCondition", typeof(TargetNpcConditionXML))]
     [XmlElement("JobCondition", typeof(JobConditionXML))]
     [XmlElement("PvpStateCondition", typeof(PvpStateConditionXML))]
+    [XmlElement("PlayerConditionCondition", typeof(PlayerConditionConditionXML))]
     public List<ConditionXML>? Conditions { get; set;  }
 
     public ConditionExpr.And ToReal() => new ConditionExpr.And(

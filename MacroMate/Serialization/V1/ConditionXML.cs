@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Serialization;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
 using MacroMate.Conditions;
 using MacroMate.Extensions.Dotnet;
@@ -13,6 +15,7 @@ namespace MacroMate.Serialization.V1;
 [XmlInclude(typeof(TargetNameConditionXML))]
 [XmlInclude(typeof(JobConditionXML))]
 [XmlInclude(typeof(PvpStateConditionXML))]
+[XmlInclude(typeof(PlayerConditionConditionXML))]
 public abstract class ConditionXML {
     public abstract ICondition ToReal();
 
@@ -22,6 +25,7 @@ public abstract class ConditionXML {
         TargetNameCondition cond => TargetNameConditionXML.From(cond),
         JobCondition cond => JobConditionXML.From(cond),
         PvpStateCondition cond => PvpStateConditionXML.From(cond),
+        PlayerConditionCondition cond => PlayerConditionConditionXML.From(cond),
         _ => throw new Exception($"Unexpected condition {condition}")
     };
 }
@@ -156,5 +160,16 @@ public class PvpStateConditionXML : ConditionXML {
             PvpStateCondition.State.NOT_IN_PVP => StateXML.NOT_IN_PVP,
             _ => throw new ArgumentException($"Unknown Pvp state {cond.state}")
         }
+    };
+}
+
+[XmlType("PlayerConditionCondition")]
+public class PlayerConditionConditionXML : ConditionXML {
+    public required List<ConditionFlag> Conditions { get; set; }
+
+    public override ICondition ToReal() => new PlayerConditionCondition(Conditions);
+
+    public static PlayerConditionConditionXML From(PlayerConditionCondition cond) => new() {
+        Conditions = cond.Conditions
     };
 }

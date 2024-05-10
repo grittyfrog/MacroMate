@@ -88,7 +88,7 @@ public class ConditionExprEditor : IDisposable {
                             if (ImGui.Selectable(conditionFactory.ConditionName)) {
                                 conditionExpr = conditionExpr.UpdateAnd(
                                     andIndex,
-                                    (and) => and.AddCondition(conditionFactory.Current() ?? conditionFactory.Default())
+                                    (and) => and.AddCondition(conditionFactory.BestInitialValue() ?? conditionFactory.Default())
                                 );
                                 edited = true;
                             }

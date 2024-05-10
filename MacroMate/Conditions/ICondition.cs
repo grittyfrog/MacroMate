@@ -29,6 +29,10 @@ public interface ICondition {
         /// Returns the current condition for this type.
         ICondition? Current();
 
+        /// Returns the best value to use for new Conditions of this type. Usually `Current`, but can be
+        /// overridden
+        ICondition? BestInitialValue() => Current();
+
         /// Returns a default valid condition
         ICondition Default();
 
@@ -51,6 +55,7 @@ public interface ICondition {
             ContentCondition.Factory,
             JobCondition.Factory,
             LocationCondition.Factory,
+            PlayerConditionCondition.Factory,
             PvpStateCondition.Factory,
             TargetNameCondition.Factory
         };
