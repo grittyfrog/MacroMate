@@ -142,10 +142,24 @@ public class ConditionExprEditor : IDisposable {
             ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
         }
 
-        var andString = conditionIndex > 0 ? "and " : "";
         ImGui.AlignTextToFramePadding();
-        ImGui.Text($"{andString}{condition.ConditionName} is");
+        if (conditionIndex > 0) {
+            ImGui.Text("and");
+            ImGui.SameLine();
+        }
+
+        ImGui.Text(condition.ConditionName);
         ImGui.SameLine();
+        if (ImGui.IsItemHovered()) {
+            var currentValue = condition.FactoryRef.Current()?.ValueName;
+            if (currentValue != null && currentValue != "") {
+                ImGui.SetTooltip(currentValue);
+            }
+        }
+
+        ImGui.Text("is");
+        ImGui.SameLine();
+
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(0f, 4f));
         if (ImGui.Button(condition.ValueName)) {
             ImGui.OpenPopup("edit_condition_popup");
