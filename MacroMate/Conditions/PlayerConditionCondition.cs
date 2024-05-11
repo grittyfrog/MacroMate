@@ -9,7 +9,6 @@ namespace MacroMate.Conditions;
 public record class PlayerConditionCondition(
     List<ConditionFlag> Conditions
 ) : ICondition {
-    // Conditions that should be treated as the same (first entry is the "Name" condition).
     private static Dictionary<ConditionFlag, ConditionFlag> EquivalentFlags = new() {
         { ConditionFlag.BetweenAreas51,                ConditionFlag.BetweenAreas },
         { ConditionFlag.BoundByDuty56,                 ConditionFlag.BoundByDuty },
