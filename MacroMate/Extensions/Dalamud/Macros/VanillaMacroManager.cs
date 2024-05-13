@@ -66,26 +66,48 @@ public unsafe class VanillaMacroManager : IDisposable {
             return;
         }
 
+        // We don't have a constructor to call so we need to initialize the memory ourselves
+        //
+        // Without this we end up corrupting the game memory, since the macro lines are copied
+        // into another buffer by the in-game `ExecuteMacro` function, and it assumes that the macro
+        // object is initialized.
+        var macro = new RaptureMacroModule.Macro();
+        macro.Name.Ctor();
+        foreach (ref var line in macro.LinesSpan) {
+            line.Ctor();
+        }
+
         try {
-            var macro = new RaptureMacroModule.Macro();
+            var lines = macroText.SplitIntoLines()
+                .TakeWhile(line => line.Payloads.Count > 0)
+                .Select(line => line.Encode())
+                .ToArray();
 
             foreach (var (line, index) in macroText.SplitIntoLines().WithIndex()) {
-                // If we run into an empty or invalid line we just stop.
                 if (line.Payloads.Count == 0 || line.Encode().Length == 0) {
-                    break;
+                    macro.LinesSpan[index].Clear();
+                    continue;
                 }
 
                 var encoded = line.Encode();
                 if (encoded.Length == 0 || encoded.Any(c => c == 0)) {
-                    break;
+                    macro.LinesSpan[index].Clear();
+                    continue;
                 }
-                macro.LinesSpan[index].SetString(encoded);
+
+                fixed (byte* encodedPtr = encoded) {
+                    macro.LinesSpan[index].SetString(encodedPtr);
+                }
             }
 
             raptureShellModule->ExecuteMacro(&macro);
         } catch (Exception e) {
             Env.PluginLog.Error($"Failed to execute macro {e}");
             Env.ChatGui.PrintError($"Failed to execute macro");
+        } finally {
+            foreach (ref var line in macro.LinesSpan) {
+                line.Dtor();
+            }
         }
     }
 
