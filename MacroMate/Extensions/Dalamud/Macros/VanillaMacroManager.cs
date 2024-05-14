@@ -147,9 +147,6 @@ public unsafe class VanillaMacroManager : IDisposable {
         macroLinePayloadUtf8->Dtor();
         IMemorySpace.Free(macroLinePayloadUtf8);
 
-        raptureMacroModule->SetSavePendingFlag(true, (uint)macroSet);
-        raptureMacroModule->UserFileEvent.HasChanges = true;
-
         // Update the MacroAddon if it's open (since it doesn't auto-refresh)
         if (iconIdChanged) {
             SetVanillaMacroUISlotIcon(macroSet, macroSlot, vanillaMacro.IconId);
