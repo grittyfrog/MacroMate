@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Game.ClientState.Conditions;
+using Generator.Equals;
 using MacroMate.Extensions.Dotnet;
 
 namespace MacroMate.Conditions;
 
-public record class PlayerConditionCondition(
-    List<ConditionFlag> Conditions
+[Equatable(Explicit = true)]
+public partial record class PlayerConditionCondition(
+    [property: SetEquality] HashSet<ConditionFlag> Conditions
 ) : ICondition {
     private static Dictionary<ConditionFlag, ConditionFlag> EquivalentFlags = new() {
         { ConditionFlag.BetweenAreas51,                ConditionFlag.BetweenAreas },
@@ -54,19 +56,20 @@ public record class PlayerConditionCondition(
     public string ValueName {
         get {
             if (Conditions.Count == 0) { return "<no conditions>"; }
-            if (Conditions.Count == 1) { return Conditions[0].ToString(); }
+            if (Conditions.Count == 1) { return Conditions.First().ToString(); }
             return string.Join("\n", Conditions);
         }
     }
+
     public string NarrowName => ValueName;
 
-    public PlayerConditionCondition() : this(new List<ConditionFlag> { ConditionFlag.NormalConditions }) {}
+    public PlayerConditionCondition() : this(new HashSet<ConditionFlag> { ConditionFlag.NormalConditions }) {}
 
     public static PlayerConditionCondition Current() {
         var activeConditions = Enum.GetValues<ConditionFlag>()
             .Where(flag => Env.PlayerCondition[flag])
             .Let(flags => ApplyFlagEquivalence(flags))
-            .ToList();
+            .ToHashSet();
         return new PlayerConditionCondition(activeConditions);
     }
 
@@ -79,6 +82,7 @@ public record class PlayerConditionCondition(
     }
 
     public static ICondition.IFactory Factory = new ConditionFactory();
+
     public ICondition.IFactory FactoryRef => Factory;
 
     class ConditionFactory : ICondition.IFactory {
@@ -87,7 +91,7 @@ public record class PlayerConditionCondition(
         public ICondition? Current() => PlayerConditionCondition.Current();
         public ICondition? BestInitialValue() {
             var current = PlayerConditionCondition.Current();
-            return new PlayerConditionCondition(current.Conditions.Take(1).ToList());
+            return new PlayerConditionCondition(current.Conditions.Take(1).ToHashSet());
         }
         public ICondition Default() => new PlayerConditionCondition();
         public ICondition? FromConditions(CurrentConditions conditions) => conditions.playerCondition;
@@ -95,7 +99,7 @@ public record class PlayerConditionCondition(
             return Enum.GetValues<ConditionFlag>()
                 .Let(flags => ApplyFlagEquivalence(flags))
                 .OrderBy(flag => Enum.GetName(flag))
-                .Select(flag => new PlayerConditionCondition(new List<ConditionFlag>() { flag }));
+                .Select(flag => new PlayerConditionCondition(new HashSet<ConditionFlag>() { flag }));
         }
     }
 }

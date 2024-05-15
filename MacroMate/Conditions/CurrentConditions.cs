@@ -2,6 +2,10 @@ using System.Collections.Generic;
 
 namespace MacroMate.Conditions;
 
+/// The Current Conditions used to evaluate condition expressions.
+///
+/// All objects in the records should use _structural equality_. If anything
+/// is using reference equality we will see significant performance regression.
 public record CurrentConditions(
     ContentCondition? content = null,
     LocationCondition? location = null,

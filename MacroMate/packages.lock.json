@@ -8,6 +8,15 @@
         "resolved": "2.1.12",
         "contentHash": "Sc0PVxvgg4NQjcI8n10/VfUQBAS4O+Fw2pZrAqBdRMbthYGeogzu5+xmIGCGmsEZ/ukMOBuAqiNiB5qA3MRalg=="
       },
+      "Generator.Equals": {
+        "type": "Direct",
+        "requested": "[3.1.1, )",
+        "resolved": "3.1.1",
+        "contentHash": "8nLS5J7v2Yggs4bJbgAYxX8CSJNPbE4QJ0n8FZrSVzw9SzT/TejwWs6i2IMd4zZPI4iOSlmAGWysxJw9I2JwtA==",
+        "dependencies": {
+          "Generator.Equals.Runtime": "3.1.1"
+        }
+      },
       "OneOf": {
         "type": "Direct",
         "requested": "[3.0.263, )",
@@ -42,6 +51,19 @@
           "Microsoft.CSharp": "4.4.0",
           "System.Xml.XmlSerializer": "4.3.0"
         }
+      },
+      "Generator.Equals.Runtime": {
+        "type": "Transitive",
+        "resolved": "3.1.1",
+        "contentHash": "maLnoXxsUdUgjSshJ7AgZ3xjAlteEl/j2KTfzsK0WbIPDtlGALX+/3NcU1rF2k7AiBLhHCv+9DGs1tyeq+gqrg==",
+        "dependencies": {
+          "Microsoft.Bcl.HashCode": "1.1.1"
+        }
+      },
+      "Microsoft.Bcl.HashCode": {
+        "type": "Transitive",
+        "resolved": "1.1.1",
+        "contentHash": "MalY0Y/uM/LjXtHfX/26l2VtN4LDNZ2OE3aumNOHDLsT4fNYy2hiHXI4CXCqKpNUNm7iJ2brrc4J89UdaL56FA=="
       },
       "Microsoft.CSharp": {
         "type": "Transitive",

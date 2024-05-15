@@ -91,10 +91,12 @@ public class MacroMate {
     private void OnConfigChange() {
         Env.SaveManager.Save(Env.MacroConfig);
 
+        Env.PluginLog.Verbose("Config Change Detected - Refreshing Macro Bindings");
         Refresh(Env.ConditionManager.CurrentConditions());
     }
 
     private void OnConditionChange(CurrentConditions conditions) {
+        Env.PluginLog.Verbose("Condition Change Detected - Refreshing Macro Bindings");
         Refresh(conditions);
     }
 }

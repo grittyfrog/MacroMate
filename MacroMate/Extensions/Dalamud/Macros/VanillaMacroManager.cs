@@ -136,8 +136,7 @@ public unsafe class VanillaMacroManager : IDisposable {
         macro->Name.SetString(vanillaMacro.Title.Truncate(15));
 
         bool iconIdChanged = macro->IconId != vanillaMacro.IconId;
-        macro->IconId = vanillaMacro.IconId;
-        macro->MacroIconRowId = vanillaMacro.IconRowId;
+        macro->SetIcon(vanillaMacro.IconId);
 
         // We don't want to use NewLinePayload since it encodes to an extra newline, instead we just encode everything to '\r'.
         // We also don't use macro-LineSpan[index] = ... here since it causes memory access errors

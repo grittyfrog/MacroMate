@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using System.Xml.Serialization;
 using Dalamud.Game.ClientState.Conditions;
@@ -167,9 +168,9 @@ public class PvpStateConditionXML : ConditionXML {
 public class PlayerConditionConditionXML : ConditionXML {
     public required List<ConditionFlag> Conditions { get; set; }
 
-    public override ICondition ToReal() => new PlayerConditionCondition(Conditions);
+    public override ICondition ToReal() => new PlayerConditionCondition(Conditions.ToHashSet());
 
     public static PlayerConditionConditionXML From(PlayerConditionCondition cond) => new() {
-        Conditions = cond.Conditions
+        Conditions = cond.Conditions.ToList()
     };
 }
