@@ -1,6 +1,8 @@
 name: Macro Mate
 author: grittyfrog
 punchline: Store and run an unlimited number of macros. Bind them to normal macro slots.
+tags:
+  - macros
 description: |
   Macro Mate lets you store and run an unlimited number of macros. You can also bind macros to normal macro slots.
 
