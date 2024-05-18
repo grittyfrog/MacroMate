@@ -23,7 +23,7 @@ public class PluginWindowManager : IDisposable {
         Env.WindowSystem.AddWindow(HelpWindow);
 
         Env.PluginInterface.UiBuilder.Draw += DrawUI;
-        Env.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUI;
+        Env.PluginInterface.UiBuilder.OpenMainUi += DrawMainUI;
     }
 
     public void ShowOrFocus(Window window) {
@@ -55,7 +55,7 @@ public class PluginWindowManager : IDisposable {
         Env.WindowSystem.Draw();
     }
 
-    private void DrawConfigUI() {
+    private void DrawMainUI() {
         if (MainWindow != null) {
             MainWindow.IsOpen =  true;
         }
