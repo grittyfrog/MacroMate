@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-using MacroMate.MacroTree;
 
 /// Pretend the Dotnet standard library has a useful tree implementation
 namespace MacroMate.Extensions.Dotnet.Tree;
@@ -213,6 +212,27 @@ public abstract class TreeNode<T> where T : TreeNode<T> {
         }
 
         target.Parent.AttachRelativeTo((T)this, target.Id, offset);
+        return (T)this;
+    }
+
+    public T SortChildrenBy<TKey>(
+        Func<T, TKey> keySelector,
+        bool ascending = true,
+        bool sortSubgroups = false
+    ) {
+        Action<T> sortFunction = ascending
+            ? (node) => { node.Children = node.Children.OrderBy(keySelector).ToImmutableList(); }
+            : (node) => { node.Children = node.Children.OrderByDescending(keySelector).ToImmutableList(); };
+
+        if (sortSubgroups) {
+            this.Walk(child => {
+                sortFunction(child);
+                return WalkBehaviour.CONTINUE;
+            });
+        } else {
+            sortFunction((T)this);
+        }
+
         return (T)this;
     }
 

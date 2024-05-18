@@ -92,6 +92,7 @@ public class MainWindow : Window, IDisposable {
     private void DrawMenuBar() {
         var newGroupPopupId = DrawNewGroupPopup(Env.MacroConfig.Root);
         var importPopupId = DrawImportPopup(Env.MacroConfig.Root);
+        var sortPopupId = DrawSortGroupPopup(Env.MacroConfig.Root);
 
         if (ImGui.BeginMenuBar()) {
             if (ImGui.BeginMenu("New")) {
@@ -113,6 +114,10 @@ public class MainWindow : Window, IDisposable {
             if (ImGui.IsItemHovered()) {
                 var editModeState = editMode ? "Enabled" : "Disabled";
                 ImGui.SetTooltip($"Toggle Edit Mode, which can be used to to edit multiple macros at once ({editModeState})");
+            }
+
+            if (ImGui.MenuItem("Sort")) {
+                ImGui.OpenPopup(sortPopupId);
             }
 
             if (ImGui.BeginMenu("Settings")) {
@@ -508,6 +513,7 @@ public class MainWindow : Window, IDisposable {
         var renamePopupId = DrawRenamePopup(node);
         var importPopupId = DrawImportPopup(node);
         var deletePopupId = DrawDeletePopupModal(node);
+        var sortPopupId = DrawSortGroupPopup(node);
 
         if (ImGui.BeginPopup(nodeActionsPopupName)) {
             if (node is MateNode.Group) {
@@ -523,6 +529,10 @@ public class MainWindow : Window, IDisposable {
                 if (ImGui.Selectable("Edit All")) {
                     EditModeSetEnabled(true);
                     EditModeSetSelected(node, true);
+                }
+
+                if (ImGui.Selectable("Sort")) {
+                    ImGui.OpenPopup(sortPopupId);
                 }
             }
 
@@ -701,6 +711,129 @@ public class MainWindow : Window, IDisposable {
 
         return importPopupId;
     }
+
+    private enum SortMode { Alphabetical }
+    private SortMode currentSortMode = SortMode.Alphabetical;
+    private enum SortDirection { Ascending, Descending }
+    private SortDirection currentSortDirection = SortDirection.Ascending;
+    private enum GroupByMode { MacrosFirst, GroupsFirst, Mixed }
+    private GroupByMode currentGroupByMode = GroupByMode.MacrosFirst;
+    private bool sortSubgroups = false;
+    private uint DrawSortGroupPopup(MateNode node) {
+        var importPopupName = $"Sort###mainwindow/sort_popup/{node.Id}";
+        var importPopupId = ImGui.GetID(importPopupName);
+
+        if (ImGui.BeginPopup(importPopupName)) {
+            var hasMacroChildren = node.Children.Any(child => child is MateNode.Macro);
+            var hasGroupChildren = node.Children.Any(child => child is MateNode.Group);
+
+            ImGui.Text($"Sort '{node.Name}'");
+            ImGui.Separator();
+            if (ImGui.BeginTable($"mainwindow/sort_popup/sort_layout_table/{node.Id}", 2, ImGuiTableFlags.SizingStretchProp)) {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text("Sort By");
+
+                ImGui.TableNextColumn();
+                ImGui.SetNextItemWidth(200);
+                if (ImGui.BeginCombo($"##sort_by/{node.Id}", currentSortMode.ToString())) {
+                    foreach (var sort in Enum.GetValues<SortMode>()) {
+                        if (ImGui.Selectable(sort.ToString(), sort == currentSortMode)) {
+                            currentSortMode = sort;
+                        }
+                    }
+                    ImGui.EndCombo();
+                }
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text("Sort Direction");
+
+                ImGui.TableNextColumn();
+                ImGui.SetNextItemWidth(200);
+                if (ImGui.BeginCombo($"###sort_direction/{node.Id}", currentSortDirection.ToString())) {
+                    foreach (var direction in Enum.GetValues<SortDirection>()) {
+                        if (ImGui.Selectable(direction.ToString(), direction == currentSortDirection)) {
+                            currentSortDirection = direction;
+                        }
+                    }
+                    ImGui.EndCombo();
+                }
+
+                // We onnly need to show 'Group By' if we have both groups and macros, otherwise it doesn't matter
+                if (hasMacroChildren && hasGroupChildren) {
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.AlignTextToFramePadding();
+                    ImGui.Text("Group By");
+                    ImGui.TableNextColumn();
+                    ImGui.SetNextItemWidth(200);
+                    if (ImGui.BeginCombo($"###group_sort_preference/{node.Id}", currentGroupByMode.ToString())) {
+                        foreach (var groupSortMode in Enum.GetValues<GroupByMode>()) {
+                            if (ImGui.Selectable(groupSortMode.ToString(), groupSortMode == currentGroupByMode)) {
+                                currentGroupByMode = groupSortMode;
+                            }
+                        }
+                        ImGui.EndCombo();
+                    }
+                } else {
+                    currentGroupByMode = GroupByMode.MacrosFirst;
+                }
+
+                // We only need to show 'Sort Subgroups' if we have any groups, otherwise it doesn't matter
+                if (hasGroupChildren) {
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.AlignTextToFramePadding();
+                    ImGui.Text("Sort Subgroups");
+                    bool sortSubgroupTextHovered = ImGui.IsItemHovered();
+
+                    ImGui.TableNextColumn();
+                    ImGui.Checkbox($"###sort_subgroups/{node.Id}", ref sortSubgroups);
+                    bool sortSubgroupCheckboxHovered = ImGui.IsItemHovered();
+
+                    if (sortSubgroupTextHovered || sortSubgroupCheckboxHovered) {
+                        ImGui.BeginTooltip();
+                        ImGui.Text("Enabled: Sort all groups and subgroups");
+                        ImGui.Text("Disabled: Only sort this group, leave subgroups untouched");
+                        ImGui.EndTooltip();
+                    }
+                } else {
+                    sortSubgroups = false;
+                }
+
+                ImGui.EndTable();
+            }
+
+            if (ImGui.Button("Apply###sort_apply/{node.Id}")) {
+                var laterValue = currentSortDirection == SortDirection.Ascending ? 1 : -1;
+                Func<MateNode, int> groupFunction = (child) => currentGroupByMode switch {
+                    GroupByMode.MacrosFirst => child is MateNode.Macro ? 0 : laterValue,
+                    GroupByMode.GroupsFirst => child is MateNode.Group ? 0 : laterValue,
+                    _ => 0
+                };
+
+                Env.MacroConfig.SortChildrenBy(
+                    node,
+                    (child) => (groupFunction(child), child.Name),
+                    ascending: currentSortDirection == SortDirection.Ascending,
+                    sortSubgroups: sortSubgroups
+                );
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Cancel###sort_cancel/{node.Id}")) {
+                ImGui.CloseCurrentPopup();
+            }
+
+            ImGui.EndPopup();
+        }
+
+        return importPopupId;
+    }
+
 
     private void EditModeSetEnabled(bool enabled) {
         editMode = enabled;

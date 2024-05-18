@@ -5,6 +5,7 @@ using MacroMate.Conditions;
 using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.Dotnet.Tree;
 using MacroMate.Extensions.Dalamud.Macros;
+using System;
 
 namespace MacroMate.MacroTree;
 
@@ -141,6 +142,15 @@ public class MacroConfig {
         NotifyEdit();
     }
 
+    public void SortChildrenBy<TKey>(
+        MateNode node,
+        Func<MateNode, TKey> keySelector,
+        bool ascending = true,
+        bool sortSubgroups = false
+    ) {
+        node.SortChildrenBy(keySelector, ascending, sortSubgroups);
+        NotifyEdit();
+    }
 
     /// Notifies the config that it has been edited.
     public void NotifyEdit() {
