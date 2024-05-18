@@ -133,7 +133,7 @@ public unsafe class VanillaMacroManager : IDisposable {
         }
 
         var macro = raptureMacroModule->GetMacro((uint)macroSet, macroSlot);
-        macro->Name.SetString(vanillaMacro.Title.Truncate(15));
+        macro->Name.SetString(vanillaMacro.Title.Truncate(20));
 
         bool iconIdChanged = macro->IconId != vanillaMacro.IconId;
         macro->SetIcon(vanillaMacro.IconId);

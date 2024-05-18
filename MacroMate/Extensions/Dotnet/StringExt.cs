@@ -10,7 +10,7 @@ public static class StringExt {
 
     public static string Truncate(this string self, int maxLength) {
         if (self.Length > maxLength) {
-            return self.Substring(0, maxLength - 1);
+            return self.Substring(0, maxLength);
         }
 
         return self;
