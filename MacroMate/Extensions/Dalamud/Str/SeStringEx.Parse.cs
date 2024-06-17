@@ -95,9 +95,7 @@ public static partial class SeStringEx {
         public static SeStringChunk? FromPayload(Payload payload) {
             switch (payload) {
                 case AutoTranslatePayload atPayload:
-                    var group = atPayload.GetField<AutoTranslatePayload, uint>("group");
-                    var key = atPayload.GetField<AutoTranslatePayload, uint>("key");
-                    var ids = new SeStringChunk.AutoTranslateIds(group, key);
+                    var ids = new SeStringChunk.AutoTranslateIds(atPayload.Group, atPayload.Key);
                     return new SeStringChunk.AutoTranslateText(atPayload.RawText(), ids);
                 case ITextProvider itp:
                     return new SeStringChunk.Text(itp.Text);
