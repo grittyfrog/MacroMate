@@ -5,6 +5,7 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.String;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -174,7 +175,7 @@ public unsafe class VanillaMacroManager : IDisposable {
         var agentMacro = XIVCS.GetAgent<AgentMacro>();
         if (agentMacro == null) { return; }
 
-        Env.XIVCSSignatures.AgentMacroOpenMacro!(agentMacro, (uint)macroSet, macroSlot);
+        agentMacro->OpenMacro((uint)macroSet, macroSlot);
     }
 
     /// When we change the Icon of a macro it doesn't actually refresh the Macro UI when it's open,
