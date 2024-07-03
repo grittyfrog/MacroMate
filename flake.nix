@@ -23,10 +23,12 @@
 
         dotnet = pkgs.dotnet-sdk_8;
 
+        dalamud-channel = "/stg"; # See https://github.com/goatcorp/dalamud-distrib
+
         # Once nix flakes support zip files with top-level folders we can remove this and just point
         # the flake straight at the zip file.
         dalamud-distrib = pkgs.runCommand "dalamud-distrib" { buildInputs = [ pkgs.unzip ]; } ''
-          unzip ${dalamud-distrib-repo}/latest.zip -d $out
+          unzip ${dalamud-distrib-repo}${dalamud-channel}/latest.zip -d $out
         '';
       in {
         devShell = mkShell {

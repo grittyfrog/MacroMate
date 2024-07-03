@@ -43,7 +43,7 @@ public unsafe class VanillaMacroManager : IDisposable {
         var macro = raptureMacroModule->GetMacro((uint)macroSet, macroNumber);
         var lineCount = raptureMacroModule->GetLineCount(macro);
         var lazyLines = new Lazy<SeString>(() => {
-            return macro->LinesSpan
+            return macro->Lines
                 .ToArray()
                 .Take((int)lineCount)
                 .Select(line => SeString.Parse(line))
@@ -73,7 +73,7 @@ public unsafe class VanillaMacroManager : IDisposable {
         // object is initialized.
         var macro = new RaptureMacroModule.Macro();
         macro.Name.Ctor();
-        foreach (ref var line in macro.LinesSpan) {
+        foreach (ref var line in macro.Lines) {
             line.Ctor();
         }
 
@@ -85,18 +85,18 @@ public unsafe class VanillaMacroManager : IDisposable {
 
             foreach (var (line, index) in macroText.SplitIntoLines().WithIndex()) {
                 if (line.Payloads.Count == 0 || line.Encode().Length == 0) {
-                    macro.LinesSpan[index].Clear();
+                    macro.Lines[index].Clear();
                     continue;
                 }
 
                 var encoded = line.Encode();
                 if (encoded.Length == 0 || encoded.Any(c => c == 0)) {
-                    macro.LinesSpan[index].Clear();
+                    macro.Lines[index].Clear();
                     continue;
                 }
 
                 fixed (byte* encodedPtr = encoded) {
-                    macro.LinesSpan[index].SetString(encodedPtr);
+                    macro.Lines[index].SetString(encodedPtr);
                 }
             }
 
@@ -105,7 +105,7 @@ public unsafe class VanillaMacroManager : IDisposable {
             Env.PluginLog.Error($"Failed to execute macro {e}");
             Env.ChatGui.PrintError($"Failed to execute macro");
         } finally {
-            foreach (ref var line in macro.LinesSpan) {
+            foreach (ref var line in macro.Lines) {
                 line.Dtor();
             }
         }

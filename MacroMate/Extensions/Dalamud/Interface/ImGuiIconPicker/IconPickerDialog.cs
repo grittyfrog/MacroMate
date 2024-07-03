@@ -12,13 +12,12 @@ namespace MacroMate.Extensions.Dalamud.Interface.ImGuiIconPicker;
 /// Inspirations:
 /// - QoLBar's IconBrowser: https://github.com/UnknownX7/QoLBar/blob/f80d64ab064e4e7574a42b2efc678beebdcb1af9/UI/IconBrowserUI.cs
 /// - Dalamud's IconBrowserWidget: https://github.com/goatcorp/Dalamud/blob/deef16cdd742ca9faa403e388602795e9d3b54e9/Dalamud/Interface/Internal/Windows/Data/Widgets/IconBrowserWidget.cs#L16
-public class IconPickerDialog : Window, IDisposable {
+public class IconPickerDialog : Window {
     public static readonly string NAME = "Icon Picker";
 
     private Action<uint>? Callback { get; set; }
     private uint? CurrentIconId { get; set; }
 
-    private IconPickerConcurrentIconLoader TextureLoader = new(Env.TextureProvider);
     private IconPickerIndex iconInfoIndex = new();
 
     private string searchText = "";
@@ -56,7 +55,6 @@ public class IconPickerDialog : Window, IDisposable {
 
     public override void OnClose() {
         base.OnClose();
-        TextureLoader.Clear();
     }
 
     public void Open(Action<uint> callback) => Open(null, callback);
@@ -68,10 +66,6 @@ public class IconPickerDialog : Window, IDisposable {
         } else {
             ImGui.SetWindowFocus(WindowName);
         }
-    }
-
-    public void Dispose() {
-        TextureLoader.Dispose();
     }
 
     public override void Draw() {
@@ -166,7 +160,7 @@ public class IconPickerDialog : Window, IDisposable {
     private void DrawSearchResults(float iconSize, int columns) {
         var lineHeight = iconSize + ImGui.GetStyle().ItemSpacing.Y;
         ImGuiClip.ClippedDraw(searchedIconInfo, (namedIcon) => {
-            var icon = TextureLoader.GetIcon(namedIcon.IconId)!;
+            var icon = Env.TextureProvider.GetFromGameIcon(namedIcon.IconId)!.GetWrapOrEmpty();
             ImGui.Image(
                 icon.ImGuiHandle,
                 new Vector2(iconSize),

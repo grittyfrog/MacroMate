@@ -11,7 +11,7 @@ namespace MacroMate.Extensions.Dalamud;
 public static unsafe class ClipboardEx {
     public static Utf8String? GetPayloadEnabledClipboardString() {
         unsafe {
-            var atkStage = AtkStage.GetSingleton();
+            var atkStage = AtkStage.Instance();
             if (atkStage == null) { return null; }
 
             var atkTextInput = atkStage->AtkInputManager->TextInput;
@@ -63,7 +63,7 @@ public static unsafe class ClipboardEx {
     public static void SetClipboardString(byte* text) {
         ThreadSafety.AssertMainThread();
 
-        var atkStage = AtkStage.GetSingleton();
+        var atkStage = AtkStage.Instance();
         if (atkStage == null) { return; }
 
         var atkTextInput = atkStage->AtkInputManager->TextInput;

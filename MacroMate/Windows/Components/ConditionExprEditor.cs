@@ -169,7 +169,7 @@ public class ConditionExprEditor : IDisposable {
         ImGui.PopStyleVar();
 
         if (condition.SatisfiedBy(Env.ConditionManager.CurrentConditions())) {
-            var yesIcon = Env.TextureProvider.GetIcon(76574);
+            var yesIcon = Env.TextureProvider.GetFromGameIcon(76574).GetWrapOrEmpty();
             if (yesIcon != null) {
                 ImGui.SameLine();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);

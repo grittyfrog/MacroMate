@@ -98,7 +98,7 @@ public record class TargetNameCondition(
         // For BNpc's we need to use BNpcName directly since the
         // regular sheet doesn't have a name or link to BNpcName
         if (target.ObjectKind == ObjectKind.BattleNpc || target.ObjectKind == ObjectKind.Treasure) {
-            if (target is Character targetCharacter) {
+            if (target is ICharacter targetCharacter) {
                 var targetNameId = targetCharacter.NameId;
                 if (targetNameId == 0) { return null; }
 

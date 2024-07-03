@@ -128,7 +128,7 @@ public class MainWindow : Window, IDisposable {
                     });
                 }
                 ImGui.SameLine();
-                var macroIcon = Env.TextureProvider.GetIcon(Env.MacroConfig.LinkPlaceholderIconId);
+                var macroIcon = Env.TextureProvider.GetFromGameIcon(Env.MacroConfig.LinkPlaceholderIconId).GetWrapOrEmpty();
                 if (macroIcon != null) {
                     ImGui.Image(macroIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(ImGui.GetTextLineHeight()));
                     ImGui.SameLine();
@@ -370,7 +370,7 @@ public class MainWindow : Window, IDisposable {
         ImGui.TableNextColumn();
 
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
-        var macroIcon = Env.TextureProvider.GetIcon(macro.IconId);
+        var macroIcon = Env.TextureProvider.GetFromGameIcon(macro.IconId).GetWrapOrEmpty();
         if (macroIcon != null) {
             ImGui.Image(macroIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(ImGui.GetTextLineHeight()));
             ImGui.SameLine();

@@ -11,12 +11,12 @@ namespace MacroMate.Extensions.FFXIVClientStructs;
 /// </summary>
 public static unsafe class XIVCS {
     public static AgentInterface* GetAgent(AgentId agentId) {
-        return Framework.Instance()->GetUiModule()->GetAgentModule()->GetAgentByInternalId(agentId);
+        return Framework.Instance()->GetUIModule()->GetAgentModule()->GetAgentByInternalId(agentId);
     }
 
     public static T* GetAgent<T>() where T : unmanaged {
         var attr = typeof(T).GetCustomAttribute<AgentAttribute>();
         if (attr == null) return null;
-        return (T*)GetAgent(attr.ID);
+        return (T*)GetAgent(attr.Id);
     }
 }

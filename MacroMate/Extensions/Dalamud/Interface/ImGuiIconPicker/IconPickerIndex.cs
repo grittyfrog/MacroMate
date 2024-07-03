@@ -105,9 +105,9 @@ public class IconPickerIndex {
         foreach (var iconId in iconRange) {
             if (iconRangeNullValues.Contains(iconId)) { continue; }
 
-            var iconPath = Env.TextureProvider.GetIconPath((uint)iconId);
-            if (iconPath.IsNullOrEmpty()) { continue; }
-            if (!Env.DataManager.FileExists(iconPath)) { continue; }
+            if (!Env.TextureProvider.TryGetIconPath((uint)iconId, out var _)) {
+                continue;
+            }
 
             var iconInfo = new IconInfo {
                 IconId = (uint)iconId

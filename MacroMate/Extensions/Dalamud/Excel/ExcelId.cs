@@ -1,9 +1,10 @@
 using MacroMate.Extensions.Lumina;
 using Dalamud;
+using Dalamud.Game;
 using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
-using Dalamud.Game.ClientState.Objects.Enums;
 using System.Text;
+using Dalamud.Game.ClientState.Objects.Enums;
 
 namespace MacroMate.Extensions.Dalamaud.Excel;
 

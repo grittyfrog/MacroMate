@@ -21,7 +21,7 @@ namespace MacroMate;
  * The Environment that all classes have access to.
  */
 public class Env {
-    public static void Initialize(DalamudPluginInterface pluginInterface) {
+    public static void Initialize(IDalamudPluginInterface pluginInterface) {
         pluginInterface.Create<Env>();
 
         FontManager = new FontManager();
@@ -54,59 +54,45 @@ public class Env {
     /// ===
 
     [PluginService]
-    [RequiredVersion("1.0")]
-    public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
+    public static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
 
     [PluginService]
-    [RequiredVersion("1.0")]
     public static IClientState ClientState { get; private set; } = null!;
 
     [PluginService]
-    [RequiredVersion("1.0")]
     public static IChatGui ChatGui { get; private set; } = null!;
 
     [PluginService]
-    [RequiredVersion("1.0")]
     public static ICommandManager CommandManager { get; private set; } = null!;
 
     [PluginService]
-    [RequiredVersion("1.0")]
     public static IDataManager DataManager { get; private set; } = null!;
 
     [PluginService]
-    [RequiredVersion("1.0")]
     public static ITargetManager TargetManager { get; private set; } = null!;
 
     [PluginService]
-    [RequiredVersion("1.0")]
     public static IFramework Framework { get; private set; } = null!;
 
     [PluginService]
-    [RequiredVersion("1.0")]
     public static ITextureProvider TextureProvider { get; private set; } = null!;
 
     [PluginService]
-    [RequiredVersion("1.0")]
     public static IGameInteropProvider GameInteropProvider { get; private set; } = null!;
 
     [PluginService]
-    [RequiredVersion("1.0")]
     public static ISigScanner SigScanner { get; private set; } = null!;
 
     [PluginService]
-    [RequiredVersion("1.0")]
     public static IPluginLog PluginLog { get; private set; } = null!;
 
     [PluginService]
-    [RequiredVersion("1.0")]
     public static IGameGui GameGui { get; private set; } = null!;
 
     [PluginService]
-    [RequiredVersion("1.0")]
     public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
 
     [PluginService]
-    [RequiredVersion("1.0")]
     public static Dalamud.Plugin.Services.ICondition PlayerCondition { get; private set; } = null!;
 
     public static WindowSystem WindowSystem { get; private set; } = null!;

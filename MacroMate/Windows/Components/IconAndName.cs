@@ -17,7 +17,7 @@ public static class IconAndName {
 
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8, ImGui.GetStyle().ItemSpacing.Y));
         var iconSize = ImGuiHelpers.ScaledVector2(48.0f);
-        var icon = Env.TextureProvider.GetIcon(macro.IconId);
+        var icon = Env.TextureProvider.GetFromGameIcon(macro.IconId).GetWrapOrEmpty();
 
         var iconPicker = Env.PluginWindowManager.IconPicker;
         if (icon != null) {
