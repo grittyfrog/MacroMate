@@ -3,6 +3,7 @@ using System.Numerics;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud.Interface.ImGuiIconPicker;
+using MacroMate.Windows.Debug;
 
 namespace MacroMate.Windows;
 
@@ -13,6 +14,7 @@ public class PluginWindowManager : IDisposable {
     public MacroLinkPicker MacroLinkPicker { get; private set; } = new();
     public BackupWindow BackupWindow { get; private set; } = new();
     public HelpWindow HelpWindow { get; private set; } = new();
+    public DebugWindow DebugWindow { get; private set; } = new();
 
     public PluginWindowManager() {
         Env.WindowSystem.AddWindow(MainWindow);
@@ -21,6 +23,7 @@ public class PluginWindowManager : IDisposable {
         Env.WindowSystem.AddWindow(MacroLinkPicker);
         Env.WindowSystem.AddWindow(BackupWindow);
         Env.WindowSystem.AddWindow(HelpWindow);
+        Env.WindowSystem.AddWindow(DebugWindow);
 
         Env.PluginInterface.UiBuilder.Draw += DrawUI;
         Env.PluginInterface.UiBuilder.OpenMainUi += DrawMainUI;

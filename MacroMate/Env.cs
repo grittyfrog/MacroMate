@@ -14,6 +14,7 @@ using MacroMate.Extensions.Dalamud.Font;
 using MacroMate.Serialization;
 using Dalamud.Game;
 using MacroMate.Extensions.FFXIVClientStructs;
+using MacroMate.Ipc;
 
 namespace MacroMate;
 
@@ -36,6 +37,7 @@ public class Env {
         SaveManager = new SaveManager();
         MacroConfig = new MacroConfig();
         MacroMate = new MacroMate();
+        IPCManager = new IPCManager();
 
         PluginCommandManager = new PluginCommandManager();
         PluginWindowManager = new PluginWindowManager();
@@ -123,4 +125,6 @@ public class Env {
     public static PluginWindowManager PluginWindowManager { get; private set; } = null!;
 
     public static SaveManager SaveManager { get; private set; } = null!;
+
+    public static IPCManager IPCManager { get; private set; } = null!;
 }

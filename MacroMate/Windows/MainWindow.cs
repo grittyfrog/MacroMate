@@ -128,7 +128,7 @@ public class MainWindow : Window, IDisposable {
                     });
                 }
                 ImGui.SameLine();
-                var macroIcon = Env.TextureProvider.GetFromGameIcon(Env.MacroConfig.LinkPlaceholderIconId).GetWrapOrEmpty();
+                var macroIcon = Env.TextureProvider.GetMacroIcon(Env.MacroConfig.LinkPlaceholderIconId).GetWrapOrEmpty();
                 if (macroIcon != null) {
                     ImGui.Image(macroIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(ImGui.GetTextLineHeight()));
                     ImGui.SameLine();
@@ -150,6 +150,12 @@ public class MainWindow : Window, IDisposable {
 
             if (ImGui.MenuItem("Help")) {
                 Env.PluginWindowManager.HelpWindow.ShowOrFocus();
+            }
+            if (ImGui.IsMouseReleased(ImGuiMouseButton.Right) &&
+                ImGui.IsItemHovered() &&
+                ImGui.IsKeyDown(ImGuiKey.ModShift)
+            ) {
+                Env.PluginWindowManager.ShowOrFocus(Env.PluginWindowManager.DebugWindow);
             }
 
             ImGui.EndMenuBar();
@@ -370,7 +376,7 @@ public class MainWindow : Window, IDisposable {
         ImGui.TableNextColumn();
 
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
-        var macroIcon = Env.TextureProvider.GetFromGameIcon(macro.IconId).GetWrapOrEmpty();
+        var macroIcon = Env.TextureProvider.GetMacroIcon(macro.IconId).GetWrapOrEmpty();
         if (macroIcon != null) {
             ImGui.Image(macroIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(ImGui.GetTextLineHeight()));
             ImGui.SameLine();

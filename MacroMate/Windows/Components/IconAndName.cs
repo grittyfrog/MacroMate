@@ -6,6 +6,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
+using MacroMate.Extensions.Dalamud;
 using MacroMate.MacroTree;
 
 namespace MacroMate.Windows.Components;
@@ -17,7 +18,7 @@ public static class IconAndName {
 
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8, ImGui.GetStyle().ItemSpacing.Y));
         var iconSize = ImGuiHelpers.ScaledVector2(48.0f);
-        var icon = Env.TextureProvider.GetFromGameIcon(macro.IconId).GetWrapOrEmpty();
+        var icon = Env.TextureProvider.GetMacroIcon(macro.IconId).GetWrapOrEmpty();
 
         var iconPicker = Env.PluginWindowManager.IconPicker;
         if (icon != null) {
@@ -27,6 +28,9 @@ public static class IconAndName {
                     macro.IconId = selectedIconId;
                     Env.MacroConfig.NotifyEdit();
                 });
+            }
+            if (ImGui.IsItemHovered() && ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
+                ImGui.SetTooltip($"icon id: {macro.IconId}");
             }
         }
 
