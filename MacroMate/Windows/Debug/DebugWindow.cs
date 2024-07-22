@@ -13,23 +13,36 @@ public class DebugWindow : Window {
     private ICallGateSubscriber<bool> csIsAvailable;
     private ICallGateSubscriber<string, string, string?, uint?, bool> csCreateMacro;
     private ICallGateSubscriber<string, bool> csCreateGroup;
+    private ICallGateSubscriber<string, (bool, string?)> csValidatePath;
+    private ICallGateSubscriber<string, (bool, string?)> csValidateMacroPath;
+    private ICallGateSubscriber<string, (bool, string?)> csValidateGroupPath;
 
     public DebugWindow() : base(NAME, ImGuiWindowFlags.AlwaysAutoResize) {
         csIsAvailable = Env.PluginInterface.GetIpcSubscriber<bool>("MacroMate.IsAvailable");
         csCreateMacro = Env.PluginInterface.GetIpcSubscriber<string, string, string?, uint?, bool>("MacroMate.CreateOrUpdateMacro");
         csCreateGroup = Env.PluginInterface.GetIpcSubscriber<string, bool>("MacroMate.CreateGroup");
+        csValidatePath = Env.PluginInterface.GetIpcSubscriber<string, (bool, string?)>("MacroMate.ValidatePath");
+        csValidateMacroPath = Env.PluginInterface.GetIpcSubscriber<string, (bool, string?)>("MacroMate.ValidateMacroPath");
+        csValidateGroupPath = Env.PluginInterface.GetIpcSubscriber<string, (bool, string?)>("MacroMate.ValidateGroupPath");
     }
 
     private string currentIpcFunction = "MacroMate.IsAvailable";
     private string[] ipcFunctions = new[] {
         "MacroMate.IsAvailable",
         "MacroMate.CreateOrUpdateMacro",
-        "MacroMate.CreateGroup"
+        "MacroMate.CreateGroup",
+        "MacroMate.ValidatePath",
+        "MacroMate.ValidateMacroPath",
+        "MacroMate.ValidateGroupPath"
     };
+
+    private bool edited = false;
 
     private string? lastIPCResult = null;
     private string? lastIPCError = null;
     public override void Draw() {
+        edited = false;
+
         ImGui.PushID("###debugwindow");
 
         ImGui.Text("IPC Debugging");
@@ -51,6 +64,9 @@ public class DebugWindow : Window {
             case "MacroMate.IsAvailable": DrawIpcIsAvailable(); break;
             case "MacroMate.CreateOrUpdateMacro": DrawIpcCreateMacro(); break;
             case "MacroMate.CreateGroup": DrawIpcCreateGroup(); break;
+            case "MacroMate.ValidatePath": DrawIpcValidatePath(); break;
+            case "MacroMate.ValidateMacroPath": DrawIpcValidateMacroPath(); break;
+            case "MacroMate.ValidateGroupPath": DrawIpcValidateGroupPath(); break;
         }
 
         if (lastIPCResult != null) {
@@ -65,6 +81,11 @@ public class DebugWindow : Window {
         }
 
         ImGui.PopID();
+
+        if (edited == true) {
+            lastIPCError = null;
+            lastIPCResult = null;
+        }
     }
 
     private void DrawIpcIsAvailable() {
@@ -102,7 +123,6 @@ public class DebugWindow : Window {
             }
         }
 
-        bool edited = false;
         edited |= ImGui.InputText("Name", ref createMacroName, 255);
         edited |= ImGui.InputText("Parent Path", ref createMacroParentPath, 255);
         edited |= ImGui.InputText("Icon Id", ref createMacroIconId, 10);
@@ -115,11 +135,6 @@ public class DebugWindow : Window {
                 ImGui.GetTextLineHeight() * 20
             )
         );
-
-        if (edited) {
-            lastIPCResult = null;
-            lastIPCError = null;
-        }
     }
 
     private string createGroupPath = "";
@@ -137,5 +152,56 @@ public class DebugWindow : Window {
 
         bool edited = false;
         edited |= ImGui.InputText("Path", ref createGroupPath, 1024);
+    }
+
+    private string validatePathPath = "";
+    private void DrawIpcValidatePath() {
+        if (ImGui.Button("Call IPC")) {
+            try {
+                var result = csValidatePath.InvokeFunc(validatePathPath);
+                lastIPCError = null;
+                lastIPCResult = result.ToString();
+            } catch (Exception ex) {
+                lastIPCError = ex.InnerException?.Message ?? ex.Message;
+                lastIPCResult = null;
+            }
+        }
+
+        bool edited = false;
+        edited |= ImGui.InputText("Path", ref validatePathPath, 1024);
+    }
+
+    private string validateMacroPathPath = "";
+    private void DrawIpcValidateMacroPath() {
+        if (ImGui.Button("Call IPC")) {
+            try {
+                var result = csValidateMacroPath.InvokeFunc(validateMacroPathPath);
+                lastIPCError = null;
+                lastIPCResult = result.ToString();
+            } catch (Exception ex) {
+                lastIPCError = ex.InnerException?.Message ?? ex.Message;
+                lastIPCResult = null;
+            }
+        }
+
+        bool edited = false;
+        edited |= ImGui.InputText("Path", ref validateMacroPathPath, 1024);
+    }
+
+    private string validateGroupPathPath = "";
+    private void DrawIpcValidateGroupPath() {
+        if (ImGui.Button("Call IPC")) {
+            try {
+                var result = csValidateGroupPath.InvokeFunc(validateGroupPathPath);
+                lastIPCError = null;
+                lastIPCResult = result.ToString();
+            } catch (Exception ex) {
+                lastIPCError = ex.InnerException?.Message ?? ex.Message;
+                lastIPCResult = null;
+            }
+        }
+
+        bool edited = false;
+        edited |= ImGui.InputText("Path", ref validateGroupPathPath, 1024);
     }
 }

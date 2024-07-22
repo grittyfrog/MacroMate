@@ -12,6 +12,9 @@ public class IPCManager : IDisposable {
     private readonly ICallGateProvider<bool> cgIsAvailable;
     private readonly ICallGateProvider<string, string, string?, uint?, bool> cgCreateMacro;
     private readonly ICallGateProvider<string, bool> cgCreateGroup;
+    private readonly ICallGateProvider<string, (bool, string?)> cgValidatePath;
+    private readonly ICallGateProvider<string, (bool, string?)> cgValidateMacroPath;
+    private readonly ICallGateProvider<string, (bool, string?)> cgValidateGroupPath;
 
     public IPCManager() {
         cgIsAvailable = Env.PluginInterface.GetIpcProvider<bool>("MacroMate.IsAvailable");
@@ -22,6 +25,15 @@ public class IPCManager : IDisposable {
 
         cgCreateGroup = Env.PluginInterface.GetIpcProvider<string, bool>("MacroMate.CreateGroup");
         cgCreateGroup.RegisterFunc(CreateGroup);
+
+        cgValidatePath = Env.PluginInterface.GetIpcProvider<string, (bool, string?)>("MacroMate.ValidatePath");
+        cgValidatePath.RegisterFunc(ValidatePath);
+
+        cgValidateMacroPath = Env.PluginInterface.GetIpcProvider<string, (bool, string?)>("MacroMate.ValidateMacroPath");
+        cgValidateMacroPath.RegisterFunc(ValidateMacroPath);
+
+        cgValidateGroupPath = Env.PluginInterface.GetIpcProvider<string, (bool, string?)>("MacroMate.ValidateGroupPath");
+        cgValidateGroupPath.RegisterFunc(ValidateGroupPath);
 
         isAvailable = true;
         cgIsAvailable.SendMessage();
@@ -107,6 +119,46 @@ public class IPCManager : IDisposable {
         }
 
         return true;
+    }
+
+    /// <returns>(true, null) if valid, otherwise (false, "the validation error")</returns>
+    private (bool, string?) ValidatePath(string path) {
+        try {
+            var parsedPath = MacroPath.ParseText(path ?? "/");
+            var target = Env.MacroConfig.Root.Walk(parsedPath);
+            if (target == null) { return (false, $"no node found at '{path}'"); }
+            return (true, null);
+        } catch (ArgumentException ex) {
+            return (false, ex.Message);
+        }
+    }
+
+    /// <summary>Validates that `path` is valid and points to a macro</summary>
+    /// <returns>(true, null) if valid, otherwise (false, "the validation error")</returns>
+    private (bool, string?) ValidateMacroPath(string path) {
+        try {
+            var parsedPath = MacroPath.ParseText(path ?? "/");
+            var target = Env.MacroConfig.Root.Walk(parsedPath);
+            if (target == null) { return (false, $"no node found at '{path}'"); }
+            if (target is not MateNode.Macro) { return (false, $"expected macro at '{path}'"); }
+            return (true, null);
+        } catch (ArgumentException ex) {
+            return (false, ex.Message);
+        }
+    }
+
+    /// <summary>Validates that `path` is valid and points to a group</summary>
+    /// <returns>(true, null) if valid, otherwise (false, "the validation error")</returns>
+    private (bool, string?) ValidateGroupPath(string path) {
+        try {
+            var parsedPath = MacroPath.ParseText(path ?? "/");
+            var target = Env.MacroConfig.Root.Walk(parsedPath);
+            if (target == null) { return (false, $"no node found at '{path}'"); }
+            if (target is not MateNode.Group) { return (false, $"expected group at '{path}'"); }
+            return (true, null);
+        } catch (ArgumentException ex) {
+            return (false, ex.Message);
+        }
     }
 
     public void Dispose() {

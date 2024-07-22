@@ -14,11 +14,17 @@ class MacroMateIPCClient {
     private ICallGateSubscriber<bool> csIsAvailable;
     private ICallGateSubscriber<string, string, string?, uint?, bool> csCreateOrUpdateMacro;
     private ICallGateSubscriber<string, bool> csCreateGroup;
+    private ICallGateSubscriber<string, (bool, string?)> csValidatePath;
+    private ICallGateSubscriber<string, (bool, string?)> csValidateMacroPath;
+    private ICallGateSubscriber<string, (bool, string?)> csValidateGroupPath;
 
     public MacroMateIPCClient(IDalamudPluginInterface pluginInterface) {
         csIsAvailable = pluginInterface.GetIpcSubscriber<bool>("MacroMate.IsAvailable");
         csCreateOrUpdateMacro = pluginInterface.GetIpcSubscriber<string, string, string?, uint?, bool>("MacroMate.CreateOrUpdateMacro");
         csCreateGroup = pluginInterface.GetIpcSubscriber<string, bool>("MacroMate.CreateGroup");
+        csValidatePath = pluginInterface.GetIpcSubscriber<string, (bool, string?)>("MacroMate.ValidatePath");
+        csValidateMacroPath = pluginInterface.GetIpcSubscriber<string, (bool, string?)>("MacroMate.ValidateMacroPath");
+        csValidateGroupPath = pluginInterface.GetIpcSubscriber<string, (bool, string?)>("MacroMate.ValidateGroupPath");
     }
 
     public bool IsAvailable() => csIsAvailable.InvokeFunc();
@@ -31,6 +37,10 @@ class MacroMateIPCClient {
     ) => csCreateOrUpdateMacro.InvokeFunc(name, lines, parentPath, iconId);
 
     public bool CreateGroup(string path) => csCreateGroup.InvokeFunc(path);
+    
+    public (bool, string?) ValidatePath(string path) => csValidatePath.InvokeFunc(path);
+    public (bool, string?) ValidateMacroPath(string path) => csValidateMacroPath.InvokeFunc(path);
+    public (bool, string?) ValidateGroupPath(string path) => csValidateGroupPath.InvokeFunc(path);
 }
 ```
 
@@ -124,7 +134,7 @@ Usage:
 ```csharp
 ICallGateSubscriber<string, bool> csCreateGroup;
 csCreateGroup = pluginInterface.GetIpcSubscriber<string, bool>("MacroMate.CreateGroup");
-macroMateClient.CreateGroup("/CoolGroup/Subgroup");
+csCreateGroup.InvokeFunc("/CoolGroup/Subgroup")
 ```
 
 Throws `ArgumentException` when:
@@ -134,3 +144,52 @@ Throws `ArgumentException` when:
 - `path` includes a named index (`Hello@2`) _and_ that index does not already exist
 - `path` includes a macro (only groups are allowed)
 
+### `MacroMate.ValidatePath`
+
+**Signature: `(bool, string?) ValidatePath(string path)`**
+
+Validates that `path` is valid and points a node in the tree
+
+Returns `(true, null)` if valid, otherwise `(false, "the validation error")`
+
+Usage:
+```
+ICallGateSubscriber<string, (bool, string?)> csValidatePath;
+csValidatePath = pluginInterface.GetIpcSubscriber<string, (bool, string?)>("MacroMate.ValidatePath");
+var (valid, err) = csValidatePath.InvokeFunc("/My Cool Path");
+if (!valid) { /* do something with err */ }
+```
+
+
+### `MacroMate.ValidateMacroPath`
+
+**Signature: `(bool, string?) ValidateMacroPath(string path)`**
+
+Validates that `path` is valid and points a macro in the tree
+
+Returns `(true, null)` if valid, otherwise `(false, "the validation error")`
+
+Usage:
+```
+ICallGateSubscriber<string, (bool, string?)> csValidateMacroPath;
+csValidateMacroPath = pluginInterface.GetIpcSubscriber<string, (bool, string?)>("MacroMate.ValidateMacroPath");
+var (valid, err) = csValidateMacroPath.InvokeFunc("/My Macro");
+if (!valid) { /* do something with err */ }
+```
+
+
+### `MacroMate.ValidateGroupPath`
+
+**Signature: `(bool, string?) ValidateGroupPath(string path)`**
+
+Validates that `path` is valid and points a group in the tree
+
+Returns `(true, null)` if valid, otherwise `(false, "the validation error")`
+
+Usage:
+```
+ICallGateSubscriber<string, (bool, string?)> csValidateGroupPath;
+csValidateGroupPath = pluginInterface.GetIpcSubscriber<string, (bool, string?)>("MacroMate.ValidateGroupPath");
+var (valid, err) = csValidateGroupPath.InvokeFunc("/My Group");
+if (!valid) { /* do something with err */ }
+```
