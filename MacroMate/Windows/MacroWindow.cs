@@ -38,7 +38,7 @@ public class MacroWindow : Window, IDisposable {
 
     public void ShowOrFocus(MateNode.Macro macro) {
         Macro = macro;
-        Env.PluginWindowManager.RightAlignedShowOrFocus(this);
+        Env.PluginWindowManager.ShowOrFocus(this);
     }
 
     public override void Draw() {

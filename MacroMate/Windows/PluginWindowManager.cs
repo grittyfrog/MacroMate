@@ -37,19 +37,6 @@ public class PluginWindowManager : IDisposable {
         }
     }
 
-    public void RightAlignedShowOrFocus(Window window) {
-        if (!window.IsOpen) {
-            var currentPos = ImGui.GetWindowPos();
-            var currentSize = ImGui.GetWindowSize();
-
-            window.Position = currentPos + new Vector2(currentSize.X, 0);
-            window.PositionCondition = ImGuiCond.Appearing;
-            window.IsOpen = true;
-        } else {
-            ImGui.SetWindowFocus(window.WindowName);
-        }
-    }
-
     public void Dispose() {
         Env.WindowSystem.RemoveAllWindows();
     }
