@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Numerics;
 using System.Text;
-using Dalamud.Interface.GameFonts;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud;
@@ -14,16 +13,16 @@ using MacroMate.MacroTree;
 namespace MacroMate.Windows.Components;
 
 public static class MacroLinkEditor {
-    private static Vector2 iconSize = ImGuiHelpers.ScaledVector2(32.0f);
+    private static Vector2 IconSize => ImGuiHelpers.ScaledVector2(32.0f);
     private static int iconColumns = 10;
     private static int iconRows = 10;
 
-    public static bool DrawEditor(ref MacroLink macroLink) {
-        var width = iconSize.X * (iconColumns + ImGui.GetStyle().ItemSpacing.X * 2);
+    public static float Width => (IconSize.X * iconColumns) + (iconColumns * ImGui.GetStyle().ItemSpacing.X);
 
+    public static bool DrawEditor(ref MacroLink macroLink) {
         bool edited = false;
 
-        ImGui.SetNextItemWidth(width);
+        ImGui.SetNextItemWidth(Width);
         if (ImGui.BeginTable("vanillaMacroSetTable", 2, ImGuiTableFlags.SizingStretchSame)) {
             ImGui.PushStyleVar(ImGuiStyleVar.SelectableTextAlign, new Vector2(0.5f, 0.5f));
 
@@ -46,7 +45,7 @@ public static class MacroLinkEditor {
             ImGui.EndTable();
         }
 
-        ImGui.SetNextItemWidth(width);
+        ImGui.SetNextItemWidth(Width);
         if (ImGui.BeginTable("vanillaMacroSlotTable", 10, ImGuiTableFlags.SizingFixedSame)) {
             uint macroSlot = 0;
             foreach (var row in Enumerable.Range(0, iconRows)) {
@@ -88,7 +87,7 @@ public static class MacroLinkEditor {
         }
 
         ImGui.PushStyleColor(ImGuiCol.Button, buttonColor);
-        if (ImGui.Button(macroSlot.ToString(), new Vector2(32.0f, 32.0f))) {
+        if (ImGui.Button(macroSlot.ToString(), ImGuiHelpers.ScaledVector2(32.0f, 32.0f))) {
             BindSlot(ref macroLink, macroSlot);
             edited = true;
         }

@@ -30,15 +30,13 @@ public class ConditionExprEditor : IDisposable {
         if (!alwaysLinked) {
             edited |= DrawOrCondition(ref conditionExpr);
         }
-        // if (alwaysLinked) { ImGui.BeginDisabled(); }
-        // if (alwaysLinked) { ImGui.EndDisabled(); }
 
         return edited;
     }
 
     private bool DrawOrCondition(ref ConditionExpr.Or conditionExpr) {
         var edited = false;
-        var tableFlags = ImGuiTableFlags.RowBg | ImGuiTableFlags.Borders;
+        var tableFlags = ImGuiTableFlags.RowBg | ImGuiTableFlags.Borders | ImGuiTableFlags.SizingFixedFit;
 
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4f, 4f));
         foreach (var (andExpression, andIndex) in conditionExpr.options.WithIndex()) {
@@ -61,7 +59,7 @@ public class ConditionExprEditor : IDisposable {
             }
 
             if (ImGui.BeginTable("condition_expr_editor_layout_table", 2, tableFlags)) {
-                ImGui.TableSetupColumn("Conditions", ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableSetupColumn("Conditions", ImGuiTableColumnFlags.WidthFixed);
                 ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthFixed);
 
                 ImGui.TableNextRow();
@@ -79,7 +77,6 @@ public class ConditionExprEditor : IDisposable {
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Bars.ToIconString())) {
                     ImGui.OpenPopup($"condition_action_button_popup");
                 }
-
 
                 if (ImGui.BeginPopup($"condition_action_button_popup")) {
                     if (ImGui.BeginMenu("Add Condition")) {
@@ -173,7 +170,7 @@ public class ConditionExprEditor : IDisposable {
             if (yesIcon != null) {
                 ImGui.SameLine();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
-                ImGui.Image(yesIcon.ImGuiHandle, ImGuiHelpers.ScaledVector2(ImGui.GetTextLineHeight()));
+                ImGui.Image(yesIcon.ImGuiHandle, new Vector2(ImGui.GetTextLineHeight()));
 
                 if (ImGui.IsItemHovered()) {
                     ImGui.SetTooltip("This condition is active");

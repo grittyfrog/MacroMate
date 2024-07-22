@@ -10,6 +10,7 @@ using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Str;
 using MacroMate.Extensions.Dalamaud.Interface.Components;
+using Dalamud.Interface.Utility;
 
 namespace MacroMate.Windows;
 
@@ -49,12 +50,12 @@ public class MacroWindow : Window, IDisposable {
             ImGui.BeginTable(
                 "layoutTable",
                 3,
-                ImGuiTableFlags.Hideable | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.NoHostExtendX
+                ImGuiTableFlags.Hideable | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.Resizable
             )
         ) {
-            ImGui.TableSetupColumn("Macro", ImGuiTableColumnFlags.WidthFixed, 500f);
-            ImGui.TableSetupColumn("Link Macros", ImGuiTableColumnFlags.WidthFixed, 400f);
-            ImGui.TableSetupColumn("Link Conditions", ImGuiTableColumnFlags.WidthStretch);
+            ImGui.TableSetupColumn("Macro", ImGuiTableColumnFlags.WidthFixed, MathF.Min(ImGui.GetContentRegionAvail().X, 500f * ImGuiHelpers.GlobalScale));
+            ImGui.TableSetupColumn("Link Macros", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, MacroLinkEditor.Width);
+            ImGui.TableSetupColumn("Link Conditions", ImGuiTableColumnFlags.WidthStretch | ImGuiTableColumnFlags.NoResize);
 
             ImGui.TableSetColumnEnabled(1, showLinkMacros);
             ImGui.TableSetColumnEnabled(2, showLinkConditions);
@@ -163,9 +164,9 @@ public class MacroWindow : Window, IDisposable {
         if (seStringInputTextMultiline.Draw(
             $"###macro-lines",
             ref lines,
-            ushort.MaxValue, // Allow for many lines, since we chunk them by blocks of 15 for execution/bindingn.
+            ushort.MaxValue, // Allow for many lines, since we chunk them by blocks of 15 for execution/binding.
             new Vector2(
-                MathF.Min(ImGui.GetContentRegionAvail().X, 500f),
+                MathF.Min(ImGui.GetContentRegionAvail().X, 500f * ImGuiHelpers.GlobalScale),
                 ImGui.GetTextLineHeight() * 20
             ),
             // Don't allow lines that are longer then the max line length
