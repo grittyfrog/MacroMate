@@ -49,13 +49,7 @@ public static class IconAndName {
             }
         }
 
-        ImGui.SetNextItemWidth(
-            Math.Clamp(
-                ImGui.GetContentRegionAvail().X,
-                200.0f,
-                500f - iconSize.X - ImGui.GetStyle().ItemSpacing.X
-            )
-        );
+        ImGui.SetNextItemWidth(-1);
         var name = macro.Name;
         if (ImGui.InputText("###name", ref name, 255)) {
             macro.Name = name;
