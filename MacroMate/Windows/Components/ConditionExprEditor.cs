@@ -59,7 +59,7 @@ public class ConditionExprEditor : IDisposable {
             }
 
             if (ImGui.BeginTable("condition_expr_editor_layout_table", 2, tableFlags)) {
-                ImGui.TableSetupColumn("Conditions", ImGuiTableColumnFlags.WidthFixed);
+                ImGui.TableSetupColumn("Conditions", ImGuiTableColumnFlags.WidthStretch);
                 ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthFixed);
 
                 ImGui.TableNextRow();
