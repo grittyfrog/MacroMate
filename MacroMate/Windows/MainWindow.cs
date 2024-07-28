@@ -203,7 +203,7 @@ public class MainWindow : Window, IDisposable {
     }
 
     private void DrawSearchBar() {
-        ImGui.SetNextItemWidth(90);
+        ImGui.SetNextItemWidth(90 * ImGuiHelpers.GlobalScale);
         var searchFilterName = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(searchFilter.ToString().ToLower());
         if (ImGui.BeginCombo("###searchcombo", searchFilterName)) {
             foreach (var searchFilterOption in Enum.GetValues<SearchFilter>()) {
@@ -233,6 +233,7 @@ public class MainWindow : Window, IDisposable {
 
         ImGui.SameLine();
 
+        ImGui.SetNextItemWidth(-1);
         if (ImGui.InputTextWithHint("###mainwindow_macrosearch", "Search", ref searchText, 255)) {
             RefreshSearch();
         }
@@ -370,8 +371,8 @@ public class MainWindow : Window, IDisposable {
 
 
     private void DrawMacroNode(MateNode.Macro macro) {
-        ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(2f, 0f));
-        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4f, 2f));
+        ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(2f, 0f) * ImGuiHelpers.GlobalScale);
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4f, 2f) * ImGuiHelpers.GlobalScale);
 
         ImGui.TableNextColumn();
 

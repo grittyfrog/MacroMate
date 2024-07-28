@@ -16,7 +16,7 @@ public static class IconAndName {
     public static bool Draw(MateNode.Macro macro) {
         var edited = false;
 
-        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8, ImGui.GetStyle().ItemSpacing.Y));
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8 * ImGuiHelpers.GlobalScale, ImGui.GetStyle().ItemSpacing.Y));
         var iconSize = ImGuiHelpers.ScaledVector2(48.0f);
         var icon = Env.TextureProvider.GetMacroIcon(macro.IconId).GetWrapOrEmpty();
 

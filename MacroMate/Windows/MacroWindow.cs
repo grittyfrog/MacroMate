@@ -79,7 +79,7 @@ public class MacroWindow : Window, IDisposable {
 
         bool edited = false;
 
-        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8.0f, ImGui.GetStyle().ItemSpacing.Y));
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8.0f * ImGuiHelpers.GlobalScale, ImGui.GetStyle().ItemSpacing.Y));
         if (ImGui.BeginMenuBar()) {
             MacroRunMenuItem.Draw(
                 Macro,

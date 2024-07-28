@@ -38,7 +38,7 @@ public class ConditionExprEditor : IDisposable {
         var edited = false;
         var tableFlags = ImGuiTableFlags.RowBg | ImGuiTableFlags.Borders | ImGuiTableFlags.SizingFixedFit;
 
-        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4f, 4f));
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4f, 4f) * ImGuiHelpers.GlobalScale);
         foreach (var (andExpression, andIndex) in conditionExpr.options.WithIndex()) {
             ImGui.PushID(andIndex);
 
@@ -168,7 +168,7 @@ public class ConditionExprEditor : IDisposable {
         ImGui.Text("is");
         ImGui.SameLine();
 
-        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(0f, 4f));
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(0f, 4f) * ImGuiHelpers.GlobalScale);
         if (ImGui.Button(condition.ValueName)) {
             ImGui.OpenPopup("edit_condition_popup");
             conditionEditor.ConditionFactory = condition.FactoryRef;
