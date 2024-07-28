@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Dalamud.Interface.Windowing;
@@ -28,7 +29,7 @@ For example, you can:
 
 - Automatically swap in the correct raid macro when you enter an instance
 - Store longer macros and automatically split them across multiple macro slots.
-- Use almost any icon in the game for your Macros
+- Use almost any icon in the game
 
 
 Binding
@@ -80,10 +81,10 @@ At this time tab completion is not supported, it may be supported in a future up
 
         // Find all the double-newlines and replace them with "\n" so we don't
         // need to do any lookahead in our normal loop
-        var linesCollapsed = lines.Zip(lines.Skip(1).Append(""), (line, nextLine) => line == "" && nextLine == "" ? "\n" : line);
+        //var linesCollapsed = lines.Zip(lines.Skip(1).Append(""), (line, nextLine) => line == "" && nextLine == "" ? "\n" : line);
 
         var currentText = new StringBuilder(); // Accumulate text until we hit a newline or special char
-        foreach (var line in linesCollapsed) {
+        foreach (var line in lines) {
             if (line == "===") {
                 TextWrappedAndClear(currentText);
                 ImGui.Separator();
@@ -92,16 +93,14 @@ At this time tab completion is not supported, it may be supported in a future up
                 TextWrappedAndClear(currentText);
                 ImGui.BulletText(line.Substring(2));
                 continue;
-            } else if (line == "\n") { // parsed double-empty-line
+            } else if (line == "") { // Previously an empty newline
                 TextWrappedAndClear(currentText);
                 ImGui.NewLine();
-                continue;
-            } else if (line == "") {
-                TextWrappedAndClear(currentText);
                 continue;
             }
 
             currentText.Append(line);
+            currentText.Append(" ");
         }
 
         TextWrappedAndClear(currentText);
