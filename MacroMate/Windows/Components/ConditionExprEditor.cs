@@ -94,6 +94,17 @@ public class ConditionExprEditor : IDisposable {
                         ImGui.EndMenu();
                     }
 
+                    if (ImGui.Selectable("Add All Current Conditions")) {
+                        conditionExpr = conditionExpr.UpdateAnd(
+                            andIndex,
+                            (and) => and.AddConditions(Env.ConditionManager.CurrentConditions().Enumerate())
+                        );
+                        edited = true;
+                    }
+                    if (ImGui.IsItemHovered()) {
+                        ImGui.SetTooltip("Adds all currently active conditions to this or condition");
+                    }
+
                     if (ImGui.Selectable("Delete##delete_condition_expr_and")) {
                         conditionExpr = conditionExpr.DeleteAnd(andIndex);
                         edited = true;

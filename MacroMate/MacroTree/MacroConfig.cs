@@ -118,9 +118,7 @@ public class MacroConfig {
             newMacroNode.Link = templateSibling.Link.Clone();
         }
 
-        // Rather then starting with an empty condition, lets start with one with every applicable
-        // condition so you have an idea of the possibilities
-        newMacroNode.ConditionExpr = Conditions.ConditionExpr.Or.Default();
+        newMacroNode.AlwaysLinked = true;
 
         parent.Attach(newMacroNode);
         NotifyEdit();

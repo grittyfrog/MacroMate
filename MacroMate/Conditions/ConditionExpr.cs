@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -32,13 +33,6 @@ public interface ConditionExpr {
             var updatedAndCondition = update(andCondition);
             return this with { options = options.SetItem(andIndex, updatedAndCondition) };
         }
-
-        public static Or Default() => new ConditionExpr.Or(
-            Env.ConditionManager.CurrentConditions().Enumerate().Select(condition =>
-                ConditionExpr.And.Single(condition)
-            ).ToImmutableList()
-        );
-
     }
 
     public record class And(ImmutableList<ICondition> conditions) : ConditionExpr {
@@ -55,6 +49,8 @@ public interface ConditionExpr {
 
         public ConditionExpr.And AddCondition(ICondition condition) =>
             this with { conditions = conditions.Add(condition) };
+        public ConditionExpr.And AddConditions(IEnumerable<ICondition> condition) =>
+            condition.Aggregate(this, (and, condition) => and.AddCondition(condition));
         public ConditionExpr.And DeleteCondition(int conditionIndex) =>
             this with { conditions = conditions.RemoveAt(conditionIndex) };
         public ConditionExpr.And SetCondition(int conditionIndex, ICondition condition) =>
