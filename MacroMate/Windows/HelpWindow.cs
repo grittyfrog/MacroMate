@@ -2,6 +2,8 @@ using System.Linq;
 using System.Text;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
+using MacroMate.Conditions;
+using MacroMate.MacroTree;
 
 namespace MacroMate.Windows;
 
@@ -43,7 +45,8 @@ public class HelpWindow : Window {
             DrawPseudoMarkdown(@"
             Auto translate text can be copied/pasted from the base game into Macro Mate, and from Macro Mate into the base game.
 
-            At this time tab completion is not supported, it may be supported in a future update.");
+            At this time tab completion is not supported, it may be supported in a future update.
+            ");
         }
 
         if (ImGui.CollapsingHeader("Limitations")) {
@@ -56,6 +59,12 @@ public class HelpWindow : Window {
             Macro Mate is not designed for conditional combat actions. Conditions that are primarily
             used for dynamically swapping combat actions are out of scope and will not be introduced in this
             plugin.");
+        }
+
+        if (ImGui.CollapsingHeader("Tutorial")) {
+            ImGui.Indent();
+            DrawSprintTutorial();
+            ImGui.Unindent();
         }
     }
 
@@ -106,5 +115,103 @@ public class HelpWindow : Window {
             ImGui.TextWrapped(builder.ToString());
         }
         builder.Clear();
+    }
+
+    private void DrawSprintTutorial() {
+        if (ImGui.CollapsingHeader("Normal Sprint / PvP / Island Sanctuary macro")) {
+            if (ImGui.Button("Import Example")) {
+                var defaultSprintMacro = new MateNode.Macro {
+                    Name = "Sprint (Default)",
+                    IconId = 104,
+                    Link = new MacroLink { Set = Extensions.Dalamud.Macros.VanillaMacroSet.INDIVIDUAL, Slots = new() { 99 } },
+                    AlwaysLinked = true,
+                    Lines = "/ac \"Sprint\" <me>"
+                };
+
+                var pvpSprintMacro = new MateNode.Macro {
+                    Name = "Sprint (PvP)",
+                    IconId = 104,
+                    Link = new MacroLink { Set = Extensions.Dalamud.Macros.VanillaMacroSet.INDIVIDUAL, Slots = new() { 99 } },
+                    AlwaysLinked = false,
+                    ConditionExpr = ConditionExpr.Or.Single(new PvpStateCondition(PvpStateCondition.State.IN_PVP)),
+                    Lines = "/pvpac \"Sprint\" <me>"
+                };
+
+                var sanctuarySprintMacro = new MateNode.Macro {
+                    Name = "Sprint (Island Sanctuary)",
+                    IconId = 104,
+                    Link = new MacroLink { Set = Extensions.Dalamud.Macros.VanillaMacroSet.INDIVIDUAL, Slots = new() { 99 } },
+                    AlwaysLinked = false,
+                    ConditionExpr = ConditionExpr.Or.Single(new LocationCondition(1055)),
+                    Lines = "/ac \"Duty Action I\""
+                };
+
+                var sprintGroup = new MateNode.Group { Name = "Sprint" };
+                sprintGroup.Attach(sanctuarySprintMacro);
+                sprintGroup.Attach(pvpSprintMacro);
+                sprintGroup.Attach(defaultSprintMacro);
+
+                Env.MacroConfig.Root.Attach(sprintGroup);
+                Env.MacroConfig.NotifyEdit();
+            }
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Import the final result of this tutorial into your macro config");
+            }
+
+            DrawPseudoMarkdown("""
+                Lets make a macro that changes to the correct type of sprint depending on your location.
+
+                First lets set up a normal sprint macro in Macro Mate:
+
+                - Create a new group called 'Sprint' using `New > Group`.
+                - Add a Macro to the Sprint group by right-clicking it and selecting 'Add Macro'. Open the new macro by clicking it
+                - Rename the macro to `Sprint (Default)` and click the 'M' icon and choose a good sprint icon. (Hint: try searching for 'sprint')
+                - In the body of the macro type '/ac Sprint <me>'
+
+                You can test this macro by clicking 'Run' in the Macro window. Your character should start sprinting.
+
+                Now lets link the macro to the in-game macro UI:
+
+                - Click 'Link' on the tab bar, the link screen should appear
+                - Click on a macro slot to link to. (Recommended: Individual 99)
+                - Click on 'Link Conditions' and make sure 'Always Linked' is ticked.
+
+                Now open the in-game macro window. You should see the 'Sprint (Default)' macro linked in the slot you chose.
+
+                Now lets add a conditional PvP Sprint macro:
+
+                - Add a new macro to the Sprint group by right-clicking it and selecting 'Add Macro'.
+                - Drag and drop the macro so it is above 'Sprint (Default)'.
+                - Open the new macro by clicking it
+                - Rename the macro to `Sprint (PvP)` and pick a good icon
+                - In the body of the macro type '/pvpac Sprint <me>'
+                - Open the 'Link' panel and select the same macro slot we used for Sprint (Default)
+                - Open the 'Link Conditions' panel and untick 'Always Linked'
+                - Click the '+' button to add an OR group
+                - Add a PvP state condition by clicking the Hamburger button > Add Condition > PvP State
+                - Click the button after 'PvP State' and select 'In PvP'
+
+                Now we have a PvP macro! Travel to Wolves Den and check the in-game macro UI, the macro should have swapped to the PvP one.
+
+                This works because Macro Mate always selects the first 'active' macro in the tree when filling a linked slot. And since the
+                link conditions for 'Sprint (PvP)' are satisfied it will be chosen. If the conditions aren't active then 'Sprint (Default)' will
+                be chosen since it is always active.
+
+                Finally we can do something similar for Island Sanctuary:
+
+                - Add a new macro to the Sprint group by right-clicking it and selecting 'Add Macro'.
+                - Drag and drop the macro so it is above 'Spirnt (PvP)'.
+                - Open the new macro by clicking it
+                - Rename the macro to `Sprint (Island Sanctuary)` and pick a good icon
+                - In the body of the macro type /ac "Duty Action I"
+                - Open the 'Link' panel and select the same macro slot we used for 'Sprint (Default)' and 'Sprint (PvP)'
+                - Open the 'Link Conditions' panel and untick 'Always Linked'
+                - Click the '+' button to add an OR group
+                - Add a Location condition by clicking the Hamburger button > Add Condition > Location
+                - Click the button after 'Location' and search for 'Unnamed Island (1055)' in the left column, don't click anything in the right column.
+
+                That's it! Now you should have a macro that will switch between Default / PvP / Island Sanctuary based on your location.
+                """);
+        }
     }
 }

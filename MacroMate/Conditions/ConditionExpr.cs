@@ -33,6 +33,9 @@ public interface ConditionExpr {
             var updatedAndCondition = update(andCondition);
             return this with { options = options.SetItem(andIndex, updatedAndCondition) };
         }
+
+        public static ConditionExpr.Or Single(ICondition condition) =>
+            new ConditionExpr.Or(ImmutableList.Create(new ConditionExpr.And(ImmutableList.Create(condition))));
     }
 
     public record class And(ImmutableList<ICondition> conditions) : ConditionExpr {
