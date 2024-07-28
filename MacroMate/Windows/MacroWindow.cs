@@ -53,7 +53,7 @@ public class MacroWindow : Window, IDisposable {
                 ImGuiTableFlags.Hideable | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.Resizable
             )
         ) {
-            ImGui.TableSetupColumn("Macro", ImGuiTableColumnFlags.WidthFixed, MathF.Min(ImGui.GetContentRegionAvail().X, 500f * ImGuiHelpers.GlobalScale));
+            ImGui.TableSetupColumn("Macro", ImGuiTableColumnFlags.WidthFixed, 500f * ImGuiHelpers.GlobalScale);
             ImGui.TableSetupColumn("Link Macros", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, MacroLinkEditor.Width);
             ImGui.TableSetupColumn("Link Conditions", ImGuiTableColumnFlags.WidthStretch | ImGuiTableColumnFlags.NoResize);
 
