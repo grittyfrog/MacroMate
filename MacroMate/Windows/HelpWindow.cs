@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Dalamud.Interface.Windowing;
@@ -8,7 +7,6 @@ namespace MacroMate.Windows;
 
 public class HelpWindow : Window {
     public static readonly string NAME = "Help";
-
     public HelpWindow() : base(NAME) {}
 
     public void ShowOrFocus() {
@@ -16,53 +14,49 @@ public class HelpWindow : Window {
     }
 
     public override void Draw() {
-        DrawGeneralHelp();
-    }
+        if (ImGui.CollapsingHeader("Introduction", ImGuiTreeNodeFlags.DefaultOpen)) {
+            DrawPseudoMarkdown(@"
+            Macro Mate lets you store and run an unlimited number of macros. You can also bind macros to normal macro slots.
 
-    private void DrawGeneralHelp() {
-        DrawPseudoMarkdown(@"
-Introduction
-===
-Macro Mate lets you store and run an unlimited number of macros. You can also bind macros to normal macro slots.
+            For example, you can:
+            - Automatically swap in the correct raid macro when you enter an instance
+            - Store longer macros and automatically split them across multiple macro slots.
+            - Use almost any icon in the game
+            ");
+        }
 
-For example, you can:
+        if (ImGui.CollapsingHeader("Binding")) {
+            DrawPseudoMarkdown(@"
+            Macros will automatically bind to their linked macro slots when its link conditions are satisifed.
 
-- Automatically swap in the correct raid macro when you enter an instance
-- Store longer macros and automatically split them across multiple macro slots.
-- Use almost any icon in the game
+            For example, a Macro that is linked to Individual Slot 1 with a Link Condition of 'Job is DRG' would
+            be copied to Individual Macro Slot 1 when you change your class to Dragoon.
 
+            Macros can be linked to multiple slots. This is used to allow for longer macros, as each slot can only
+            accomodate 15 lines. Longer macros will be written to each linked slot in sequence.
 
-Binding
-===
-Macros will automatically bind to their linked macro slots when its link conditions are satisifed.
+            If multiple Macros want to bind to the same slot then the one that is higher up in the tree will
+            be bound.");
+        }
 
-For example, a Macro that is linked to Individual Slot 1 with a Link Condition of 'Job is DRG' would
-be copied to Individual Macro Slot 1 when you change your class to Dragoon.
+        if (ImGui.CollapsingHeader("Auto Translation")) {
+            DrawPseudoMarkdown(@"
+            Auto translate text can be copied/pasted from the base game into Macro Mate, and from Macro Mate into the base game.
 
-Macros can be linked to multiple slots. This is used to allow for longer macros, as each slot can only
-accomodate 15 lines. Longer macros will be written to each linked slot in sequence.
+            At this time tab completion is not supported, it may be supported in a future update.");
+        }
 
-If multiple Macros want to bind to the same slot then the one that is higher up in the tree will
-be bound.
+        if (ImGui.CollapsingHeader("Limitations")) {
+            DrawPseudoMarkdown(@"
+            Macro Mate does not extend the macro system in any way and macros are executed identically to the base game.
 
+            You can store macros that are longer then 15 lines, but macros must still be
+            executed in 15-line chunks, and longer macros will need to be linked to multiple macro slots.
 
-Limitations
-===
-Macro Mate does not extend the macro system in any way and macros are executed identically to the base game.
-
-You can store macros that are longer then 15 lines, but macros must still be
-executed in 15-line chunks, and longer macros will need to be linked to multiple macro slots.
-
-Macro Mate is not designed for conditional combat actions. Conditions that are primarily
-used for dynamically swapping combat actions are out of scope and will not be introduced in this
-plugin.
-
-
-Auto Translation
-===
-Auto translate text can be copied/pasted from the base game into Macro Mate, and from Macro Mate into the base game.
-
-At this time tab completion is not supported, it may be supported in a future update.");
+            Macro Mate is not designed for conditional combat actions. Conditions that are primarily
+            used for dynamically swapping combat actions are out of scope and will not be introduced in this
+            plugin.");
+        }
     }
 
     /**
@@ -77,7 +71,8 @@ At this time tab completion is not supported, it may be supported in a future up
     private void DrawPseudoMarkdown(string text) {
         var lines = text
             .Trim()
-            .Split("\n");
+            .Split("\n")
+            .Select(line => line.Trim());
 
         // Find all the double-newlines and replace them with "\n" so we don't
         // need to do any lookahead in our normal loop
