@@ -9,7 +9,9 @@ Paths are a list of segments delimited by forward slashes (`/`). I.e: `/segment 
 ```
 /                     Select root 
 /My Group             Select 'My Group' under root
+My Group              Select 'My Group' under root
 /My Group/Subgroup    Select 'Subgroup' under 'My Group' under root
+My Group/Subgroup     Select 'Subgroup' under 'My Group' under root
 /@0                   Select the first child of root
 /My Group/@2          Select the third child of 'My Group'
 /My Group@1           Select the second child named 'My Group' under root
@@ -18,7 +20,7 @@ Paths are a list of segments delimited by forward slashes (`/`). I.e: `/segment 
 /My\\Group            Select the child named 'My\Group' under root
 ```
 
-Paths always start with `/` which indicates the root node of the macro tree. Paths also treat `@` and `\` as special characters which must be escaped if used in a macro name.
+Paths may start with a `/` or not, either way they always start from the root node of the macro tree. Paths also treat `@` and `\` as special characters which must be escaped if used in a macro name.
 
 Each segment is either a **name**, **index** or **named index**.
 

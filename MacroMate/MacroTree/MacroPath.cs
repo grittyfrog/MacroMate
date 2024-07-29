@@ -54,9 +54,9 @@ public interface MacroPathSegment {
     public static IEnumerable<MacroPathSegment> ParseText(string path) {
         if (path == "") { return ImmutableList<MacroPathSegment>.Empty; }
         if (path == "/") { return ImmutableList<MacroPathSegment>.Empty; }
-        if (!path.StartsWith("/")) { throw new ArgumentException("MacroPath must start with '/'"); }
 
-        return parseMacroPathSegment.XMany().End().Parse(path);
+        var prefix = path.StartsWith("/") ? "" : "/";
+        return parseMacroPathSegment.XMany().End().Parse(prefix + path);
     }
 
     // Reads `\\` as a literal `\`
