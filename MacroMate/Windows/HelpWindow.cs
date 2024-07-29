@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Text;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using MacroMate.Conditions;
@@ -47,6 +48,70 @@ public class HelpWindow : Window {
 
             At this time tab completion is not supported, it may be supported in a future update.
             ");
+        }
+
+        if (ImGui.CollapsingHeader("Paths")) {
+            DrawPseudoMarkdown(@"
+            Paths identify a particular macro or group in the tree. For example '/My Group/My Macro' is a path that identifies a macro called 'My Macro' inside 'My Group'.
+
+            Paths are made of segments separated by slashes. A segment can be:
+            - '<name>' matches a node by name (i.e. 'My Macro' matches the node named 'My Macro')
+            - '@<index>' matches the N-th child of a group (i.e '@1' matches the second child of root)
+            - '<name>@<index>' matches the N-th child with '<name>' (i.e. 'Run@1' matches the second macro named 'Run' under root)
+
+            Examples:");
+
+            if (ImGui.BeginTable("###helpwindow_paths_examples", 2, ImGuiTableFlags.Borders)) {
+                ImGui.TableSetupColumn("Command", ImGuiTableColumnFlags.WidthFixed, 150 * ImGuiHelpers.GlobalScale);
+                ImGui.TableSetupColumn("Description", ImGuiTableColumnFlags.WidthStretch);
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("/");
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("Select root");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("/My Group");
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("Select 'My Group' under root");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("My Group");
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("Select 'My Group' under root");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("My Group/Subgroup");
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("Select 'Subgroup' under 'My Group' under root");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("@0");
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("Select the first child of root");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("My Group/@2");
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("Select the third child of 'My Group'");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("My Group@1");
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("Select the second child named 'My Group' under root");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("My\\/Group");
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("Select the child named 'My/Group' under root");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("My\\@Group");
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("Select the child named 'My@Group' under root");
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("My\\\\Group");
+                ImGui.TableNextColumn(); ImGui.TextUnformatted("Select the child named 'My\\Group' under root");
+
+                ImGui.EndTable();
+            }
+            ImGui.NewLine();
+
+            DrawPseudoMarkdown(@"
+            Paths may start with a / or not, either way they always start from the root node of the macro tree.
+            Paths also treat @ and \ as special characters which must be escaped if used in a macro name.");
         }
 
         if (ImGui.CollapsingHeader("Limitations")) {
