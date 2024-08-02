@@ -52,6 +52,12 @@ public class ContextMenuManager {
             );
             if (activeMacro != null) {
                 args.AddMenuItem(new MenuItem() {
+                    Name = "Open in Macro Mate",
+                    PrefixChar = 'M',
+                    OnClicked = (clickArgs) => OnOpenInMacroMate(clickArgs, activeMacro)
+                });
+
+                args.AddMenuItem(new MenuItem() {
                     Name = "Update in Macro Mate",
                     PrefixChar = 'M',
                     OnClicked = (clickArgs) => OnUpdateInMacroMate(
@@ -76,6 +82,10 @@ public class ContextMenuManager {
             var importTitle = activeMacro == null ? "Import to Macro Mate" : "Update in Macro Mate";
 
         }
+    }
+
+    private void OnOpenInMacroMate(IMenuItemClickedArgs args, MateNode.Macro activeMacro) {
+        Env.PluginWindowManager.MacroWindow.ShowOrFocus(activeMacro);
     }
 
     private void OnUpdateInMacroMate(
