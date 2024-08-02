@@ -91,6 +91,11 @@ public class MacroConfig {
         }).ToList();
     }
 
+    /// <summary>Get the macro that is actively linked to a vanilla macro slot (if any)</summary>
+    public MateNode.Macro? ActiveMacroLinkedTo(VanillaMacroSet macroSet, uint macroSlot) {
+        return ActiveMacros.FirstOrDefault(macro => macro.Link.Set == macroSet && macro.Link.Slots.Contains(macroSlot));
+    }
+
     public MateNode.Group CreateGroup(string groupName) {
         var newGroup = new MateNode.Group { Name = groupName };
         Root = Root.Attach(newGroup);

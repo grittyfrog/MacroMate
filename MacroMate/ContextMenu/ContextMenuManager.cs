@@ -38,11 +38,24 @@ public class ContextMenuManager {
             // find the right signature.
             if (macroLineCount == 0) { return; }
 
+            // If we've right clicked on a macro that is already linked from Macro Mate then
+            // we are updating the macro, rather then importing it. The actual function is the
+            // same but we should change the menu text
+            var activeMacro = Env.MacroConfig.ActiveMacroLinkedTo(
+                (VanillaMacroSet)agentMacro->SelectedMacroSet,
+                agentMacro->SelectedMacroIndex
+            );
+
+            var importTitle = activeMacro == null ? "Import to Macro Mate" : "Update in Macro Mate";
+
             args.AddMenuItem(new MenuItem() {
-                Name = "Import to Macro Mate",
+                Name = importTitle,
                 PrefixChar = 'M',
                 OnClicked = (clickArgs) => OnImportToMacroMate(
-                    clickArgs, agentMacro->SelectedMacroSet, agentMacro->SelectedMacroIndex
+                    clickArgs,
+                    activeMacro,
+                    (VanillaMacroSet)agentMacro->SelectedMacroSet,
+                    agentMacro->SelectedMacroIndex
                 )
             });
         }
@@ -50,28 +63,33 @@ public class ContextMenuManager {
 
     private unsafe void OnImportToMacroMate(
         IMenuItemClickedArgs args,
-        uint selectedMacroSet,
-        uint selectedMacroIndex
+        MateNode.Macro? activeMacro,
+        VanillaMacroSet selectedMacroSet,
+        uint selectedMacroSlot
     ) {
-        var vanillaMacro = Env.VanillaMacroManager.GetMacro((VanillaMacroSet)selectedMacroSet, selectedMacroIndex);
-        Env.PluginLog.Info($"{vanillaMacro}");
-
+        var vanillaMacro = Env.VanillaMacroManager.GetMacro(selectedMacroSet, selectedMacroSlot);
         var name = string.IsNullOrEmpty(vanillaMacro.Title) ? "Imported Macro" : vanillaMacro.Title;
 
         var importMacro = new MateNode.Macro {
             Name = name,
             IconId = vanillaMacro.IconId,
             Link = new MacroLink {
-                Set = (VanillaMacroSet)selectedMacroSet,
-                Slots = new() { selectedMacroIndex }
+                Set = selectedMacroSet,
+                Slots = new() { selectedMacroSlot }
             },
             Lines = vanillaMacro.Lines.Value,
             AlwaysLinked = true,
         };
 
+        // If we've got an active macro then we should "move" into it which will cause
+        // us to update.
+        //
+        // Otherwise just use root, where we might import or update.
+        var parent = activeMacro?.Parent ?? Env.MacroConfig.Root;
+
         Env.MacroConfig.MoveMacroIntoOrUpdate(
             importMacro,
-            Env.MacroConfig.Root,
+            parent,
             (existing, replacement) => existing.Name == replacement.Name && existing.Link.Equals(replacement.Link)
         );
     }
