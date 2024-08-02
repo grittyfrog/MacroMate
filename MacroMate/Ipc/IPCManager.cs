@@ -54,21 +54,12 @@ public class IPCManager : IDisposable {
     ) {
         var parentGroup = GetGroupFromPath(parentPath);
 
-        var existingNode = parentGroup.Children.FirstOrDefault(child => child.Name == name);
-        if (existingNode is MateNode.Macro existingMacro) {
-            existingMacro.IconId = iconId ?? existingMacro.IconId;
-            existingMacro.Lines = SeStringEx.ParseFromText(lines);
-            Env.MacroConfig.NotifyEdit();
-        } else {
-            var macro = new MateNode.Macro {
-                Name = name,
-                IconId = iconId ?? VanillaMacro.DefaultIconId,
-                Lines = SeStringEx.ParseFromText(lines)
-            };
-
-            Env.MacroConfig.MoveInto(macro, parentGroup);
-        }
-
+        var macro = new MateNode.Macro {
+            Name = name,
+            IconId = iconId ?? VanillaMacro.DefaultIconId,
+            Lines = SeStringEx.ParseFromText(lines)
+        };
+        Env.MacroConfig.MoveMacroIntoOrUpdate(macro, parentGroup);
 
         return true;
     }
