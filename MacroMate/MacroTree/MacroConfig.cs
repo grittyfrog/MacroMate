@@ -125,6 +125,29 @@ public class MacroConfig {
         return newMacroNode;
     }
 
+    /**
+     * Moves [source] into [targetGroup] if it doesn't exist, or update an existing macro
+     * with the same name.
+     */
+    public void MoveMacroIntoOrUpdate(
+        MateNode.Macro macro,
+        MateNode targetGroup,
+        Func<MateNode.Macro, MateNode.Macro, bool> equalsFn // (existing, replacement) => equals
+    ) {
+        var existingNode = targetGroup.Children
+            .FirstOrDefault(child => child is MateNode.Macro macroChild && equalsFn(macroChild, macro));
+        if (existingNode is MateNode.Macro existingMacro) {
+            existingMacro.StealValuesFrom(macro);
+            NotifyEdit();
+        } else {
+            Env.MacroConfig.MoveInto(macro, targetGroup);
+        }
+    }
+
+    public void MoveMacroIntoOrUpdate(MateNode.Macro macro, MateNode targetGroup) {
+        MoveMacroIntoOrUpdate(macro, targetGroup, (existing, replacement) => existing.Name == replacement.Name);
+    }
+
     public void MoveBeside(MateNode source, MateNode target, TreeNodeOffset offset) {
         source.MoveBeside(target, offset);
         NotifyEdit();

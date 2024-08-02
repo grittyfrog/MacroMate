@@ -15,6 +15,7 @@ using MacroMate.Serialization;
 using Dalamud.Game;
 using MacroMate.Extensions.FFXIVClientStructs;
 using MacroMate.Ipc;
+using MacroMate.ContextMenu;
 
 namespace MacroMate;
 
@@ -38,6 +39,7 @@ public class Env {
         MacroConfig = new MacroConfig();
         MacroMate = new MacroMate();
         IPCManager = new IPCManager();
+        ContextMenuManager = new ContextMenuManager();
 
         PluginCommandManager = new PluginCommandManager();
         PluginWindowManager = new PluginWindowManager();
@@ -95,6 +97,9 @@ public class Env {
     public static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
 
     [PluginService]
+    public static IContextMenu ContextMenu { get; private set; } = null!;
+
+    [PluginService]
     public static Dalamud.Plugin.Services.ICondition PlayerCondition { get; private set; } = null!;
 
     public static WindowSystem WindowSystem { get; private set; } = null!;
@@ -127,4 +132,6 @@ public class Env {
     public static SaveManager SaveManager { get; private set; } = null!;
 
     public static IPCManager IPCManager { get; private set; } = null!;
+
+    public static ContextMenuManager ContextMenuManager { get; private set; } = null!;
 }

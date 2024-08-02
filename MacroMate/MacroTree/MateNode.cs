@@ -64,6 +64,14 @@ public abstract class MateNode : TreeNode<MateNode> {
             ConditionExpr = ConditionExpr
         };
 
+        public void StealValuesFrom(Macro other) {
+            Name = other.Name;
+            IconId = other.IconId;
+            Link = other.Link.Clone();
+            Lines = other.Lines;
+            ConditionExpr = other.ConditionExpr;
+        }
+
         /// Get the Vanilla Macros that can be produced by this macro.
         ///
         /// Each block of 15 lines in this Macro will produce one Vanilla macro

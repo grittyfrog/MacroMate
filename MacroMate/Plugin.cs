@@ -1,5 +1,4 @@
-﻿using Dalamud.IoC;
-using Dalamud.Plugin;
+﻿using Dalamud.Plugin;
 
 namespace MacroMate;
 
