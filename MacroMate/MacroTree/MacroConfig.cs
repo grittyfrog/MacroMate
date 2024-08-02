@@ -23,6 +23,16 @@ public class MacroConfig {
         }
     }
 
+    /// Toggles the display of all context menu items in the Vanilla Macro UI
+    private bool _showVanillaMacroContextMenus = true;
+    public bool ShowVanillaMacroContextMenus {
+        get { return _showVanillaMacroContextMenus; }
+        set {
+            _showVanillaMacroContextMenus = value;
+            NotifyEdit();
+        }
+    }
+
     private MateNode _root;
     public MateNode Root {
         get { return _root; }

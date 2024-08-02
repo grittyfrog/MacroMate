@@ -22,6 +22,8 @@ public class ContextMenuManager {
         if (mtd.TargetObjectId != 0xE0000000) { return; }
 
         if (args.AddonName == "Macro") {
+            if (!Env.MacroConfig.ShowVanillaMacroContextMenus) { return; }
+
             // Don't use args.AgentPtr here, it seems to point to something that isn't AgentMacro
             var agentMacro = XIVCS.GetAgent<AgentMacro>();
             if (agentMacro == null) { return; }

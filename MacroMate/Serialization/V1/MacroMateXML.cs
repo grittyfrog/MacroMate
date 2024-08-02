@@ -17,6 +17,7 @@ public class MacroMateV1XML {
     public int ConfigVersion { get; set; } = 1;
 
     public required uint? LinkPlaceholderIconId { get; set; } = VanillaMacro.InactiveIconId;
+    public required bool? ShowVanillaMacroContextMenus { get; set; } = true;
 
     [XmlElement("Root", typeof(GroupXML))]
     [XmlElement("RootMacro", typeof(MacroXML))]
@@ -24,11 +25,13 @@ public class MacroMateV1XML {
 
     public MacroConfig ToReal() => new MacroConfig {
         LinkPlaceholderIconId = LinkPlaceholderIconId ?? VanillaMacro.InactiveIconId,
+        ShowVanillaMacroContextMenus = ShowVanillaMacroContextMenus ?? true,
         Root = Root.ToReal(),
     };
 
     public static MacroMateV1XML From(MacroConfig config) => new() {
         LinkPlaceholderIconId = config.LinkPlaceholderIconId,
+        ShowVanillaMacroContextMenus = config.ShowVanillaMacroContextMenus,
         Root = MateNodeXML.From(config.Root)
     };
 }

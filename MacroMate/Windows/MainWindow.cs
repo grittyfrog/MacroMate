@@ -122,16 +122,17 @@ public class MainWindow : Window, IDisposable {
 
             if (ImGui.BeginMenu("Settings")) {
                 ImGui.BeginGroup();
-                if (ImGui.MenuItem("Link Placeholder Icon")) {
+                var macroIcon = Env.TextureProvider.GetMacroIcon(Env.MacroConfig.LinkPlaceholderIconId).GetWrapOrEmpty();
+                if (macroIcon != null) {
+                    ImGui.Image(macroIcon.ImGuiHandle, new Vector2(ImGui.GetTextLineHeight()) * 1.3f);
+                    ImGui.SameLine();
+                }
+                ImGui.SameLine();
+                ImGui.AlignTextToFramePadding();
+                if (ImGui.MenuItem("Set Link Placeholder Icon")) {
                     Env.PluginWindowManager.IconPicker.Open(Env.MacroConfig.LinkPlaceholderIconId, selectedIconId => {
                         Env.MacroConfig.LinkPlaceholderIconId = selectedIconId;
                     });
-                }
-                ImGui.SameLine();
-                var macroIcon = Env.TextureProvider.GetMacroIcon(Env.MacroConfig.LinkPlaceholderIconId).GetWrapOrEmpty();
-                if (macroIcon != null) {
-                    ImGui.Image(macroIcon.ImGuiHandle, new Vector2(ImGui.GetTextLineHeight()));
-                    ImGui.SameLine();
                 }
                 ImGui.EndGroup();
                 if (ImGui.IsItemHovered()) {
@@ -139,6 +140,11 @@ public class MainWindow : Window, IDisposable {
                 }
                 if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
                     Env.MacroConfig.LinkPlaceholderIconId = VanillaMacro.InactiveIconId;
+                }
+
+                var showVanillaMacroContextMenus = Env.MacroConfig.ShowVanillaMacroContextMenus;
+                if (ImGui.Checkbox("Show Vanilla Macro Context Menus", ref showVanillaMacroContextMenus)) {
+                    Env.MacroConfig.ShowVanillaMacroContextMenus = showVanillaMacroContextMenus;
                 }
 
                 ImGui.EndMenu();
