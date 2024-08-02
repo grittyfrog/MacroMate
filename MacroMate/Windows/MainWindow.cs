@@ -239,7 +239,15 @@ public class MainWindow : Window, IDisposable {
 
         ImGui.SameLine();
 
-        ImGui.SetNextItemWidth(-1);
+
+        ImGui.PushFont(UiBuilder.IconFont);
+        var searchButtonWidth = ImGui.CalcTextSize(FontAwesomeIcon.Times.ToIconString())
+            + (ImGui.GetStyle().FramePadding * 2.0f);
+        ImGui.PopFont();
+
+        ImGui.SetNextItemWidth(
+            ImGui.GetContentRegionAvail().X - searchButtonWidth.X - (ImGui.GetStyle().WindowPadding * 2.0f).X
+        );
         if (ImGui.InputTextWithHint("###mainwindow_macrosearch", "Search", ref searchText, 255)) {
             RefreshSearch();
         }
