@@ -94,6 +94,11 @@ public class ContextMenuManager {
             var shouldUpdate = vanillaLink.Set == selectedMacroSet && vanillaLink.Slot == selectedMacroSlot;
             var sourceStr = shouldUpdate ? vanillaMacro.Lines.Value : macro.Lines.Value;
             foreach (var payload in sourceStr.Payloads) {
+                // If we have Macro Chain enabled then we've added `/nextmacro` and should remove it
+                if (activeMacro.LinkWithMacroChain && payload is TextPayload textPayload && textPayload.Text == "/nextmacro") {
+                    continue;
+                }
+
                 replacementLines.Add(payload);
             }
             replacementLines.Add(new NewLinePayload());
@@ -105,6 +110,7 @@ public class ContextMenuManager {
         }
         activeMacro.IconId = vanillaMacro.IconId;
         activeMacro.Lines = replacementLines.Build();
+        Env.MacroConfig.NotifyEdit();
     }
 
     private unsafe void OnImportToMacroMate(
