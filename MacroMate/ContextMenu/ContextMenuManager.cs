@@ -1,4 +1,7 @@
+using System.Linq;
 using Dalamud.Game.Gui.ContextMenu;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using MacroMate.Extensions.Dalamud.Macros;
@@ -45,25 +48,67 @@ public class ContextMenuManager {
                 (VanillaMacroSet)agentMacro->SelectedMacroSet,
                 agentMacro->SelectedMacroIndex
             );
+            if (activeMacro != null) {
+                args.AddMenuItem(new MenuItem() {
+                    Name = "Update in Macro Mate",
+                    PrefixChar = 'M',
+                    OnClicked = (clickArgs) => OnUpdateInMacroMate(
+                        clickArgs,
+                        activeMacro,
+                        (VanillaMacroSet)agentMacro->SelectedMacroSet,
+                        agentMacro->SelectedMacroIndex
+                    )
+                });
+            } else {
+                args.AddMenuItem(new MenuItem() {
+                    Name = "Import to Macro Mate",
+                    PrefixChar = 'M',
+                    OnClicked = (clickArgs) => OnImportToMacroMate(
+                        clickArgs,
+                        (VanillaMacroSet)agentMacro->SelectedMacroSet,
+                        agentMacro->SelectedMacroIndex
+                    )
+                });
+            }
 
             var importTitle = activeMacro == null ? "Import to Macro Mate" : "Update in Macro Mate";
 
-            args.AddMenuItem(new MenuItem() {
-                Name = importTitle,
-                PrefixChar = 'M',
-                OnClicked = (clickArgs) => OnImportToMacroMate(
-                    clickArgs,
-                    activeMacro,
-                    (VanillaMacroSet)agentMacro->SelectedMacroSet,
-                    agentMacro->SelectedMacroIndex
-                )
-            });
         }
+    }
+
+    private void OnUpdateInMacroMate(
+        IMenuItemClickedArgs args,
+        MateNode.Macro activeMacro,
+        VanillaMacroSet selectedMacroSet,
+        uint selectedMacroSlot
+    ) {
+        var vanillaMacro = Env.VanillaMacroManager.GetMacro(selectedMacroSet, selectedMacroSlot);
+
+        // Split the active macro into Vanilla Macros, update the correct part of the Vanilla macro, then
+        // reconstitute it back into a macro mate macro.
+        //
+        // This approach is a bit more complex, but it allows for updating "part" of a multi-link macro.
+        var existingMacroLinkBindings = activeMacro.VanillaMacroLinkBinding();
+        var replacementLines = new SeStringBuilder();
+        foreach (var (vanillaLink, macro) in existingMacroLinkBindings) {
+            var shouldUpdate = vanillaLink.Set == selectedMacroSet && vanillaLink.Slot == selectedMacroSlot;
+            var sourceStr = shouldUpdate ? vanillaMacro.Lines.Value : macro.Lines.Value;
+            foreach (var payload in sourceStr.Payloads) {
+                replacementLines.Add(payload);
+            }
+            replacementLines.Add(new NewLinePayload());
+        }
+
+        // Only update the name for single-link situations since multi-link appends "Foo 1", "Foo 2", "Foo 3" etc.
+        if (existingMacroLinkBindings.Count() <= 1) {
+            activeMacro.Name = string.IsNullOrEmpty(vanillaMacro.Title) ? "Updated Macro" : vanillaMacro.Title;
+        }
+        activeMacro.IconId = vanillaMacro.IconId;
+        activeMacro.Lines = replacementLines.Build();
     }
 
     private unsafe void OnImportToMacroMate(
         IMenuItemClickedArgs args,
-        MateNode.Macro? activeMacro,
         VanillaMacroSet selectedMacroSet,
         uint selectedMacroSlot
     ) {
@@ -81,15 +126,9 @@ public class ContextMenuManager {
             AlwaysLinked = true,
         };
 
-        // If we've got an active macro then we should "move" into it which will cause
-        // us to update.
-        //
-        // Otherwise just use root, where we might import or update.
-        var parent = activeMacro?.Parent ?? Env.MacroConfig.Root;
-
         Env.MacroConfig.MoveMacroIntoOrUpdate(
             importMacro,
-            parent,
+            Env.MacroConfig.Root,
             (existing, replacement) => existing.Name == replacement.Name && existing.Link.Equals(replacement.Link)
         );
     }
