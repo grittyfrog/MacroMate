@@ -146,6 +146,9 @@ public class MainWindow : Window, IDisposable {
                 if (ImGui.Checkbox("Show Vanilla Macro Context Menus", ref showVanillaMacroContextMenus)) {
                     Env.MacroConfig.ShowVanillaMacroContextMenus = showVanillaMacroContextMenus;
                 }
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip("When disabled no Macro Mate context menu actions will be shown in the vanilla macro UI");
+                }
 
                 ImGui.EndMenu();
             }
