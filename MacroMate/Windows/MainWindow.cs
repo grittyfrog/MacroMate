@@ -91,7 +91,7 @@ public class MainWindow : Window, IDisposable {
 
     private void DrawMenuBar() {
         var newGroupPopupId = DrawNewGroupPopup(Env.MacroConfig.Root);
-        var importCodePopupId = DrawImportCodePopup(Env.MacroConfig.Root);
+        var importCodePopupId = DrawImportFromCodePopup(Env.MacroConfig.Root);
         var importFromGamePopupId = DrawImportFromGamePopup(Env.MacroConfig.Root);
         var sortPopupId = DrawSortGroupPopup(Env.MacroConfig.Root);
 
@@ -550,7 +550,8 @@ public class MainWindow : Window, IDisposable {
 
         var newGroupPopupId = DrawNewGroupPopup(node);
         var renamePopupId = DrawRenamePopup(node);
-        var importPopupId = DrawImportCodePopup(node);
+        var importFromCodePopupId = DrawImportFromCodePopup(node);
+        var importFromGamePopupId = DrawImportFromGamePopup(node);
         var deletePopupId = DrawDeletePopupModal(node);
         var sortPopupId = DrawSortGroupPopup(node);
 
@@ -598,11 +599,21 @@ public class MainWindow : Window, IDisposable {
             }
 
             if (node is MateNode.Group) {
-                if (ImGui.Selectable("Import Here")) {
-                    ImGui.OpenPopup(importPopupId);
-                }
-                if (ImGui.IsItemHovered()) {
-                    ImGui.SetTooltip("Import a Macro Mate preset into this group");
+                if (ImGui.BeginMenu("Import Here")) {
+                    if (ImGui.MenuItem("From Preset Code")) {
+                        ImGui.OpenPopup(importFromCodePopupId);
+                    }
+                    if (ImGui.IsItemHovered()) {
+                        ImGui.SetTooltip("Import a Macro Mate preset into this group");
+                    }
+
+                    if (ImGui.MenuItem("From Game")) {
+                        ImGui.OpenPopup(importFromGamePopupId);
+                    }
+                    if (ImGui.IsItemHovered()) {
+                        ImGui.SetTooltip("Bulk import macros from existing vanilla macros");
+                    }
+                    ImGui.EndMenu();
                 }
             }
 
@@ -680,7 +691,7 @@ public class MainWindow : Window, IDisposable {
 
     private string importCode = "";
     private bool lastImportWasError = false;
-    private uint DrawImportCodePopup(MateNode node) {
+    private uint DrawImportFromCodePopup(MateNode node) {
         var importPopupName = $"Import###mainwindow/import_code_popup/{node.Id}";
         var importPopupId = ImGui.GetID(importPopupName);
 

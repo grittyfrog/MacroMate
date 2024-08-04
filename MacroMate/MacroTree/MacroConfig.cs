@@ -249,7 +249,7 @@ public class MacroConfig {
 
         MoveMacroIntoOrUpdate(
             importMacro,
-            Env.MacroConfig.Root,
+            parent,
             (existing, replacement) => existing.Name == replacement.Name && existing.Link.Equals(replacement.Link)
         );
     }
