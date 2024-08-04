@@ -189,6 +189,7 @@ public class MainWindow : Window, IDisposable {
     private void DrawEditModeActions() {
         var macroLinkPicker = Env.PluginWindowManager.MacroLinkPicker;
         var macroLinkPickerScope = "main_window_edit_mode_macro_link_picker";
+        var bulkDeletePopup = DrawBulkDeletePopupModel();
 
         // Edit Buttons (if in edit mode)
         if (editMode) {
@@ -207,12 +208,19 @@ public class MainWindow : Window, IDisposable {
             }
 
             ImGui.SameLine();
-
             if (ImGui.Button("Set Link")) {
                 macroLinkPicker.ShowOrFocus(macroLinkPickerScope);
             }
             if (ImGui.IsItemHovered()) {
                 ImGui.SetTooltip("Set the link of all selected macros");
+            }
+
+            ImGui.SameLine();
+            if (ImGui.Button("Bulk Delete")) {
+                ImGui.OpenPopup(bulkDeletePopup);
+            }
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Bulk delete all selected macros");
             }
         }
 
@@ -687,6 +695,31 @@ public class MainWindow : Window, IDisposable {
         }
 
         return deletePopupId;
+    }
+
+    private uint DrawBulkDeletePopupModel() {
+        var bulkDeletePopupName = $"Bulk Delete###mainwindow/bulk_delete_popup";
+        var bulkDeletePopupId = ImGui.GetID(bulkDeletePopupName);
+
+        if (ImGui.BeginPopupModal(bulkDeletePopupName)) {
+            ImGui.Text($"Are you sure you want to delete all selected macros (total: {editModeMacroSelection.Count})?");
+            if (ImGui.Button("Delete!")) {
+                foreach (var macro in Env.MacroConfig.Root.Values().OfType<MateNode.Macro>()) {
+                    if (editModeMacroSelection.Contains(macro.Id)) {
+                        Env.MacroConfig.Root.Delete(macro.Id);
+                    }
+                }
+                Env.MacroConfig.NotifyEdit();
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("No!")) {
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+
+        return bulkDeletePopupId;
     }
 
     private string importCode = "";
