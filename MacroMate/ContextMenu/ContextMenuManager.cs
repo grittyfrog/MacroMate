@@ -94,35 +94,7 @@ public class ContextMenuManager {
         VanillaMacroSet selectedMacroSet,
         uint selectedMacroSlot
     ) {
-        var vanillaMacro = Env.VanillaMacroManager.GetMacro(selectedMacroSet, selectedMacroSlot);
-
-        // Split the active macro into Vanilla Macros, update the correct part of the Vanilla macro, then
-        // reconstitute it back into a macro mate macro.
-        //
-        // This approach is a bit more complex, but it allows for updating "part" of a multi-link macro.
-        var existingMacroLinkBindings = activeMacro.VanillaMacroLinkBinding();
-        var replacementLines = new SeStringBuilder();
-        foreach (var (vanillaLink, macro) in existingMacroLinkBindings) {
-            var shouldUpdate = vanillaLink.Set == selectedMacroSet && vanillaLink.Slot == selectedMacroSlot;
-            var sourceStr = shouldUpdate ? vanillaMacro.Lines.Value : macro.Lines.Value;
-            foreach (var payload in sourceStr.Payloads) {
-                // If we have Macro Chain enabled then we've added `/nextmacro` and should remove it
-                if (activeMacro.LinkWithMacroChain && payload is TextPayload textPayload && textPayload.Text == "/nextmacro") {
-                    continue;
-                }
-
-                replacementLines.Add(payload);
-            }
-            replacementLines.Add(new NewLinePayload());
-        }
-
-        // Only update the name for single-link situations since multi-link appends "Foo 1", "Foo 2", "Foo 3" etc.
-        if (existingMacroLinkBindings.Count() <= 1) {
-            activeMacro.Name = string.IsNullOrEmpty(vanillaMacro.Title) ? "Updated Macro" : vanillaMacro.Title;
-        }
-        activeMacro.IconId = vanillaMacro.IconId;
-        activeMacro.Lines = replacementLines.Build();
-        Env.MacroConfig.NotifyEdit();
+        Env.MacroConfig.UpdateFromXIV(activeMacro, selectedMacroSet, selectedMacroSlot);
     }
 
     private unsafe void OnImportToMacroMate(
@@ -130,24 +102,6 @@ public class ContextMenuManager {
         VanillaMacroSet selectedMacroSet,
         uint selectedMacroSlot
     ) {
-        var vanillaMacro = Env.VanillaMacroManager.GetMacro(selectedMacroSet, selectedMacroSlot);
-        var name = string.IsNullOrEmpty(vanillaMacro.Title) ? "Imported Macro" : vanillaMacro.Title;
-
-        var importMacro = new MateNode.Macro {
-            Name = name,
-            IconId = vanillaMacro.IconId,
-            Link = new MacroLink {
-                Set = selectedMacroSet,
-                Slots = new() { selectedMacroSlot }
-            },
-            Lines = vanillaMacro.Lines.Value,
-            AlwaysLinked = true,
-        };
-
-        Env.MacroConfig.MoveMacroIntoOrUpdate(
-            importMacro,
-            Env.MacroConfig.Root,
-            (existing, replacement) => existing.Name == replacement.Name && existing.Link.Equals(replacement.Link)
-        );
+        Env.MacroConfig.ImportFromXIV(Env.MacroConfig.Root, selectedMacroSet, selectedMacroSlot);
     }
 }

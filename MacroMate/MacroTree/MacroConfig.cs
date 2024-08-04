@@ -6,6 +6,8 @@ using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.Dotnet.Tree;
 using MacroMate.Extensions.Dalamud.Macros;
 using System;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 
 namespace MacroMate.MacroTree;
 
@@ -186,6 +188,70 @@ public class MacroConfig {
     ) {
         node.SortChildrenBy(keySelector, ascending, sortSubgroups);
         NotifyEdit();
+    }
+
+    /// Import a macro from the game
+    public void ImportFromXIV(
+        MateNode parent,
+        VanillaMacroSet macroSet,
+        uint macroSlot
+    ) {
+        var vanillaMacro = Env.VanillaMacroManager.GetMacro(macroSet, macroSlot);
+        var name = string.IsNullOrEmpty(vanillaMacro.Title) ? "Imported Macro" : vanillaMacro.Title;
+
+        var importMacro = new MateNode.Macro {
+            Name = name,
+            IconId = vanillaMacro.IconId,
+            Link = new MacroLink {
+                Set = macroSet,
+                Slots = new() { macroSlot }
+            },
+            Lines = vanillaMacro.Lines.Value,
+            AlwaysLinked = true,
+        };
+
+        MoveMacroIntoOrUpdate(
+            importMacro,
+            Env.MacroConfig.Root,
+            (existing, replacement) => existing.Name == replacement.Name && existing.Link.Equals(replacement.Link)
+        );
+    }
+
+    /// Update an existing macro with the name, icon and lines of a vanilla macro slot
+    public void UpdateFromXIV(
+        MateNode.Macro macro,
+        VanillaMacroSet macroSet,
+        uint macroSlot
+    ) {
+        var targetVanillaMacro = Env.VanillaMacroManager.GetMacro(macroSet, macroSlot);
+
+        // Split the active macro into Vanilla Macros, update the correct part of the Vanilla macro, then
+        // reconstitute it back into a macro mate macro.
+        //
+        // This approach is a bit more complex, but it allows for updating "part" of a multi-link macro.
+        var existingMacroLinkBindings = macro.VanillaMacroLinkBinding();
+        var replacementLines = new SeStringBuilder();
+        foreach (var (vanillaLink, vanillaMacro) in existingMacroLinkBindings) {
+            var shouldUpdate = vanillaLink.Set == macroSet && vanillaLink.Slot == macroSlot;
+            var sourceStr = shouldUpdate ? vanillaMacro.Lines.Value : vanillaMacro.Lines.Value;
+            foreach (var payload in sourceStr.Payloads) {
+                // If we have Macro Chain enabled then we've added `/nextmacro` and should remove it
+                if (macro.LinkWithMacroChain && payload is TextPayload textPayload && textPayload.Text == "/nextmacro") {
+                    continue;
+                }
+
+                replacementLines.Add(payload);
+            }
+            replacementLines.Add(new NewLinePayload());
+        }
+
+        // Only update the name for single-link situations since multi-link appends "Foo 1", "Foo 2", "Foo 3" etc.
+        if (existingMacroLinkBindings.Count() <= 1) {
+            macro.Name = string.IsNullOrEmpty(targetVanillaMacro.Title) ? "Updated Macro" : targetVanillaMacro.Title;
+        }
+        macro.IconId = targetVanillaMacro.IconId;
+        macro.Lines = replacementLines.Build();
+        Env.MacroConfig.NotifyEdit();
     }
 
     /// Notifies the config that it has been edited.
