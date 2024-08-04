@@ -91,7 +91,8 @@ public class MainWindow : Window, IDisposable {
 
     private void DrawMenuBar() {
         var newGroupPopupId = DrawNewGroupPopup(Env.MacroConfig.Root);
-        var importPopupId = DrawImportPopup(Env.MacroConfig.Root);
+        var importCodePopupId = DrawImportCodePopup(Env.MacroConfig.Root);
+        var importFromGamePopupId = DrawImportFromGamePopup(Env.MacroConfig.Root);
         var sortPopupId = DrawSortGroupPopup(Env.MacroConfig.Root);
 
         if (ImGui.BeginMenuBar()) {
@@ -102,8 +103,22 @@ public class MainWindow : Window, IDisposable {
                 if (ImGui.MenuItem("Macro")) {
                     Env.MacroConfig.CreateMacro(Env.MacroConfig.Root);
                 }
-                if (ImGui.MenuItem("Import")) {
-                    ImGui.OpenPopup(importPopupId);
+                if (ImGui.BeginMenu("Import")) {
+                    if (ImGui.MenuItem("From Preset Code")) {
+                        ImGui.OpenPopup(importCodePopupId);
+                    }
+                    if (ImGui.IsItemHovered()) {
+                        ImGui.SetTooltip("Import a new macro from a Macro Mate preset code");
+                    }
+
+                    if (ImGui.MenuItem("From Game")) {
+                        ImGui.OpenPopup(importFromGamePopupId);
+                    }
+                    if (ImGui.IsItemHovered()) {
+                        ImGui.SetTooltip("Bulk import macros from existing vanilla macros");
+                    }
+
+                    ImGui.EndMenu();
                 }
                 ImGui.EndMenu();
             }
@@ -535,7 +550,7 @@ public class MainWindow : Window, IDisposable {
 
         var newGroupPopupId = DrawNewGroupPopup(node);
         var renamePopupId = DrawRenamePopup(node);
-        var importPopupId = DrawImportPopup(node);
+        var importPopupId = DrawImportCodePopup(node);
         var deletePopupId = DrawDeletePopupModal(node);
         var sortPopupId = DrawSortGroupPopup(node);
 
@@ -665,8 +680,8 @@ public class MainWindow : Window, IDisposable {
 
     private string importCode = "";
     private bool lastImportWasError = false;
-    private uint DrawImportPopup(MateNode node) {
-        var importPopupName = $"Import###mainwindow/import_popup/{node.Id}";
+    private uint DrawImportCodePopup(MateNode node) {
+        var importPopupName = $"Import###mainwindow/import_code_popup/{node.Id}";
         var importPopupId = ImGui.GetID(importPopupName);
 
         if (ImGui.BeginPopup(importPopupName)) {
@@ -734,6 +749,94 @@ public class MainWindow : Window, IDisposable {
         }
 
         return importPopupId;
+    }
+
+    private string lastImportFromGameError = "";
+    private List<string>? lastImportFromGameResults = null;
+    private VanillaMacroSet importFromGameCurrentMacroSet = VanillaMacroSet.INDIVIDUAL;
+    private int importFromGameMacroSlotStart = 0;
+    private int importFromGameMacroSlotEnd = 99;
+    private uint DrawImportFromGamePopup(MateNode parent) {
+        var importFromGamePopupName = $"Import###mainwindow/import_from_game/{parent.Id}";
+        var importFromGamePopupId = ImGui.GetID(importFromGamePopupName);
+
+        if (ImGui.BeginPopup(importFromGamePopupName)) {
+            if (lastImportFromGameError != "") {
+                ImGui.PushStyleColor(ImGuiCol.Text, Colors.ErrorRed);
+                ImGui.TextUnformatted(lastImportFromGameError);
+                ImGui.PopStyleColor();
+            }
+
+            ImGui.Text("Import from Game");
+            ImGui.Separator();
+
+            if (ImGui.BeginTable($"##mainwindow/import_from_game/{parent.Id}", 2, ImGuiTableFlags.SizingStretchProp)) {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text("Macro Set");
+
+                ImGui.TableNextColumn();
+                ImGui.SetNextItemWidth(200);
+                ImGuiExt.EnumCombo<VanillaMacroSet>($"##mainwindow/import_from_game/macroset/{parent.Id}", ref importFromGameCurrentMacroSet);
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text("Macro Slot Start");
+
+                ImGui.TableNextColumn();
+                if (ImGuiExt.InputTextInt("###mainwindow/import_from_game/macroslotstart/{parent.Id}", ref importFromGameMacroSlotStart)) {
+                    importFromGameMacroSlotStart = Math.Clamp(importFromGameMacroSlotStart, 0, 99);
+                }
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text("Macro Slot End");
+
+                ImGui.TableNextColumn();
+                if (ImGuiExt.InputTextInt("###mainwindow/import_from_game/macroslotend/{parent.Id}", ref importFromGameMacroSlotEnd)) {
+                    importFromGameMacroSlotEnd = Math.Clamp(importFromGameMacroSlotEnd, 0, 99);
+                }
+
+                ImGui.EndTable();
+
+                if (ImGui.Button("Import")) {
+                    lastImportFromGameError = "";
+                    try {
+                        lastImportFromGameResults = Env.MacroConfig.BulkImportFromXIV(
+                            parent,
+                            importFromGameCurrentMacroSet,
+                            (uint)importFromGameMacroSlotStart,
+                            (uint)importFromGameMacroSlotEnd
+                        );
+                    } catch (ArgumentException ex) {
+                        lastImportFromGameError = ex.Message;
+                        lastImportFromGameResults = null;
+                    }
+                }
+                if (ImGui.IsItemHovered()) {
+                    if (importFromGameMacroSlotStart <= importFromGameMacroSlotEnd) {
+                        var total = importFromGameMacroSlotEnd - importFromGameMacroSlotStart + 1;
+                        ImGui.SetTooltip($"Imports {importFromGameCurrentMacroSet} macros {importFromGameMacroSlotStart} - {importFromGameMacroSlotEnd} (total: {total}) into Macro Mate under {parent.Name}");
+                    } else {
+                        ImGui.SetTooltip($"Invalid import: 'Macro Slot Start' must be before 'Macro Slot End'");
+                    }
+                }
+            }
+
+            if (lastImportFromGameResults != null) {
+                ImGui.Separator();
+                foreach (var result in lastImportFromGameResults) {
+                    ImGui.TextUnformatted(result);
+                }
+            }
+
+            ImGui.EndPopup();
+        }
+
+        return importFromGamePopupId;
     }
 
     private enum SortMode { Alphabetical }

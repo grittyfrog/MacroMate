@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using ImGuiNET;
@@ -32,6 +33,28 @@ public static class ImGuiExt {
             ImDrawFlags.None,
             thickness
         );
+    }
+
+    public static void EnumCombo<T>(string label, ref T currentValue) where T : Enum {
+        if (ImGui.BeginCombo(label, currentValue.ToString())) {
+            foreach (var enumValue in Enum.GetValues(typeof(T)).OfType<T>()) {
+                if (ImGui.Selectable(enumValue.ToString(), enumValue.Equals(currentValue))) {
+                    currentValue = enumValue;
+                }
+            }
+            ImGui.EndCombo();
+        }
+    }
+
+    public static bool InputTextInt(string label, ref int value) {
+        string buffer = value.ToString();
+        bool inputTextEdited = ImGui.InputText(label, ref buffer, 255, ImGuiInputTextFlags.CharsDecimal);
+        if (inputTextEdited) {
+            if (int.TryParse(buffer, out var parsedInt)) {
+                value = parsedInt;
+            }
+        }
+        return inputTextEdited;
     }
 
     public static ImGuiInputTextCallback CallbackCharFilterFn(Func<char, bool> predicate) {

@@ -59,14 +59,8 @@ public class MacroMate {
 
             // We want to bind any inactive macro links to something so the button doesn't disappear off
             // the hotbar,
-            var inactiveMacro = new VanillaMacro(
-                IconId: Env.MacroConfig.LinkPlaceholderIconId,
-                Title: "Inactive",
-                LineCount: 1,
-                Lines: new(() => "/echo No active macro")
-            );
             foreach (var inactiveLink in inactiveVanillaMacroLinks) {
-                Env.VanillaMacroManager.SetMacro(inactiveLink, inactiveMacro);
+                Env.VanillaMacroManager.SetMacro(inactiveLink, VanillaMacro.Inactive);
             }
 
             var nextVanillaLinks = Env.MacroConfig.AllVanillaLinks();

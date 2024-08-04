@@ -190,6 +190,43 @@ public class MacroConfig {
         NotifyEdit();
     }
 
+    /// <summary>Imports multiple macros from the base game (macros that are already managed by macro mate are skipped)</summary>
+    /// <returns>A list of messages indicating the imports</returns>
+    public List<string> BulkImportFromXIV(
+        MateNode parent,
+        VanillaMacroSet macroSet,
+        uint startMacroSlot,
+        uint endMacroSlot
+    ) {
+        if (startMacroSlot > endMacroSlot) { throw new ArgumentException("Invalid import: start must be before end"); }
+
+        var results = new List<string>();
+        var linkedSlots = ActiveMacros.SelectMany(macro => macro.Link.Slots).ToHashSet();
+        for (var macroSlot = startMacroSlot; macroSlot <= endMacroSlot; ++macroSlot) {
+            if (linkedSlots.Contains(macroSlot)) {
+                results.Add($"Slot {macroSlot}: Skipped (already managed by Macro Mate)");
+                continue;
+            }
+
+            var vanillaMacro = Env.VanillaMacroManager.GetMacro(macroSet, macroSlot);
+            if (vanillaMacro.LineCount == 0) {
+                results.Add($"Slot {macroSlot}: Skipped (no lines)");
+                continue;
+            }
+
+            var inactiveMacro = VanillaMacro.Inactive;
+            if (vanillaMacro.Title == inactiveMacro.Title && vanillaMacro.Lines.ToString() == inactiveMacro.Lines.ToString()) {
+                results.Add($"Slot {macroSlot}: Skipped (inactive macro mate link)");
+                continue;
+            }
+
+            ImportFromXIV(parent, macroSet, macroSlot);
+            results.Add($"Slot {macroSlot}: Imported");
+        }
+
+        return results;
+    }
+
     /// Import a macro from the game
     public void ImportFromXIV(
         MateNode parent,

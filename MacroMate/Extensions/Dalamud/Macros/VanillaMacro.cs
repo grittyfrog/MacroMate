@@ -26,6 +26,13 @@ public record class VanillaMacro(
         Lines: new(() => "")
     );
 
+    public static VanillaMacro Inactive => new VanillaMacro(
+        IconId: Env.MacroConfig.LinkPlaceholderIconId,
+        Title: "Inactive",
+        LineCount: 1,
+        Lines: new(() => "/echo No active macro")
+    );
+
     /// Macros seem to "exist" if they have any title or lines.
     public bool IsDefined() {
         return Title != "" || LineCount > 0 && IconRowId > 0;
