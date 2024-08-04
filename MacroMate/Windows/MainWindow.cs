@@ -356,7 +356,12 @@ public class MainWindow : Window, IDisposable {
 
         var nodeActionsPopupId = DrawNodeActionsPopup(group);
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
-            ImGui.OpenPopup(nodeActionsPopupId);
+            if (ImGui.IsKeyDown(ImGuiKey.ModShift)) {
+                editMode = true;
+                EditModeToggleSelected(group);
+            } else {
+                ImGui.OpenPopup(nodeActionsPopupId);
+            }
         }
 
         NodeDragDropSource(group, DragDropType.MACRO_OR_GROUP_NODE, drawPreview: () => { ImGui.CollapsingHeader(group.Name); });
@@ -429,7 +434,12 @@ public class MainWindow : Window, IDisposable {
 
         var nodeActionsPopupId = DrawNodeActionsPopup(macro);
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
-            ImGui.OpenPopup(nodeActionsPopupId);
+            if (ImGui.IsKeyDown(ImGuiKey.ModShift)) {
+                editMode = true;
+                EditModeToggleSelected(macro);
+            } else {
+                ImGui.OpenPopup(nodeActionsPopupId);
+            }
         }
 
         NodeDragDropSource(macro, DragDropType.MACRO_OR_GROUP_NODE, drawPreview: () => {
@@ -1026,6 +1036,14 @@ public class MainWindow : Window, IDisposable {
         }
 
         return editModeMacroSelection.Contains(node.Id);
+    }
+
+    private void EditModeToggleSelected(MateNode node) {
+        if (EditModeIsSelected(node)) {
+            EditModeSetSelected(node, false);
+        } else {
+            EditModeSetSelected(node, true);
+        }
     }
 
     private void EditModeSetSelected(MateNode node, bool selected) {
