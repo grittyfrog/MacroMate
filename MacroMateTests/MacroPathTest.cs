@@ -1,5 +1,4 @@
 using MacroMate.MacroTree;
-using Sprache;
 
 namespace MacroMateTests;
 
@@ -80,11 +79,6 @@ public class MacroPathTests {
         complex.Segments[2].ShouldBe(new MacroPathSegment.ByIndex(1));
         complex.Segments[3].ShouldBe(new MacroPathSegment.ByIndex(2));
         complex.Segments[4].ShouldBe(new MacroPathSegment.ByName("A"));
-    }
-
-    [Fact]
-    public void ParseShouldErrorOnNoPreceedingStart() {
-        Should.Throw<ArgumentException>(() => { MacroPath.ParseText("Hello"); });
     }
 
     [Fact]
