@@ -142,27 +142,29 @@ public class MacroConfig {
         return newMacroNode;
     }
 
-    /**
-     * Moves [source] into [targetGroup] if it doesn't exist, or update an existing macro
-     * with the same name.
-     */
-    public void MoveMacroIntoOrUpdate(
-        MateNode.Macro macro,
-        MateNode targetGroup,
-        Func<MateNode.Macro, MateNode.Macro, bool> equalsFn // (existing, replacement) => equals
-    ) {
-        var existingNode = targetGroup.Children
-            .FirstOrDefault(child => child is MateNode.Macro macroChild && equalsFn(macroChild, macro));
-        if (existingNode is MateNode.Macro existingMacro) {
-            existingMacro.StealValuesFrom(macro);
-            NotifyEdit();
-        } else {
-            Env.MacroConfig.MoveInto(macro, targetGroup);
-        }
+    public MateNode.Macro CreateOrFindMacroByName(string name, MateNode targetGroup) {
+        return CreateOrFindMacroByName(name, targetGroup, (_) => true);
     }
 
-    public void MoveMacroIntoOrUpdate(MateNode.Macro macro, MateNode targetGroup) {
-        MoveMacroIntoOrUpdate(macro, targetGroup, (existing, replacement) => existing.Name == replacement.Name);
+    /**
+     * Finds a macro with [name] in [targetGroup] and returns it, or creates a new
+     * empty macro with [name] if it does not exist.
+     */
+    public MateNode.Macro CreateOrFindMacroByName(
+        string name,
+        MateNode targetGroup,
+        Func<MateNode.Macro, bool> fnExtraMatch
+    ) {
+        var existingNode = targetGroup.Children
+            .FirstOrDefault(child => child is MateNode.Macro macroChild && child.Name == name && fnExtraMatch(macroChild));
+        if (existingNode is MateNode.Macro existingMacro) {
+            return existingMacro;
+        } else {
+            var newMacro = new MateNode.Macro { Name = name, AlwaysLinked = true };
+            newMacro.MoveInto(targetGroup);
+            NotifyEdit();
+            return newMacro;
+        }
     }
 
     public void MoveBeside(MateNode source, MateNode target, TreeNodeOffset offset) {
@@ -236,22 +238,12 @@ public class MacroConfig {
         var vanillaMacro = Env.VanillaMacroManager.GetMacro(macroSet, macroSlot);
         var name = string.IsNullOrEmpty(vanillaMacro.Title) ? "Imported Macro" : vanillaMacro.Title;
 
-        var importMacro = new MateNode.Macro {
-            Name = name,
-            IconId = vanillaMacro.IconId,
-            Link = new MacroLink {
-                Set = macroSet,
-                Slots = new() { macroSlot }
-            },
-            Lines = vanillaMacro.Lines.Value,
-            AlwaysLinked = true,
-        };
-
-        MoveMacroIntoOrUpdate(
-            importMacro,
-            parent,
-            (existing, replacement) => existing.Name == replacement.Name && existing.Link.Equals(replacement.Link)
-        );
+        var targetMacroLink = new MacroLink { Set = macroSet, Slots = new() { macroSlot } };
+        var importMacro = CreateOrFindMacroByName(name, parent, (existing) => existing.Link.Equals(targetMacroLink));
+        importMacro.IconId = vanillaMacro.IconId;
+        importMacro.Link = targetMacroLink;
+        importMacro.Lines = vanillaMacro.Lines.Value;
+        NotifyEdit();
     }
 
     /// Update an existing macro with the name, icon and lines of a vanilla macro slot

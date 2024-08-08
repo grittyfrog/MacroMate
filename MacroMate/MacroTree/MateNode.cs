@@ -64,11 +64,18 @@ public abstract class MateNode : TreeNode<MateNode> {
             ConditionExpr = ConditionExpr
         };
 
-        public void StealValuesFrom(Macro other) {
+        public void StealVanillaValuesFrom(Macro other) {
             Name = other.Name;
-            IconId = other.IconId;
             Link = other.Link.Clone();
             Lines = other.Lines;
+
+            if (other.IconId != 0) {
+                IconId = other.IconId;
+            }
+
+            // We intentionally do not copy ConditionExpr since the intent of this function is to steal
+            // values from a macro created externally (either from the game or from IPC) which do not provide
+            // conditions
             ConditionExpr = other.ConditionExpr;
         }
 
