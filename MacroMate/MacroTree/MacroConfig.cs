@@ -262,7 +262,7 @@ public class MacroConfig {
         var replacementLines = new SeStringBuilder();
         foreach (var (vanillaLink, vanillaMacro) in existingMacroLinkBindings) {
             var shouldUpdate = vanillaLink.Set == macroSet && vanillaLink.Slot == macroSlot;
-            var sourceStr = shouldUpdate ? vanillaMacro.Lines.Value : vanillaMacro.Lines.Value;
+            var sourceStr = shouldUpdate ? targetVanillaMacro.Lines.Value : vanillaMacro.Lines.Value;
             foreach (var payload in sourceStr.Payloads) {
                 // If we have Macro Chain enabled then we've added `/nextmacro` and should remove it
                 if (macro.LinkWithMacroChain && payload is TextPayload textPayload && textPayload.Text == "/nextmacro") {
