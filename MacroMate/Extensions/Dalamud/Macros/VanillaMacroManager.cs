@@ -79,11 +79,6 @@ public unsafe class VanillaMacroManager : IDisposable {
         }
 
         try {
-            var lines = macroText.SplitIntoLines()
-                .TakeWhile(line => line.Payloads.Count > 0)
-                .Select(line => line.Encode())
-                .ToArray();
-
             foreach (var (line, index) in macroText.SplitIntoLines().WithIndex()) {
                 if (line.Payloads.Count == 0 || line.Encode().Length == 0) {
                     macro.Lines[index].Clear();
@@ -142,7 +137,7 @@ public unsafe class VanillaMacroManager : IDisposable {
         // We don't want to use NewLinePayload since it encodes to an extra newline, instead we just encode everything to '\r'.
         // We also don't use macro-LineSpan[index] = ... here since it causes memory access errors
         var macroLinePayload = macroText.ReplaceNewlinesWithCR();
-        var macroLinePayloadUtf8 = Utf8String.FromSequence(macroLinePayload.Encode());
+        var macroLinePayloadUtf8 = Utf8String.FromSequence(macroLinePayload.EncodeWithNullTerminator());
         raptureMacroModule->ReplaceMacroLines(macro, macroLinePayloadUtf8);
         macroLinePayloadUtf8->Dtor();
         IMemorySpace.Free(macroLinePayloadUtf8);
