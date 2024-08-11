@@ -36,15 +36,16 @@ public record class ExcelId<T>(uint Id) : ExcelId where T : ExcelRow {
     public T? GetWithLanguage(ClientLanguage language) => Env.DataManager.GetExcelSheet<T>(language)?.GetRow(this.Id);
 
     public string Name() {
-        if (GameData is BNpcName bNpcName) { return bNpcName.Singular.Text(); }
-        if (GameData is ENpcResident eNpc) { return eNpc.Singular.Text(); }
-        if (GameData is ContentFinderCondition cfc) { return cfc.Name.Text(); }
-        if (GameData is TerritoryType tt) {
+        var gameData = GameData;
+        if (gameData is BNpcName bNpcName) { return bNpcName.Singular.Text(); }
+        if (gameData is ENpcResident eNpc) { return eNpc.Singular.Text(); }
+        if (gameData is ContentFinderCondition cfc) { return cfc.Name.Text(); }
+        if (gameData is TerritoryType tt) {
             if (tt.PlaceName.Value is {} pn) { return pn.Name.Text(); }
         }
-        if (GameData is PlaceName placeName) { return placeName.Name.Text(); }
-        if (GameData is ClassJob job) { return job.Abbreviation.Text(); }
-        if (GameData is HousingFurniture hf) {
+        if (gameData is PlaceName placeName) { return placeName.Name.Text(); }
+        if (gameData is ClassJob job) { return job.Abbreviation.Text(); }
+        if (gameData is HousingFurniture hf) {
             if (hf.Item.Value is {} hfItem) { return hfItem.Name.Text(); }
         }
 
@@ -52,9 +53,10 @@ public record class ExcelId<T>(uint Id) : ExcelId where T : ExcelRow {
     }
 
     public ObjectKind? ObjKind() {
-        if (GameData is BNpcName) { return ObjectKind.BattleNpc; }
-        if (GameData is ENpcResident) { return ObjectKind.EventNpc; }
-        if (GameData is HousingFurniture) { return ObjectKind.Housing; }
+        var gameData = GameData;
+        if (gameData is BNpcName) { return ObjectKind.BattleNpc; }
+        if (gameData is ENpcResident) { return ObjectKind.EventNpc; }
+        if (gameData is HousingFurniture) { return ObjectKind.Housing; }
 
         return null;
     }
