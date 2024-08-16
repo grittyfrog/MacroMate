@@ -7,8 +7,8 @@ namespace MacroMate.Conditions;
 
 /// A condition expression, currently constaint to an Or of Ands.
 public interface ConditionExpr {
-    public record class Or(ImmutableList<ConditionExpr.And> options) : ConditionExpr {
-        public static ConditionExpr.Or Empty => new ConditionExpr.Or(ImmutableList<ConditionExpr.And>.Empty);
+    public record class Or(ImmutableList<Conditions.ConditionExpr.And> options) : Conditions.ConditionExpr {
+        public static Conditions.ConditionExpr.Or Empty => new Conditions.ConditionExpr.Or(ImmutableList<And>.Empty);
 
         public bool SatisfiedBy(CurrentConditions currentConditions) {
             // If we have no conditions then we are never satisfied
@@ -17,47 +17,61 @@ public interface ConditionExpr {
             return options.Any(option => option.SatisfiedBy(currentConditions));
         }
 
-        public ConditionExpr.Or AddAnd() {
-            return this with { options = options.Add(ConditionExpr.And.Empty) };
+        public Conditions.ConditionExpr.Or AddAnd() {
+            return this with { options = options.Add(Conditions.ConditionExpr.And.Empty) };
         }
 
-        public ConditionExpr.Or DeleteAnd(int andIndex)  {
+        public Conditions.ConditionExpr.Or DeleteAnd(int andIndex)  {
             return this with { options = options.RemoveAt(andIndex) };
         }
 
-        public ConditionExpr.Or UpdateAnd(
+        public Conditions.ConditionExpr.Or UpdateAnd(
             int andIndex,
-            Func<ConditionExpr.And, ConditionExpr.And> update
+            Func<Conditions.ConditionExpr.And, Conditions.ConditionExpr.And> update
         )  {
             var andCondition = options[andIndex];
             var updatedAndCondition = update(andCondition);
             return this with { options = options.SetItem(andIndex, updatedAndCondition) };
         }
 
-        public static ConditionExpr.Or Single(ICondition condition) =>
-            new ConditionExpr.Or(ImmutableList.Create(new ConditionExpr.And(ImmutableList.Create(condition))));
+        public static Conditions.ConditionExpr.Or Single(IValueCondition condition) =>
+            new ConditionExpr.Or(
+                ImmutableList.Create(new ConditionExpr.And(ImmutableList.Create(condition.WrapInDefaultOp())))
+            );
     }
 
-    public record class And(ImmutableList<ICondition> conditions) : ConditionExpr {
-        public static ConditionExpr.And Empty => new ConditionExpr.And(ImmutableList<ICondition>.Empty);
-        public static ConditionExpr.And Single(ICondition condition) =>
-            new ConditionExpr.And(new[] { condition }.ToImmutableList());
+    public record class And(ImmutableList<OpExpr> opExprs) : Conditions.ConditionExpr {
+        public static Conditions.ConditionExpr.And Empty => new Conditions.ConditionExpr.And(ImmutableList<OpExpr>.Empty);
+        public static Conditions.ConditionExpr.And Single(OpExpr condition) =>
+            new Conditions.ConditionExpr.And((new[] { condition }).ToImmutableList());
 
         public bool SatisfiedBy(CurrentConditions currentConditions) {
             // If we have no conditions then we are never satisfied
-            if (conditions.IsEmpty) { return false; }
+            if (opExprs.IsEmpty) { return false; }
 
-            return conditions.All(condition => condition.SatisfiedBy(currentConditions));
+            return opExprs.All(condition => condition.SatisfiedBy(currentConditions));
         }
 
-        public ConditionExpr.And AddCondition(ICondition condition) =>
-            this with { conditions = conditions.Add(condition) };
-        public ConditionExpr.And AddConditions(IEnumerable<ICondition> condition) =>
+        public Conditions.ConditionExpr.And AddCondition(OpExpr conditionOp) =>
+            this with { opExprs = opExprs.Add(conditionOp) };
+        public Conditions.ConditionExpr.And AddConditions(IEnumerable<OpExpr> condition) =>
             condition.Aggregate(this, (and, condition) => and.AddCondition(condition));
-        public ConditionExpr.And DeleteCondition(int conditionIndex) =>
-            this with { conditions = conditions.RemoveAt(conditionIndex) };
-        public ConditionExpr.And SetCondition(int conditionIndex, ICondition condition) =>
-            this with { conditions = conditions.SetItem(conditionIndex, condition) };
+        public Conditions.ConditionExpr.And DeleteCondition(int conditionIndex) =>
+            this with { opExprs = opExprs.RemoveAt(conditionIndex) };
+
+        public Conditions.ConditionExpr.And SetCondition(int conditionIndex, ICondition condition) {
+            var currentCondition = opExprs[conditionIndex];
+            if (currentCondition.TrySetCondition(condition, out var updatedCondition)) {
+                return this with { opExprs = opExprs.SetItem(conditionIndex, updatedCondition) };
+            } else {
+                Env.PluginLog.Error($"Could not set condition {condition} on index {conditionIndex}");
+                return this;
+            }
+        }
+
+        public Conditions.ConditionExpr.And SetOperator(int conditionIndex, OpExpr op) {
+            return this with { opExprs = opExprs.SetItem(conditionIndex, op) };
+        }
     }
 
     public bool SatisfiedBy(CurrentConditions currentConditions);

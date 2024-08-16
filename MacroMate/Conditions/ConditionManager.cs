@@ -48,7 +48,8 @@ public class ConditionManager : IDisposable {
             targetNpc: TargetNameCondition.Current(),
             job: JobCondition.Current(),
             pvpState: PvpStateCondition.Current(),
-            playerCondition: PlayerConditionCondition.Current()
+            playerCondition: PlayerConditionCondition.Current(),
+            craftMaxDurabilityCondition: CurrentCraftMaxDurabilityCondition.Current()
         );
     }
 

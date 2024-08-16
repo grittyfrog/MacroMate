@@ -11,7 +11,7 @@ namespace MacroMate.Conditions;
 public record class TargetNameCondition(
     ObjectKind TargetKind,
     uint TargetId
-) : ICondition {
+) : IValueCondition {
     private enum ObjectKindSupport {
         SUPPORTED,
 
@@ -49,20 +49,20 @@ public record class TargetNameCondition(
         { ObjectKind.Ornament,       ObjectKindSupport.UNSUPPORTED }
     };
 
-    string ICondition.ValueName {
+    public string ValueName {
         get {
             if (TargetId == 0) { return TargetKind.ToString(); }
             return  $"{Name} ({TargetId} - {TargetKind})";
         }
     }
-    string ICondition.NarrowName {
+    public string NarrowName {
         get {
             if (TargetId == 0) { return TargetKind.ToString(); }
             return $"{Name} ({TargetId})";
         }
     }
 
-    bool ICondition.SatisfiedBy(ICondition other) {
+    public bool SatisfiedBy(ICondition other) {
         if (other is TargetNameCondition otherTarget) {
             // If TargetId is 0, assume it is satisfied
             if (TargetId == 0) { return this.TargetKind.Equals(otherTarget.TargetKind); }
@@ -136,32 +136,32 @@ public record class TargetNameCondition(
 
     public string DisplayName => $"{Name} ({TargetId} - {TargetKind})";
 
-    public static ICondition.IFactory Factory = new ConditionFactory();
-    ICondition.IFactory ICondition.FactoryRef => Factory;
+    public static IValueCondition.IFactory Factory = new ConditionFactory();
+    public IValueCondition.IFactory FactoryRef => Factory;
 
-    class ConditionFactory : ICondition.IFactory {
+    class ConditionFactory : IValueCondition.IFactory {
         public string ConditionName => "Target";
-        public ICondition? Current() => TargetNameCondition.Current();
-        public ICondition Default() => new TargetNameCondition();
-        public ICondition? FromConditions(CurrentConditions conditions) => conditions.targetNpc;
+        public IValueCondition? Current() => TargetNameCondition.Current();
+        public IValueCondition Default() => new TargetNameCondition();
+        public IValueCondition? FromConditions(CurrentConditions conditions) => conditions.targetNpc;
 
-        public IEnumerable<ICondition> TopLevel() {
+        public IEnumerable<IValueCondition> TopLevel() {
             var supportedKinds = Enum.GetValues<ObjectKind>()
                 .Where(kind => ObjectKindSupportLevel.GetValueOrDefault(kind) != ObjectKindSupport.UNSUPPORTED);
             return supportedKinds.Select(kind => new TargetNameCondition(kind, 0));
         }
 
-        public IEnumerable<ICondition> Narrow(ICondition search) {
+        public IEnumerable<IValueCondition> Narrow(IValueCondition search) {
             var targetCondition = search as TargetNameCondition;
-            if (targetCondition == null) { return new List<ICondition>(); }
+            if (targetCondition == null) { return new List<IValueCondition>(); }
 
             // If we already have a target we can't narrow any further
-            if (targetCondition.TargetId != 0) {  return new List<ICondition>(); }
+            if (targetCondition.TargetId != 0) {  return new List<IValueCondition>(); }
 
             // If our support level for this kind isn't fully SUPPORTED then we can't narrow any further
             var supportLevel = ObjectKindSupportLevel.GetValueOrDefault(targetCondition.TargetKind);
             if (supportLevel != ObjectKindSupport.SUPPORTED) {
-                return new List<ICondition>();
+                return new List<IValueCondition>();
             }
 
             if (targetCondition.TargetKind == ObjectKind.BattleNpc) {
@@ -200,7 +200,7 @@ public record class TargetNameCondition(
                     .Select(furniture => new TargetNameCondition(ObjectKind.Housing, furniture.RowId));
             }
 
-            return new List<ICondition>();
+            return new List<IValueCondition>();
         }
     }
 }

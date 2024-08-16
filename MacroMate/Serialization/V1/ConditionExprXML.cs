@@ -22,6 +22,7 @@ public class OrConditionXML {
 
 [XmlType("AndCondition")]
 public class AndConditionXML {
+    /// Deprecated field, kept to allow for forward-conversion of config
     [XmlElement("ContentCondition", typeof(ContentConditionXML))]
     [XmlElement("LocationCondition", typeof(LocationConditionXML))]
     [XmlElement("TargetNameCondition", typeof(TargetNameConditionXML))]
@@ -31,14 +32,20 @@ public class AndConditionXML {
     [XmlElement("PlayerConditionCondition", typeof(PlayerConditionConditionXML))]
     public List<ConditionXML>? Conditions { get; set;  }
 
-    public ConditionExpr.And ToReal() => new ConditionExpr.And(
-        Conditions
-            ?.Select(condition => condition.ToReal())
-            ?.ToImmutableList()
-            ?? ImmutableList<ICondition>.Empty
-    );
+    public List<OpExprXML>? OpExprs { get; set; }
 
+    public ConditionExpr.And ToReal() {
+        // Forward-convert any old conditions into OpExpr
+        var opExprFromConditions = Conditions ?.Select(xml => xml.ToReal().WrapInDefaultOp()) ?? new List<OpExpr>();
+
+        // Load our normal path
+        var opExprs = OpExprs?.Select(xml => xml.ToReal()) ?? new List<OpExpr>();
+
+        return new ConditionExpr.And(opExprFromConditions.Concat(opExprs).ToImmutableList());
+    }
+
+    // Does not write to `Conditions` as it is a legacy field
     public static AndConditionXML From(ConditionExpr.And and) => new AndConditionXML {
-        Conditions = and.conditions.Select(condition => ConditionXML.From(condition)).ToList()
+        OpExprs = and.opExprs.Select(opExpr => OpExprXML.From(opExpr)).ToList()
     };
 }

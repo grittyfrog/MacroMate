@@ -17,6 +17,7 @@ namespace MacroMate.Serialization.V1;
 [XmlInclude(typeof(JobConditionXML))]
 [XmlInclude(typeof(PvpStateConditionXML))]
 [XmlInclude(typeof(PlayerConditionConditionXML))]
+[XmlInclude(typeof(CurrentCraftMaxDurabilityConditionXML))]
 public abstract class ConditionXML {
     public abstract ICondition ToReal();
 
@@ -27,6 +28,7 @@ public abstract class ConditionXML {
         JobCondition cond => JobConditionXML.From(cond),
         PvpStateCondition cond => PvpStateConditionXML.From(cond),
         PlayerConditionCondition cond => PlayerConditionConditionXML.From(cond),
+        CurrentCraftMaxDurabilityCondition cond => CurrentCraftMaxDurabilityConditionXML.From(cond),
         _ => throw new Exception($"Unexpected condition {condition}")
     };
 }
@@ -172,5 +174,16 @@ public class PlayerConditionConditionXML : ConditionXML {
 
     public static PlayerConditionConditionXML From(PlayerConditionCondition cond) => new() {
         Conditions = cond.Conditions.ToList()
+    };
+}
+
+[XmlType("CurrentCraftMaxDurabilityCondition")]
+public class CurrentCraftMaxDurabilityConditionXML : ConditionXML {
+    public required int MaxDurability { get; set; }
+
+    public override ICondition ToReal() => new CurrentCraftMaxDurabilityCondition(MaxDurability);
+
+    public static CurrentCraftMaxDurabilityConditionXML From(CurrentCraftMaxDurabilityCondition cond) => new() {
+        MaxDurability = cond.MaxDurability
     };
 }

@@ -195,18 +195,10 @@ public abstract class MateNode : TreeNode<MateNode> {
             return this;
         }
 
-        public Macro SetCondition(int andIndex, int conditionIndex, ICondition condition) {
-            ConditionExpr = ConditionExpr.UpdateAnd(
-                andIndex,
-                (and) => and.SetCondition(conditionIndex, condition)
-            );
-            return this;
-        }
-
         public Macro AddCondition(int andIndex, ICondition condition) {
             ConditionExpr = ConditionExpr.UpdateAnd(
                 andIndex,
-                (and) => and.AddCondition(condition)
+                (and) => and.AddCondition(condition.WrapInDefaultOp())
             );
             return this;
         }

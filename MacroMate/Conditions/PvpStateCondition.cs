@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace MacroMate.Conditions;
 
-public record class PvpStateCondition(PvpStateCondition.State state) : ICondition {
+public record class PvpStateCondition(PvpStateCondition.State state) : IValueCondition {
     public enum State {
         IN_PVP,
         IN_PVP_NO_WOLVES_DEN,
@@ -39,16 +39,16 @@ public record class PvpStateCondition(PvpStateCondition.State state) : IConditio
         return new PvpStateCondition(State.NOT_IN_PVP);
     }
 
-    public static ICondition.IFactory Factory = new ConditionFactory();
-    ICondition.IFactory ICondition.FactoryRef => Factory;
+    public static IValueCondition.IFactory Factory = new ConditionFactory();
+    public IValueCondition.IFactory FactoryRef => Factory;
 
-    class ConditionFactory : ICondition.IFactory {
+    class ConditionFactory : IValueCondition.IFactory {
         public string ConditionName => "PvP State";
 
-        public ICondition? Current() => PvpStateCondition.Current();
-        public ICondition Default() => new PvpStateCondition();
-        public ICondition? FromConditions(CurrentConditions conditions) => conditions.pvpState;
-        public IEnumerable<ICondition> TopLevel() {
+        public IValueCondition? Current() => PvpStateCondition.Current();
+        public IValueCondition Default() => new PvpStateCondition();
+        public IValueCondition? FromConditions(CurrentConditions conditions) => conditions.pvpState;
+        public IEnumerable<IValueCondition> TopLevel() {
             foreach (State state in Enum.GetValues(typeof(State))) {
                 yield return new PvpStateCondition(state);
             }

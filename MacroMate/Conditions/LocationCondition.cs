@@ -10,8 +10,8 @@ namespace MacroMate.Conditions;
 public record class LocationCondition(
     ExcelId<TerritoryType> territory,          // i.e. "Limsa Lominsa Lower Decks"
     ExcelId<PlaceName>? regionOrSubAreaName    // i.e. "The Octant" or "Seasong Grotto"
-) : ICondition {
-    string ICondition.ValueName {
+) : IValueCondition {
+    public string ValueName {
         get {
             var names = new List<string?>() {
                 territory.DisplayName(),
@@ -20,7 +20,7 @@ public record class LocationCondition(
             return String.Join(", ", names.WithoutNull());
         }
     }
-    string ICondition.NarrowName => regionOrSubAreaName?.DisplayName() ?? territory.DisplayName();
+    public string NarrowName => regionOrSubAreaName?.DisplayName() ?? territory.DisplayName();
 
     /// Default: Limsa Lomina Upper Decks
     public LocationCondition() : this(territoryId: 128) {}
@@ -42,7 +42,7 @@ public record class LocationCondition(
     }
 
 
-    bool ICondition.SatisfiedBy(ICondition other) {
+    public bool SatisfiedBy(ICondition other) {
         var otherLocation = other as LocationCondition;
         if (otherLocation == null) { return false; }
 
@@ -62,31 +62,31 @@ public record class LocationCondition(
         return regionOrSubAreaEqual;
     }
 
-    public static ICondition.IFactory Factory = new ConditionFactory();
-    ICondition.IFactory ICondition.FactoryRef => Factory;
+    public static IValueCondition.IFactory Factory = new ConditionFactory();
+    public IValueCondition.IFactory FactoryRef => Factory;
 
-    class ConditionFactory : ICondition.IFactory {
+    class ConditionFactory : IValueCondition.IFactory {
         public string ConditionName => "Location";
-        public ICondition? Current() => LocationCondition.Current();
-        public ICondition Default() => new LocationCondition();
-        public ICondition? FromConditions(CurrentConditions conditions) => conditions.location;
+        public IValueCondition? Current() => LocationCondition.Current();
+        public IValueCondition Default() => new LocationCondition();
+        public IValueCondition? FromConditions(CurrentConditions conditions) => conditions.location;
 
-        public IEnumerable<ICondition> TopLevel() {
+        public IEnumerable<IValueCondition> TopLevel() {
             return Env.DataManager.GetExcelSheet<TerritoryType>()!
                 .Where(territoryType => territoryType.PlaceName.Row != 0)
                 .DistinctBy(territoryType => territoryType.PlaceName.Row)
                 .Select(territoryType =>
-                    new LocationCondition(territoryId: territoryType.RowId) as ICondition
+                    new LocationCondition(territoryId: territoryType.RowId) as IValueCondition
                 );
         }
 
-        public IEnumerable<ICondition> Narrow(ICondition search) {
+        public IEnumerable<IValueCondition> Narrow(IValueCondition search) {
             // We can only narrow conditions of our type
             var locationCondition = search as LocationCondition;
-            if (locationCondition == null) { return new List<ICondition>(); }
+            if (locationCondition == null) { return new List<IValueCondition>(); }
 
             // If we already have a regionOrSubAreaNameId then we can't do any further narrowing.
-            if (locationCondition.regionOrSubAreaName != null) { return new List<ICondition>(); }
+            if (locationCondition.regionOrSubAreaName != null) { return new List<IValueCondition>(); }
 
             // Otherwise, we can fill out the data using Map Markers!
             //
@@ -103,7 +103,7 @@ public record class LocationCondition(
                 )
                 .DistinctBy(mapMarker => mapMarker.PlaceNameSubtext.Row)
                 .Select(mapMarker =>
-                    locationCondition with { regionOrSubAreaName = new ExcelId<PlaceName>(mapMarker.PlaceNameSubtext.Row) } as ICondition
+                    locationCondition with { regionOrSubAreaName = new ExcelId<PlaceName>(mapMarker.PlaceNameSubtext.Row) } as IValueCondition
                 );
         }
     }

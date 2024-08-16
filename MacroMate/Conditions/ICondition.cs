@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace MacroMate.Conditions;
@@ -5,14 +6,42 @@ namespace MacroMate.Conditions;
 public interface ICondition {
     string ConditionName => FactoryRef.ConditionName;
 
-    /// The full value name of this condition
+    ICondition.IFactory FactoryRef { get; }
+
+    /// The text representation of this condition's value
     string ValueName { get; }
 
+    /// Wraps this condition in a default operator (for new conditions)
+    OpExpr WrapInDefaultOp();
+
+    public interface IFactory {
+        string ConditionName { get; }
+
+        ICondition? Current();
+
+        /// Returns the best value to use for new Conditions of this type. Usually `Current`, but can be
+        /// overridden
+        ICondition? BestInitialValue() => Current();
+
+        /// Returns a default valid condition
+        ICondition Default();
+
+        static IEnumerable<IFactory> All => new IFactory[] {
+            ContentCondition.Factory,
+            JobCondition.Factory,
+            LocationCondition.Factory,
+            PlayerConditionCondition.Factory,
+            PvpStateCondition.Factory,
+            TargetNameCondition.Factory,
+            CurrentCraftMaxDurabilityCondition.Factory
+        };
+    }
+}
+
+public interface IValueCondition : ICondition {
     /// The "Narrow" name of this condition, typically only includes the name of the most
     /// "inner" part
     string NarrowName { get; }
-
-    IFactory FactoryRef { get; }
 
     /// True if this condition is considered satisfied if `other` is also satisfied.
     bool SatisfiedBy(ICondition other);
@@ -23,41 +52,69 @@ public interface ICondition {
         return SatisfiedBy(condition);
     }
 
-    public interface IFactory {
-        string ConditionName { get; }
+    OpExpr ICondition.WrapInDefaultOp() => new OpExpr.Is(this);
 
-        /// Returns the current condition for this type.
-        ICondition? Current();
+    public new IValueCondition.IFactory FactoryRef { get; }
+    ICondition.IFactory ICondition.FactoryRef => FactoryRef;
+
+    public new interface IFactory : ICondition.IFactory {
+        IValueCondition? FromConditions(CurrentConditions conditions);
 
         /// Returns the best value to use for new Conditions of this type. Usually `Current`, but can be
         /// overridden
-        ICondition? BestInitialValue() => Current();
+        new IValueCondition? BestInitialValue() => Current();
+        ICondition? ICondition.IFactory.BestInitialValue() => BestInitialValue();
 
-        /// Returns a default valid condition
-        ICondition Default();
+        public new IValueCondition? Current();
+        ICondition? ICondition.IFactory.Current() => Current();
 
-        /// Returns this condition from a ConditionSet
-        ICondition? FromConditions(CurrentConditions conditions);
+        public new IValueCondition Default();
+        ICondition ICondition.IFactory.Default() => Default();
 
         /// Returns all the possible context-less conditions for this type.
         ///
         /// Deeper context-dependent conditions should use a value produced by this function and
         /// pass it to `Narrow`.
-        IEnumerable<ICondition> TopLevel();
+        IEnumerable<IValueCondition> TopLevel();
 
         /// Given a chosen condition, offer more "specific" options that are a subset of the
         /// given condition.
-        ///
         /// For example: Given a Territory, produce conditions that are regions or sub-areas in that territory.
-        IEnumerable<ICondition> Narrow(ICondition search) => new List<ICondition>();
+        IEnumerable<IValueCondition> Narrow(IValueCondition search) => new List<IValueCondition>();
+    }
+}
 
-        static IEnumerable<IFactory> All => new IFactory[] {
-            ContentCondition.Factory,
-            JobCondition.Factory,
-            LocationCondition.Factory,
-            PlayerConditionCondition.Factory,
-            PvpStateCondition.Factory,
-            TargetNameCondition.Factory
-        };
+
+/// <summary>
+/// A condition that can be treated as a number and compared to a particular value.
+/// </summary>
+public interface INumericCondition : ICondition {
+    int AsNumber();
+
+    OpExpr ICondition.WrapInDefaultOp() => new OpExpr.Lte(this);
+
+    public new INumericCondition.IFactory FactoryRef { get; }
+    ICondition.IFactory ICondition.FactoryRef => FactoryRef;
+
+    string ICondition.ValueName => AsNumber().ToString();
+
+    bool SatisfiedBy(CurrentConditions currentConditions, Func<int, int, bool> compare) {
+        var currentValue = FactoryRef.FromConditions(currentConditions);
+        if (currentValue == null) { return false; }
+        return compare(currentValue.AsNumber(), this.AsNumber());
+    }
+
+    public new interface IFactory : ICondition.IFactory {
+        INumericCondition? FromConditions(CurrentConditions conditions);
+        INumericCondition FromNumber(int num);
+
+        public new INumericCondition? BestInitialValue() => Current();
+        ICondition? ICondition.IFactory.BestInitialValue() => BestInitialValue();
+
+        public new INumericCondition Default() => FromNumber(0);
+        ICondition ICondition.IFactory.Default() => Default();
+
+        public new INumericCondition? Current();
+        ICondition? ICondition.IFactory.Current() => Current();
     }
 }

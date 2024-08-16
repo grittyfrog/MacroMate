@@ -10,7 +10,7 @@ namespace MacroMate.Conditions;
 [Equatable(Explicit = true)]
 public partial record class PlayerConditionCondition(
     [property: SetEquality] HashSet<ConditionFlag> Conditions
-) : ICondition {
+) : IValueCondition {
     private static Dictionary<ConditionFlag, ConditionFlag> EquivalentFlags = new() {
         { ConditionFlag.BetweenAreas51,                ConditionFlag.BetweenAreas },
         { ConditionFlag.BoundByDuty56,                 ConditionFlag.BoundByDuty },
@@ -81,21 +81,20 @@ public partial record class PlayerConditionCondition(
         return Conditions.All(condition => otherPlayerCondition.Conditions.Contains(condition));
     }
 
-    public static ICondition.IFactory Factory = new ConditionFactory();
+    public static IValueCondition.IFactory Factory = new ConditionFactory();
+    public IValueCondition.IFactory FactoryRef => Factory;
 
-    public ICondition.IFactory FactoryRef => Factory;
-
-    class ConditionFactory : ICondition.IFactory {
+    class ConditionFactory : IValueCondition.IFactory {
         public string ConditionName => "Player Condition";
 
-        public ICondition? Current() => PlayerConditionCondition.Current();
-        public ICondition? BestInitialValue() {
+        public IValueCondition? Current() => PlayerConditionCondition.Current();
+        public IValueCondition? BestInitialValue() {
             var current = PlayerConditionCondition.Current();
             return new PlayerConditionCondition(current.Conditions.Take(1).ToHashSet());
         }
-        public ICondition Default() => new PlayerConditionCondition();
-        public ICondition? FromConditions(CurrentConditions conditions) => conditions.playerCondition;
-        public IEnumerable<ICondition> TopLevel() {
+        public IValueCondition Default() => new PlayerConditionCondition();
+        public IValueCondition? FromConditions(CurrentConditions conditions) => conditions.playerCondition;
+        public IEnumerable<IValueCondition> TopLevel() {
             return Enum.GetValues<ConditionFlag>()
                 .Let(flags => ApplyFlagEquivalence(flags))
                 .OrderBy(flag => Enum.GetName(flag))

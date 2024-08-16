@@ -7,17 +7,17 @@ using ImGuiNET;
 
 namespace MacroMate.Windows.Components;
 
-public class ConditionEditor : IDisposable {
+public class ValueConditionEditor : IDisposable {
     // Some day we might support more then two levels of narrowing, today is not that day.
-    private ConditionEditorColumn topLevelColumn = new();
-    private ConditionEditorColumn narrowColumn = new();
+    private ValueConditionEditorColumn topLevelColumn = new();
+    private ValueConditionEditorColumn narrowColumn = new();
 
-    public ICondition? SelectedCondition => narrowColumn.SelectedCondition ?? topLevelColumn.SelectedCondition;
+    public IValueCondition? SelectedCondition => narrowColumn.SelectedCondition ?? topLevelColumn.SelectedCondition;
 
     /// Sets the SelectedCondition of our columns to condition if possible.
     ///
     /// Make sure to provide ConditionFactory before calling this function.
-    public void TrySelect(ICondition condition) {
+    public void TrySelect(IValueCondition condition) {
         bool topLevelUpdated = topLevelColumn.TrySelect(condition);
 
         if (topLevelUpdated && topLevelColumn.SelectedCondition != null) {
@@ -28,14 +28,14 @@ public class ConditionEditor : IDisposable {
         }
     }
 
-    private ICondition.IFactory? _conditionFactory = null;
-    public ICondition.IFactory? ConditionFactory {
+    private IValueCondition.IFactory? _conditionFactory = null;
+    public IValueCondition.IFactory? ConditionFactory {
         get { return _conditionFactory; }
         set {
             if (_conditionFactory != value) {
                 _conditionFactory = value;
-                topLevelColumn.Conditions = _conditionFactory?.TopLevel() ?? new List<ICondition>();
-                narrowColumn.Conditions = new List<ICondition>();
+                topLevelColumn.Conditions = _conditionFactory?.TopLevel() ?? new List<IValueCondition>();
+                narrowColumn.Conditions = new List<IValueCondition>();
             }
         }
     }
@@ -95,13 +95,13 @@ public class ConditionEditor : IDisposable {
     }
 }
 
-unsafe class ConditionEditorColumn : IDisposable {
+unsafe class ValueConditionEditorColumn : IDisposable {
     private ImGuiTextFilterPtr filter;
     private ImGuiListClipperPtr clipper;
     private int? scrollToIndexOnNextDraw = null;
 
-    private IEnumerable<ICondition> _conditions = new List<ICondition>();
-    public IEnumerable<ICondition> Conditions {
+    private IEnumerable<IValueCondition> _conditions = new List<IValueCondition>();
+    public IEnumerable<IValueCondition> Conditions {
         get { return _conditions; }
         set {
             if(_conditions != value) {
@@ -111,9 +111,9 @@ unsafe class ConditionEditorColumn : IDisposable {
         }
     }
 
-    public ICondition? SelectedCondition { get; private set; } = null;
+    public IValueCondition? SelectedCondition { get; private set; } = null;
 
-    public bool TrySelect(ICondition? selectCondition) {
+    public bool TrySelect(IValueCondition? selectCondition) {
         if (selectCondition == null) {
             SelectedCondition = null;
             return false;
@@ -130,9 +130,9 @@ unsafe class ConditionEditorColumn : IDisposable {
         return true;
     }
 
-    private IEnumerable<ICondition> filteredConditions = new List<ICondition>();
+    private IEnumerable<IValueCondition> filteredConditions = new List<IValueCondition>();
 
-    public ConditionEditorColumn() {
+    public ValueConditionEditorColumn() {
         var filterPtr = ImGuiNative.ImGuiTextFilter_ImGuiTextFilter(null);
         filter = new ImGuiTextFilterPtr(filterPtr);
         clipper = new ImGuiListClipperPtr(ImGuiNative.ImGuiListClipper_ImGuiListClipper());

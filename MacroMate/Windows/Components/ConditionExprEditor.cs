@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
@@ -7,11 +8,12 @@ using ImGuiNET;
 using MacroMate.Conditions;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dotnet;
+using MacroMate.Extensions.Imgui;
 
 namespace MacroMate.Windows.Components;
 
 public class ConditionExprEditor : IDisposable {
-    private ConditionEditor conditionEditor = new();
+    private ValueConditionEditor conditionEditor = new();
 
     public void Dispose() {
         conditionEditor.Dispose();
@@ -66,9 +68,9 @@ public class ConditionExprEditor : IDisposable {
 
                 // Conditions
                 ImGui.TableNextColumn();
-                foreach (var (condition, conditionIndex) in andExpression.conditions.WithIndex()) {
-                    ImGui.PushID(conditionIndex);
-                    edited |= DrawCondition(andIndex, conditionIndex, condition, ref conditionExpr);
+                foreach (var (opExpr, opExprIndex) in andExpression.opExprs.WithIndex()) {
+                    ImGui.PushID(opExprIndex);
+                    edited |= DrawOpExpr(andIndex, opExprIndex, opExpr, ref conditionExpr);
                     ImGui.PopID();
                 }
 
@@ -85,7 +87,9 @@ public class ConditionExprEditor : IDisposable {
                             if (ImGui.Selectable(conditionFactory.ConditionName)) {
                                 conditionExpr = conditionExpr.UpdateAnd(
                                     andIndex,
-                                    (and) => and.AddCondition(conditionFactory.BestInitialValue() ?? conditionFactory.Default())
+                                    (and) => and.AddCondition(
+                                        (conditionFactory.BestInitialValue() ?? conditionFactory.Default()).WrapInDefaultOp()
+                                    )
                                 );
                                 edited = true;
                             }
@@ -97,7 +101,9 @@ public class ConditionExprEditor : IDisposable {
                     if (ImGui.Selectable("Add All Current Conditions")) {
                         conditionExpr = conditionExpr.UpdateAnd(
                             andIndex,
-                            (and) => and.AddConditions(Env.ConditionManager.CurrentConditions().Enumerate())
+                            (and) => and.AddConditions(
+                                Env.ConditionManager.CurrentConditions().Enumerate().Select(c => c.WrapInDefaultOp())
+                            )
                         );
                         edited = true;
                     }
@@ -133,17 +139,19 @@ public class ConditionExprEditor : IDisposable {
         return edited;
     }
 
-    private bool DrawCondition(
+    private bool DrawOpExpr(
         int andIndex,
-        int conditionIndex,
-        ICondition condition,
+        int opIndex,
+        OpExpr op,
         ref ConditionExpr.Or conditionExpr
     ) {
         bool edited = false;
 
-        var conditionActive = condition.SatisfiedBy(Env.ConditionManager.CurrentConditions());
+        ImGui.PushID(opIndex);
 
-        ImGui.PushID(conditionIndex);
+        var editValueConditionPopup = DrawEditValueConditionPopup(andIndex, opIndex, ref conditionExpr, ref edited);
+
+        var conditionActive = op.SatisfiedBy(Env.ConditionManager.CurrentConditions());
         if (conditionActive) {
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.ActiveGreen);
         } else {
@@ -151,32 +159,30 @@ public class ConditionExprEditor : IDisposable {
         }
 
         ImGui.AlignTextToFramePadding();
-        if (conditionIndex > 0) {
+        if (opIndex > 0) {
             ImGui.Text("and");
             ImGui.SameLine();
         }
 
-        ImGui.Text(condition.ConditionName);
+        ImGui.Text(op.Condition.ConditionName);
         ImGui.SameLine();
         if (ImGui.IsItemHovered()) {
-            var currentValue = condition.FactoryRef.Current()?.ValueName;
+            var currentValue = op.Condition.FactoryRef.Current()?.ValueName;
             if (currentValue != null && currentValue != "") {
                 ImGui.SetTooltip(currentValue);
             }
         }
 
-        ImGui.Text("is");
+        edited |= DrawOperatorSegment(andIndex, opIndex, op, ref conditionExpr);
         ImGui.SameLine();
 
-        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(0f, 4f) * ImGuiHelpers.GlobalScale);
-        if (ImGui.Button(condition.ValueName)) {
-            ImGui.OpenPopup("edit_condition_popup");
-            conditionEditor.ConditionFactory = condition.FactoryRef;
-            conditionEditor.TrySelect(condition);
-        };
-        ImGui.PopStyleVar();
+        if (op.Condition is IValueCondition valueCondition) {
+            DrawValueConditionButton(editValueConditionPopup, andIndex, opIndex, op, valueCondition, ref conditionExpr);
+        } else if (op.Condition is INumericCondition numCondition) {
+            edited |= DrawNumConditionInputText(andIndex, opIndex, op, numCondition, ref conditionExpr);
+        }
 
-        if (condition.SatisfiedBy(Env.ConditionManager.CurrentConditions())) {
+        if (conditionActive) {
             var yesIcon = Env.TextureProvider.GetFromGameIcon(76574).GetWrapOrEmpty();
             if (yesIcon != null) {
                 ImGui.SameLine();
@@ -189,28 +195,116 @@ public class ConditionExprEditor : IDisposable {
             }
         }
 
+
         ImGui.PopStyleColor();
 
-        if (ImGui.BeginPopup("edit_condition_popup")) {
+        ImGui.PopID();
+
+        return edited;
+    }
+
+    private bool DrawOperatorSegment(
+        int andIndex,
+        int opIndex,
+        OpExpr op,
+        ref ConditionExpr.Or conditionExpr
+    ) {
+        bool edited = false;
+
+        var opOptions = OpExpr.WrapAll(op.Condition).ToList();
+        if (opOptions.Count <= 1) {
+            ImGui.Text(op.Text);
+            return edited;
+        }
+
+        // Remove the "Active Green" colouring if it's active
+        ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.Text]);
+
+        var flags = ImGuiComboFlags.NoArrowButton;
+        var current = op.Text;
+        ImGui.SetNextItemWidth(ImGui.CalcTextSize(op.Text).X + ImGui.GetStyle().FramePadding.X * 2);
+        if (ImGui.BeginCombo($"###condition_expr_editor/draw_operator_segment/{andIndex}/{opIndex}", current, flags)) {
+            foreach (var opOption in opOptions) {
+                if (ImGui.Selectable(opOption.Text, opOption == op)) {
+                    conditionExpr = conditionExpr.UpdateAnd(
+                        andIndex,
+                        (and) => and.SetOperator(opIndex, opOption)
+                    );
+                    edited = true;
+                }
+            }
+            ImGui.EndCombo();
+        }
+
+        ImGui.PopStyleColor();
+
+        return edited;
+    }
+
+    private void DrawValueConditionButton(
+        uint editValueConditionPopup,
+        int andIndex,
+        int opIndex,
+        OpExpr op,
+        IValueCondition condition,
+        ref ConditionExpr.Or conditionExpr
+    ) {
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(0f, 4f) * ImGuiHelpers.GlobalScale);
+        if (ImGui.Button(condition.ValueName)) {
+            ImGui.OpenPopup(editValueConditionPopup);
+            conditionEditor.ConditionFactory = condition.FactoryRef;
+            conditionEditor.TrySelect(condition);
+        };
+        ImGui.PopStyleVar();
+    }
+
+    private bool DrawNumConditionInputText(
+        int andIndex,
+        int opIndex,
+        OpExpr op,
+        INumericCondition condition,
+        ref ConditionExpr.Or conditionExpr
+    ) {
+        bool edited = false;
+        var num = condition.AsNumber();
+        ImGui.SetNextItemWidth(ImGui.CalcTextSize(num.ToString() + "  ").X + ImGui.GetStyle().FramePadding.X * 2);
+        if (ImGuiExt.InputTextInt($"###condition_expr_editor/num_condition_input_text/{andIndex}/{opIndex}", ref num)) {
+            conditionExpr = conditionExpr.UpdateAnd(
+                andIndex,
+                (and) => and.SetCondition(opIndex, condition.FactoryRef.FromNumber(num))
+            );
+            edited = true;
+        }
+        return edited;
+    }
+
+    private uint DrawEditValueConditionPopup(
+        int andIndex,
+        int opIndex,
+        ref ConditionExpr.Or conditionExpr,
+        ref bool edited
+    ) {
+        var popupName = $"###condition_expr_editor/edit_condition_popup/{andIndex}/{opIndex}";
+        var popupId = ImGui.GetID(popupName);
+
+        if (ImGui.BeginPopup(popupName)) {
             var drawResult = conditionEditor.Draw();
-            if (drawResult == ConditionEditor.DrawResult.Edited && conditionEditor.SelectedCondition != null) {
+            if (drawResult == ValueConditionEditor.DrawResult.Edited && conditionEditor.SelectedCondition != null) {
                 conditionExpr = conditionExpr.UpdateAnd(
                     andIndex,
-                    (and) => and.SetCondition(conditionIndex, conditionEditor.SelectedCondition)
+                    (and) => and.SetCondition(opIndex, conditionEditor.SelectedCondition)
                 );
                 edited = true;
-            } else if (drawResult == ConditionEditor.DrawResult.DeleteRequested) {
+            } else if (drawResult == ValueConditionEditor.DrawResult.DeleteRequested) {
                 conditionExpr = conditionExpr.UpdateAnd(
                     andIndex,
-                    (and) => and.DeleteCondition(conditionIndex)
+                    (and) => and.DeleteCondition(opIndex)
                 );
                 edited = true;
             }
             ImGui.EndPopup();
         }
 
-        ImGui.PopID();
-
-        return edited;
+        return popupId;
     }
 }

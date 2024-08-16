@@ -12,7 +12,8 @@ public record CurrentConditions(
     TargetNameCondition? targetNpc = null,
     JobCondition? job = null,
     PvpStateCondition? pvpState = null,
-    PlayerConditionCondition? playerCondition = null
+    PlayerConditionCondition? playerCondition = null,
+    CurrentCraftMaxDurabilityCondition? craftMaxDurabilityCondition = null
 ) {
     public static CurrentConditions Empty => new CurrentConditions();
 
@@ -23,5 +24,6 @@ public record CurrentConditions(
         if (job != null) { yield return job; }
         if (pvpState != null) { yield return pvpState; }
         if (playerCondition != null) { yield return playerCondition; }
+        if (craftMaxDurabilityCondition != null) { yield return craftMaxDurabilityCondition; }
     }
 }
