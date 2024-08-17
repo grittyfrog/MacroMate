@@ -214,6 +214,7 @@ public class ConditionExprEditor : IDisposable {
         var opOptions = OpExpr.WrapAll(op.Condition).ToList();
         if (opOptions.Count <= 1) {
             ImGui.Text(op.Text);
+            ImGuiExt.HoverTooltip(op.LongText);
             return edited;
         }
 
@@ -235,6 +236,7 @@ public class ConditionExprEditor : IDisposable {
             }
             ImGui.EndCombo();
         }
+        ImGuiExt.HoverTooltip(op.LongText);
 
         ImGui.PopStyleColor();
 

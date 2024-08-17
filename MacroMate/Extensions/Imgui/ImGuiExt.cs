@@ -57,6 +57,12 @@ public static class ImGuiExt {
         return inputTextEdited;
     }
 
+    public static void HoverTooltip(string? message) {
+        if (message != null && ImGui.IsItemHovered()) {
+            ImGui.SetTooltip(message);
+        }
+    }
+
     public static ImGuiInputTextCallback CallbackCharFilterFn(Func<char, bool> predicate) {
         unsafe {
             return (ev) => {

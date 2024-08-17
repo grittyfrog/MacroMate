@@ -4,6 +4,7 @@ using MacroMate.Conditions;
 
 public interface OpExpr {
     public string Text { get; }
+    public string? LongText { get => null; }
     public bool SatisfiedBy(CurrentConditions currentConditions);
     public ICondition Condition { get; }
 
@@ -55,6 +56,7 @@ public interface OpExpr {
     /// True if the current conditions are less than to num
     public record class Lt(INumericCondition Num) : OpExpr {
         public string Text => "<";
+        public string LongText => "Less Than";
         public ICondition Condition => Num;
         public bool SatisfiedBy(CurrentConditions currentConditions) =>
             Num.SatisfiedBy(currentConditions, (cur, val) => cur < val);
@@ -63,6 +65,7 @@ public interface OpExpr {
     /// True if the current conditions are less than or equal to num
     public record class Lte(INumericCondition Num) : OpExpr {
         public string Text => "<=";
+        public string LongText => "Less Than or Equal";
         public ICondition Condition => Num;
         public bool SatisfiedBy(CurrentConditions currentConditions) =>
             Num.SatisfiedBy(currentConditions, (cur, val) => cur <= val);
@@ -71,6 +74,7 @@ public interface OpExpr {
     /// True if the current conditions are greater than to num
     public record class Gt(INumericCondition Num) : OpExpr {
         public string Text => ">";
+        public string LongText => "Greater Than";
         public ICondition Condition => Num;
         public bool SatisfiedBy(CurrentConditions currentConditions) =>
             Num.SatisfiedBy(currentConditions, (cur, val) => cur > val);
@@ -79,6 +83,7 @@ public interface OpExpr {
     /// True if the current conditions are grater than or equal to num
     public record class Gte(INumericCondition Num) : OpExpr {
         public string Text => ">=";
+        public string LongText => "Greater Than or Equal";
         public ICondition Condition => Num;
         public bool SatisfiedBy(CurrentConditions currentConditions) =>
             Num.SatisfiedBy(currentConditions, (cur, val) => cur >= val);

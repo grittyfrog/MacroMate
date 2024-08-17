@@ -16,6 +16,7 @@ using Dalamud.Game;
 using MacroMate.Extensions.FFXIVClientStructs;
 using MacroMate.Ipc;
 using MacroMate.ContextMenu;
+using MacroMate.Extensions.Dalamud.Synthesis;
 
 namespace MacroMate;
 
@@ -33,14 +34,15 @@ public class Env {
 
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         PlayerLocationManager = new PlayerLocationManager();
-        ConditionManager = new ConditionManager();
         VanillaMacroManager = new VanillaMacroManager();
         SaveManager = new SaveManager();
         MacroConfig = new MacroConfig();
-        MacroMate = new MacroMate();
         IPCManager = new IPCManager();
         ContextMenuManager = new ContextMenuManager();
+        SynthesisManager = new SynthesisManager();
+        ConditionManager = new ConditionManager();
 
+        MacroMate = new MacroMate();
         PluginCommandManager = new PluginCommandManager();
         PluginWindowManager = new PluginWindowManager();
     }
@@ -134,4 +136,6 @@ public class Env {
     public static IPCManager IPCManager { get; private set; } = null!;
 
     public static ContextMenuManager ContextMenuManager { get; private set; } = null!;
+
+    public static SynthesisManager SynthesisManager { get; private set; } = null!;
 }

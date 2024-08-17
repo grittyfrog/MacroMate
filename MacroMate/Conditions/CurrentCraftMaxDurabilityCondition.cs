@@ -4,7 +4,12 @@ public record class CurrentCraftMaxDurabilityCondition(
     int MaxDurability
 ) : INumericCondition {
     public static CurrentCraftMaxDurabilityCondition? Current() {
-        return new CurrentCraftMaxDurabilityCondition(10);
+        var durability = Env.SynthesisManager.CurrentCraftMaxDurability;
+        if (durability.HasValue) {
+            return new CurrentCraftMaxDurabilityCondition((int)(durability.Value));
+        } else {
+            return null;
+        }
     }
 
     public int AsNumber() => MaxDurability;
