@@ -268,6 +268,8 @@ public class ConditionExprEditor : IDisposable {
         ref ConditionExpr.Or conditionExpr
     ) {
         bool edited = false;
+        var rightClickPopup = DrawNumConditionPopup(andIndex, opIndex, op, condition, ref conditionExpr, ref edited);
+
         var num = condition.AsNumber();
         ImGui.SetNextItemWidth(ImGui.CalcTextSize(num.ToString() + "  ").X + ImGui.GetStyle().FramePadding.X * 2);
         if (ImGuiExt.InputTextInt($"###condition_expr_editor/num_condition_input_text/{andIndex}/{opIndex}", ref num)) {
@@ -277,7 +279,49 @@ public class ConditionExprEditor : IDisposable {
             );
             edited = true;
         }
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
+            ImGui.OpenPopup(rightClickPopup);
+        }
         return edited;
+    }
+
+    private uint DrawNumConditionPopup(
+        int andIndex,
+        int opIndex,
+        OpExpr op,
+        INumericCondition condition,
+        ref ConditionExpr.Or conditionExpr,
+        ref bool edited
+    ) {
+        var popupName = $"###condition_expr_editors/num_condition_popup/{andIndex}/{opIndex}";
+        var popupId = ImGui.GetID(popupName);
+
+        if (ImGui.BeginPopup(popupName)) {
+            if (ImGui.Selectable("Select Current")) {
+                var current = condition.FactoryRef.Current();
+                if (current != null) {
+                    conditionExpr = conditionExpr.UpdateAnd(
+                        andIndex,
+                        (and) => and.SetCondition(opIndex, current)
+                    );
+                    edited = true;
+                }
+            }
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Select the currently active condition");
+            }
+
+            if (ImGui.Selectable("Delete")) {
+                conditionExpr = conditionExpr.UpdateAnd(
+                    andIndex,
+                    (and) => and.DeleteCondition(opIndex)
+                );
+                edited = true;
+            }
+            ImGui.EndPopup();
+        }
+
+        return popupId;
     }
 
     private uint DrawEditValueConditionPopup(
