@@ -18,6 +18,8 @@ namespace MacroMate.Serialization.V1;
 [XmlInclude(typeof(PvpStateConditionXML))]
 [XmlInclude(typeof(PlayerConditionConditionXML))]
 [XmlInclude(typeof(CurrentCraftMaxDurabilityConditionXML))]
+[XmlInclude(typeof(CurrentCraftMaxQualityConditionXML))]
+[XmlInclude(typeof(CurrentCraftDifficultyConditionXML))]
 public abstract class ConditionXML {
     public abstract ICondition ToReal();
 
@@ -29,6 +31,8 @@ public abstract class ConditionXML {
         PvpStateCondition cond => PvpStateConditionXML.From(cond),
         PlayerConditionCondition cond => PlayerConditionConditionXML.From(cond),
         CurrentCraftMaxDurabilityCondition cond => CurrentCraftMaxDurabilityConditionXML.From(cond),
+        CurrentCraftMaxQualityCondition cond => CurrentCraftMaxQualityConditionXML.From(cond),
+        CurrentCraftDifficultyCondition cond => CurrentCraftDifficultyConditionXML.From(cond),
         _ => throw new Exception($"Unexpected condition {condition}")
     };
 }
@@ -185,5 +189,29 @@ public class CurrentCraftMaxDurabilityConditionXML : ConditionXML {
 
     public static CurrentCraftMaxDurabilityConditionXML From(CurrentCraftMaxDurabilityCondition cond) => new() {
         MaxDurability = cond.MaxDurability
+    };
+}
+
+
+[XmlType("CurrentCraftMaxQualityCondition")]
+public class CurrentCraftMaxQualityConditionXML : ConditionXML {
+    public required int MaxQuality { get; set; }
+
+    public override ICondition ToReal() => new CurrentCraftMaxQualityCondition(MaxQuality);
+
+    public static CurrentCraftMaxQualityConditionXML From(CurrentCraftMaxQualityCondition cond) => new() {
+        MaxQuality = cond.MaxQuality
+    };
+}
+
+
+[XmlType("CurrentCraftDifficultyCondition")]
+public class CurrentCraftDifficultyConditionXML : ConditionXML {
+    public required int Difficulty { get; set; }
+
+    public override ICondition ToReal() => new CurrentCraftDifficultyCondition(Difficulty);
+
+    public static CurrentCraftDifficultyConditionXML From(CurrentCraftDifficultyCondition cond) => new() {
+        Difficulty = cond.Difficulty
     };
 }

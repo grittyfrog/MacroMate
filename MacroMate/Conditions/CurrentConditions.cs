@@ -13,7 +13,9 @@ public record CurrentConditions(
     JobCondition? job = null,
     PvpStateCondition? pvpState = null,
     PlayerConditionCondition? playerCondition = null,
-    CurrentCraftMaxDurabilityCondition? craftMaxDurabilityCondition = null
+    CurrentCraftMaxDurabilityCondition? craftMaxDurabilityCondition = null,
+    CurrentCraftMaxQualityCondition? craftMaxQualityCondition = null,
+    CurrentCraftDifficultyCondition? craftDifficultyCondition = null
 ) {
     public static CurrentConditions Empty => new CurrentConditions();
 
@@ -25,5 +27,7 @@ public record CurrentConditions(
         if (pvpState != null) { yield return pvpState; }
         if (playerCondition != null) { yield return playerCondition; }
         if (craftMaxDurabilityCondition != null) { yield return craftMaxDurabilityCondition; }
+        if (craftMaxQualityCondition != null) { yield return craftMaxQualityCondition; }
+        if (craftDifficultyCondition != null) { yield return craftDifficultyCondition; }
     }
 }

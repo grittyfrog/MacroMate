@@ -33,7 +33,9 @@ public interface ICondition {
             PlayerConditionCondition.Factory,
             PvpStateCondition.Factory,
             TargetNameCondition.Factory,
-            CurrentCraftMaxDurabilityCondition.Factory
+            CurrentCraftMaxDurabilityCondition.Factory,
+            CurrentCraftMaxQualityCondition.Factory,
+            CurrentCraftDifficultyCondition.Factory
         };
     }
 }

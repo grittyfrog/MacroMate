@@ -65,7 +65,7 @@ public interface OpExpr {
     /// True if the current conditions are less than or equal to num
     public record class Lte(INumericCondition Num) : OpExpr {
         public string Text => "<=";
-        public string LongText => "Less Than or Equal";
+        public string LongText => "Less Than or Equal To";
         public ICondition Condition => Num;
         public bool SatisfiedBy(CurrentConditions currentConditions) =>
             Num.SatisfiedBy(currentConditions, (cur, val) => cur <= val);
@@ -83,7 +83,7 @@ public interface OpExpr {
     /// True if the current conditions are grater than or equal to num
     public record class Gte(INumericCondition Num) : OpExpr {
         public string Text => ">=";
-        public string LongText => "Greater Than or Equal";
+        public string LongText => "Greater Than or Equal To";
         public ICondition Condition => Num;
         public bool SatisfiedBy(CurrentConditions currentConditions) =>
             Num.SatisfiedBy(currentConditions, (cur, val) => cur >= val);
