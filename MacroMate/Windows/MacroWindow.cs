@@ -153,6 +153,8 @@ public class MacroWindow : Window, IDisposable {
     private void DrawMacro() {
         if (Macro == null) { return; }
 
+        var rightClickPopup = DrawMacroTextRightClickPopup(Macro);
+
         bool edited = false;
 
         // Macro Icon and Name
@@ -176,6 +178,9 @@ public class MacroWindow : Window, IDisposable {
             Macro.Lines = lines;
         }
         edited = edited || ImGui.IsItemDeactivatedAfterEdit();
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
+            ImGui.OpenPopup(rightClickPopup);
+        }
 
         if (edited) {
             Save();
@@ -230,6 +235,29 @@ public class MacroWindow : Window, IDisposable {
         return runMacroPopupId;
     }
 
+    private uint DrawMacroTextRightClickPopup(MateNode.Macro macro) {
+        var macroTextRightClickPopupName = $"""macrowindow/macro_text_right_click_popup/{macro.Id}""";
+        var macroTextRightClickPopupId = ImGui.GetID(macroTextRightClickPopupName);
+
+        if (ImGui.BeginPopup(macroTextRightClickPopupName)) {
+            if (ImGui.Selectable("Run Selected")) {
+                var selected = seStringInputTextMultiline.SelectedSeString();
+                if (selected != null) {
+                    Env.VanillaMacroManager.ExecuteMacro(selected);
+                }
+            }
+            if (ImGui.IsItemHovered()) {
+                var selected = seStringInputTextMultiline.SelectedSeString();
+                if (selected != null) {
+                    ImGui.SetTooltip(selected.TextValue.ReplaceLineEndings());
+                }
+            }
+
+            ImGui.EndPopup();
+        }
+
+        return macroTextRightClickPopupId;
+    }
 
     private void Save() {
         if (deleteRequested) {

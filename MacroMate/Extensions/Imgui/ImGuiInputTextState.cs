@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Dalamud.Interface.Utility;
@@ -40,6 +41,15 @@ public unsafe struct ImGuiInputTextState
     }
 
     private ImGuiInputTextState* ThisPtr => (ImGuiInputTextState*)Unsafe.AsPointer(ref this);
+
+    public string SelectedText() {
+        // These are in wchar-positions, not UTF8 positions
+        var lower = Stb.SelectStart <= Stb.SelectEnd ? Stb.SelectStart : Stb.SelectEnd;
+        var higher = Stb.SelectStart <= Stb.SelectEnd ? Stb.SelectEnd : Stb.SelectStart;
+        var selectionLength = higher - lower;
+        var selectedChars = TextW.DataSpan.Slice(lower, selectionLength);
+        return selectedChars.ToString(); // ToString on Span<char> constructs the string
+    }
 }
 
 /// <summary>

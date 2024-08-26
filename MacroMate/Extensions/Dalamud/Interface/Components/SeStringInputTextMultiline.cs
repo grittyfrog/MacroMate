@@ -126,6 +126,24 @@ public class SeStringInputTextMultiline {
         return edited;
     }
 
+    /// Gets the SeString represented by the selection, or null if no selection
+    public SeString? SelectedSeString() {
+        string selectedText;
+        unsafe {
+            selectedText = TextState->SelectedText();
+        }
+
+        if (selectedText != "") {
+            var selectedSeString = SeStringEx
+                .ParseFromText(selectedText, knownTranslationPayloads)
+                .NormalizeNewlines()
+                .ReplaceNewlinesWithCR();
+            return selectedSeString;
+        }
+
+        return null;
+    }
+
     private void IndexPayloads(SeString s) {
         // We need to pre-index the existing auto translate payloads in our input so we can recognise them later on
         foreach (var atPayload in s.Payloads.OfType<AutoTranslatePayload>()) {

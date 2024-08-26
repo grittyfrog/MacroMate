@@ -62,7 +62,11 @@ public unsafe class VanillaMacroManager : IDisposable {
 
     public void ExecuteMacro(VanillaMacro vanillaMacro) {
         var macroText = vanillaMacro.Lines.Value;
-        if (macroText.CountNewlines() > 15) {
+        ExecuteMacro(macroText);
+    }
+
+    public void ExecuteMacro(SeString lines) {
+        if (lines.CountNewlines() > 15) {
             Env.ChatGui.PrintError($"Macro has too many lines (max 15)");
             return;
         }
@@ -79,7 +83,7 @@ public unsafe class VanillaMacroManager : IDisposable {
         }
 
         try {
-            foreach (var (line, index) in macroText.SplitIntoLines().WithIndex()) {
+            foreach (var (line, index) in lines.SplitIntoLines().WithIndex()) {
                 if (line.Payloads.Count == 0 || line.Encode().Length == 0) {
                     macro.Lines[index].Clear();
                     continue;
