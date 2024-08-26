@@ -622,6 +622,10 @@ public class IconPickerIndex {
                 .Where(icon => icon != 0);
 
             foreach (var usefulIcon in usefulIcons) {
+                // If no icon info exists then this isn't a valid id
+                var existingIconInfo = iconInfos.GetValueOrDefault((uint)usefulIcon);
+                if (existingIconInfo == null) { continue; }
+
                 var iconInfo = new IconInfo {
                     IconId = usefulIcon!,
                     Names = usefulNames
