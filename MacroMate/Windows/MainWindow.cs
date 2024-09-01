@@ -725,7 +725,10 @@ public class MainWindow : Window, IDisposable {
             ImGui.InputText("###subscription_url", ref subscriptionGroupPopupUrl, 4096);
 
             if (ImGui.Button("Save")) {
-                Env.MacroConfig.CreateSubscriptionGroup(parent, subscriptionGroupPopupUrl);
+                var sGroup = Env.MacroConfig.CreateSubscriptionGroup(parent, subscriptionGroupPopupUrl);
+                Env.SubscriptionManager.ScheduleSyncFromSubscription(sGroup);
+                Env.PluginWindowManager.SubscriptionStatusWindow.Subscription = sGroup;
+                Env.PluginWindowManager.ShowOrFocus(Env.PluginWindowManager.SubscriptionStatusWindow);
                 ImGui.CloseCurrentPopup();
             }
 
