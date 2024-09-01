@@ -77,6 +77,19 @@ public static class ImGuiExt {
         }
     }
 
+    /// <summary>
+    /// Draws text to the left of the current cursor and positions the cursor at the start of the text.
+    ///
+    /// Leaves the cursor on the same line
+    /// </summary>
+    public static void TextUnformattedHorizontalRTL(string text) {
+        var textSize = ImGui.CalcTextSize(text);
+        var startPos = ImGui.GetCursorPosX() - textSize.X;
+        ImGui.SetCursorPosX(startPos);
+        ImGui.TextUnformatted(text);
+        ImGui.SameLine(startPos - ImGui.GetStyle().FramePadding.X);
+    }
+
     /// ImGui.NET doesn't provide any way to pass ImGuiWindowFlags to BeginPopupModal
     /// without also passing the isOpen bool ref.
     ///

@@ -17,6 +17,10 @@ using MacroMate.Extensions.FFXIVClientStructs;
 using MacroMate.Ipc;
 using MacroMate.ContextMenu;
 using MacroMate.Extensions.Dalamud.Synthesis;
+using System.Net.Http;
+using Dalamud.Networking.Http;
+using System.Net;
+using MacroMate.Subscription;
 
 namespace MacroMate;
 
@@ -26,6 +30,12 @@ namespace MacroMate;
 public class Env {
     public static void Initialize(IDalamudPluginInterface pluginInterface) {
         pluginInterface.Create<Env>();
+
+        HappyEyeballsCallback = new HappyEyeballsCallback();
+        HttpClient = new HttpClient(new SocketsHttpHandler {
+            AutomaticDecompression = DecompressionMethods.All,
+            ConnectCallback = HappyEyeballsCallback.ConnectCallback,
+        });
 
         FontManager = new FontManager();
         WindowSystem = new("MacroMate");
@@ -41,6 +51,7 @@ public class Env {
         ContextMenuManager = new ContextMenuManager();
         SynthesisManager = new SynthesisManager();
         ConditionManager = new ConditionManager();
+        SubscriptionManager = new SubscriptionManager();
 
         MacroMate = new MacroMate();
         PluginCommandManager = new PluginCommandManager();
@@ -54,6 +65,14 @@ public class Env {
         FontManager.Dispose();
         VanillaMacroManager.Dispose();
     }
+
+    /// ===
+    /// .NET Stuff
+    /// ===
+
+    public static HappyEyeballsCallback HappyEyeballsCallback { get; private set; } = null!;
+
+    public static HttpClient HttpClient { get; private set; } = null!;
 
     /// ===
     /// Dalamud Injections
@@ -138,4 +157,6 @@ public class Env {
     public static ContextMenuManager ContextMenuManager { get; private set; } = null!;
 
     public static SynthesisManager SynthesisManager { get; private set; } = null!;
+
+    public static SubscriptionManager SubscriptionManager { get; private set; } = null!;
 }

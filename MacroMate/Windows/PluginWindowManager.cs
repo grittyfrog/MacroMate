@@ -1,5 +1,4 @@
 using System;
-using System.Numerics;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud.Interface.ImGuiIconPicker;
@@ -13,6 +12,7 @@ public class PluginWindowManager : IDisposable {
     public IconPickerDialog IconPicker { get; private set; } = new();
     public MacroLinkPicker MacroLinkPicker { get; private set; } = new();
     public BackupWindow BackupWindow { get; private set; } = new();
+    public SubscriptionStatusWindow SubscriptionStatusWindow { get; private set; } = new();
     public HelpWindow HelpWindow { get; private set; } = new();
     public DebugWindow DebugWindow { get; private set; } = new();
 
@@ -22,6 +22,7 @@ public class PluginWindowManager : IDisposable {
         Env.WindowSystem.AddWindow(IconPicker);
         Env.WindowSystem.AddWindow(MacroLinkPicker);
         Env.WindowSystem.AddWindow(BackupWindow);
+        Env.WindowSystem.AddWindow(SubscriptionStatusWindow);
         Env.WindowSystem.AddWindow(HelpWindow);
         Env.WindowSystem.AddWindow(DebugWindow);
 

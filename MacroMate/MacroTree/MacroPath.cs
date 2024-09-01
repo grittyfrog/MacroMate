@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Sprache;
 
 namespace MacroMate.MacroTree;
@@ -45,11 +46,25 @@ public record class MacroPath(
             throw new ArgumentException($"invalid macro path '{path}': {ex.Message}", ex);
         }
     }
+
+    public override string ToString() {
+        return string.Join("/", Segments.Select(s => s.ToString()));
+    }
 }
 
 public interface MacroPathSegment {
-    public record class ByName(string name, int offset = 0) : MacroPathSegment {}
-    public record class ByIndex(int index) : MacroPathSegment {}
+    public record class ByName(string name, int offset = 0) : MacroPathSegment {
+        public override string ToString() {
+            if (offset != 0) { return $"{name}@{offset}"; }
+            return name;
+        }
+    }
+
+    public record class ByIndex(int index) : MacroPathSegment {
+        public override string ToString() {
+            return $"@{index}";
+        }
+    }
 
     public static IEnumerable<MacroPathSegment> ParseText(string path) {
         if (path == "") { return ImmutableList<MacroPathSegment>.Empty; }

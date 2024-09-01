@@ -1,7 +1,5 @@
 using System;
-using System.Linq;
 using Dalamud.Plugin.Ipc;
-using MacroMate.Extensions.Dalamud.Macros;
 using MacroMate.Extensions.Dalamud.Str;
 using MacroMate.MacroTree;
 
@@ -72,41 +70,7 @@ public class IPCManager : IDisposable {
         var parsedPath = MacroPath.ParseText(path ?? "/");
         if (parsedPath.Segments.Count == 0) { return true; }
 
-        MateNode.Group? attachmentPoint = null;
-        // The 'top' new group, only attached at the end in case we error mid-function
-        MateNode.Group? highestNewGroupAdded = null;
-
-        MateNode.Group currentNode = (MateNode.Group)Env.MacroConfig.Root;
-        foreach (var segment in parsedPath.Segments) {
-            var childNode = currentNode.GetChildFromPathSegment(segment);
-            if (childNode == null) {
-                if (segment is MacroPathSegment.ByName nameSegment) {
-                    if (nameSegment.offset != 0) {
-                        throw new ArgumentException($"cannot create group for missing named index (path: {path})");
-                    }
-
-                    var newChild = new MateNode.Group { Name = nameSegment.name };
-                    // We
-                    if (highestNewGroupAdded == null) {
-                        attachmentPoint = currentNode;
-                        highestNewGroupAdded = newChild;
-                    } else {
-                        currentNode.Attach(newChild);
-                    }
-                    currentNode = newChild;
-                } else {
-                    throw new ArgumentException($"cannot create group for missing index (path: {path}))");
-                }
-            } else if (childNode is MateNode.Group childGroup) {
-                currentNode = childGroup;
-            } else {
-                throw new ArgumentException($"cannot create group for path containing macro (path: {path})");
-            }
-        }
-
-        if (highestNewGroupAdded != null && attachmentPoint != null) {
-            Env.MacroConfig.MoveInto(highestNewGroupAdded, attachmentPoint);
-        }
+        Env.MacroConfig.CreateOrFindGroupByPath((MateNode.Group)Env.MacroConfig.Root, parsedPath);
 
         return true;
     }

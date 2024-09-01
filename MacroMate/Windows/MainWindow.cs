@@ -91,6 +91,7 @@ public class MainWindow : Window, IDisposable {
 
     private void DrawMenuBar() {
         var newGroupPopupId = DrawNewGroupPopup(Env.MacroConfig.Root);
+        var newSubscriptionGroupPopupId = DrawNewSubscriptionGroupPopup(Env.MacroConfig.Root);
         var importCodePopupId = DrawImportFromCodePopup(Env.MacroConfig.Root);
         var importFromGamePopupId = DrawImportFromGamePopup(Env.MacroConfig.Root);
         var sortPopupId = DrawSortGroupPopup(Env.MacroConfig.Root);
@@ -119,6 +120,9 @@ public class MainWindow : Window, IDisposable {
                     }
 
                     ImGui.EndMenu();
+                }
+                if (ImGui.MenuItem("Subscription")) {
+                    ImGui.OpenPopup(newSubscriptionGroupPopupId);
                 }
                 ImGui.EndMenu();
             }
@@ -335,11 +339,18 @@ public class MainWindow : Window, IDisposable {
             case MateNode.Macro macro:
                 DrawMacroNode(macro);
                 break;
+
+            case MateNode.SubscriptionGroup group:
+                DrawGroupNode(group);
+                break;
         }
         ImGui.PopID();
     }
 
-    private void DrawGroupNode(MateNode.Group group) {
+    /// <summary>
+    /// Draw any node as a group node, shouldn't be used on `MateNode.Macro` since it shouldn't hold children
+    /// </summary>
+    private void DrawGroupNode(MateNode group) {
         ImGui.TableNextColumn();
 
         var expandedState = GroupNodeExpanded.GetOrAdd(group.Id, () => new());
@@ -367,6 +378,10 @@ public class MainWindow : Window, IDisposable {
         NodeDragDropSource(group, DragDropType.MACRO_OR_GROUP_NODE, drawPreview: () => { ImGui.CollapsingHeader(group.Name); });
         NodeDragDropTarget(group, DragDropType.MACRO_OR_GROUP_NODE, allowInto: true, allowBeside: true);
 
+        ImGui.SameLine(ImGui.GetContentRegionMax().X);
+        if (group is MateNode.SubscriptionGroup sGroup) {
+            DrawSubscriptionGroupIcons(sGroup);
+        }
         DrawGroupLinkIcon(group);
 
         // Action Button
@@ -387,7 +402,14 @@ public class MainWindow : Window, IDisposable {
         }
     }
 
-    private void DrawGroupLinkIcon(MateNode.Group group) {
+    private void DrawSubscriptionGroupIcons(MateNode.SubscriptionGroup sGroup) {
+        ImGui.PushFont(UiBuilder.IconFont);
+        ImGuiExt.TextUnformattedHorizontalRTL(FontAwesomeIcon.Rss.ToIconString());
+        ImGui.PopFont();
+        ImGuiExt.HoverTooltip($"This group is provided by a 3rd party, make sure to verify the macros in this group before you run them.\n\nSubscription URL: {sGroup.SubscriptionUrl}");
+    }
+
+    private void DrawGroupLinkIcon(MateNode group) {
         var activelyLinkedChildren = group.Descendants()
             .OfType<MateNode.Macro>()
             .Where(macro => Env.MacroConfig.ActiveMacros.Contains(macro))
@@ -396,9 +418,7 @@ public class MainWindow : Window, IDisposable {
         if (activelyLinkedChildren.Count == 0) { return; }
 
         ImGui.PushFont(UiBuilder.IconFont);
-        var linkIconSize = ImGui.CalcTextSize(FontAwesomeIcon.Link.ToIconString());
-        ImGui.SameLine(ImGui.GetContentRegionMax().X - linkIconSize.X);
-        ImGui.Text(FontAwesomeIcon.Link.ToIconString());
+        ImGuiExt.TextUnformattedHorizontalRTL(FontAwesomeIcon.Link.ToIconString());
         ImGui.PopFont();
 
         if (ImGui.IsItemHovered()) {
@@ -574,7 +594,33 @@ public class MainWindow : Window, IDisposable {
         var sortPopupId = DrawSortGroupPopup(node);
 
         if (ImGui.BeginPopup(nodeActionsPopupName)) {
-            if (node is MateNode.Group) {
+            if (node is MateNode.SubscriptionGroup sGroup) {
+                if (ImGui.BeginMenu("Subscription")) {
+                    if (ImGui.Selectable("Sync from Subscription")) {
+                        Env.SubscriptionManager.ScheduleSyncFromSubscription(sGroup);
+                        Env.PluginWindowManager.SubscriptionStatusWindow.Subscription = sGroup;
+                        Env.PluginWindowManager.ShowOrFocus(Env.PluginWindowManager.SubscriptionStatusWindow);
+                    }
+                    ImGuiExt.HoverTooltip("Download the latest version of this group from the subscription. Create new macros (if any) and applies changes to existing macros.");
+
+                    if (ImGui.Selectable("Check for Updates")) {
+                        Env.SubscriptionManager.ScheduleCheckForUpdates(sGroup);
+                        Env.PluginWindowManager.SubscriptionStatusWindow.Subscription = sGroup;
+                        Env.PluginWindowManager.ShowOrFocus(Env.PluginWindowManager.SubscriptionStatusWindow);
+                    }
+                    ImGuiExt.HoverTooltip("Check if there are any updates for this group.");
+
+                    if (ImGui.Selectable("Status")) {
+                        Env.PluginWindowManager.SubscriptionStatusWindow.Subscription = sGroup;
+                        Env.PluginWindowManager.ShowOrFocus(Env.PluginWindowManager.SubscriptionStatusWindow);
+                    }
+                    ImGuiExt.HoverTooltip("Show the last shown status window");
+
+                    ImGui.EndMenu();
+                }
+            }
+
+            if (node is MateNode.Group || node is MateNode.SubscriptionGroup) {
                 if (ImGui.Selectable("Add Macro")) {
                     var newMacroNode = Env.MacroConfig.CreateMacro(node);
                     Env.PluginWindowManager.MacroWindow.ShowOrFocus(newMacroNode);
@@ -666,6 +712,27 @@ public class MainWindow : Window, IDisposable {
         }
 
         return newGroupPopupId;
+    }
+
+    private string subscriptionGroupPopupUrl = "";
+    private uint DrawNewSubscriptionGroupPopup(MateNode parent) {
+        var newSubscriptionGroupPopupName = $"mainwindow/new_subscription_group_popup/{parent.Id}";
+        var newSubscriptionGroupPopupId = ImGui.GetID(newSubscriptionGroupPopupName);
+
+        if (ImGui.BeginPopup(newSubscriptionGroupPopupName)) {
+            ImGui.Text("Subscription URL");
+            ImGui.SameLine();
+            ImGui.InputText("###subscription_url", ref subscriptionGroupPopupUrl, 4096);
+
+            if (ImGui.Button("Save")) {
+                Env.MacroConfig.CreateSubscriptionGroup(parent, subscriptionGroupPopupUrl);
+                ImGui.CloseCurrentPopup();
+            }
+
+            ImGui.EndPopup();
+        }
+
+        return newSubscriptionGroupPopupId;
     }
 
     private uint DrawRenamePopup(MateNode node) {

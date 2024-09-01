@@ -64,6 +64,12 @@
           "System.Xml.XmlSerializer": "4.3.0"
         }
       },
+      "YamlDotNet": {
+        "type": "Direct",
+        "requested": "[16.0.0, )",
+        "resolved": "16.0.0",
+        "contentHash": "kZ4jR5ltFhnjaUqK9x81zXRIUTH4PTXTTEmJDNQdkDLQhcv+2Nl19r0dCSvPW1mstOYBfXTnjdieRbUO6gHMDw=="
+      },
       "Generator.Equals.Runtime": {
         "type": "Transitive",
         "resolved": "3.1.1",

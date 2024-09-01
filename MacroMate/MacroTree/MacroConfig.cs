@@ -122,6 +122,16 @@ public class MacroConfig {
         return newGroup;
     }
 
+    public MateNode.SubscriptionGroup CreateSubscriptionGroup(MateNode parent, string subscriptionUrl) {
+        var newSubscriptionGroup = new MateNode.SubscriptionGroup {
+            Name = "<Subscription Name Pending Download>",
+            SubscriptionUrl = subscriptionUrl
+        };
+        parent.Attach(newSubscriptionGroup);
+        NotifyEdit();
+        return newSubscriptionGroup;
+    }
+
     public MateNode.Macro CreateMacro(MateNode parent) {
         var newMacroNode = new MateNode.Macro {
             Name = "New Macro"
@@ -146,10 +156,56 @@ public class MacroConfig {
         return CreateOrFindMacroByName(name, targetGroup, (_) => true);
     }
 
-    /**
-     * Finds a macro with [name] in [targetGroup] and returns it, or creates a new
-     * empty macro with [name] if it does not exist.
-     */
+    /// <summary>
+    /// Finds the group identified by path or creates all missing groups to ensure this path exists.
+    /// </summary>
+    /// <returns>Either a MateNode.Group or MateNode.SubscriptionGroup</returns>
+    public MateNode CreateOrFindGroupByPath(MateNode root, MacroPath path) {
+        MateNode? attachmentPoint = null;
+        // The 'top' new group, only attached at the end in case we error mid-function
+        MateNode? highestNewGroupAdded = null;
+
+        MateNode currentNode = root;
+        foreach (var segment in path.Segments) {
+            var childNode = currentNode.GetChildFromPathSegment(segment);
+            if (childNode == null) {
+                if (segment is MacroPathSegment.ByName nameSegment) {
+                    if (nameSegment.offset != 0) {
+                        throw new ArgumentException($"cannot create group for missing named index (path: {path})");
+                    }
+
+                    var newChild = new MateNode.Group { Name = nameSegment.name };
+                    // We
+                    if (highestNewGroupAdded == null) {
+                        attachmentPoint = currentNode;
+                        highestNewGroupAdded = newChild;
+                    } else {
+                        currentNode.Attach(newChild);
+                    }
+                    currentNode = newChild;
+                } else {
+                    throw new ArgumentException($"cannot create group for missing index (path: {path}))");
+                }
+            } else if (childNode is MateNode.Group childGroup) {
+                currentNode = childGroup;
+            } else if (childNode is MateNode.SubscriptionGroup sGroup) {
+                currentNode = sGroup;
+            } else {
+                throw new ArgumentException($"cannot create group for path containing macro (path: {path})");
+            }
+        }
+
+        if (highestNewGroupAdded != null && attachmentPoint != null) {
+            MoveInto(highestNewGroupAdded, attachmentPoint);
+        }
+
+        return currentNode; // Current node is the 'lowest' group after iteration
+    }
+
+    /// <summary>
+    /// Finds a macro with [name] in [targetGroup] and returns it, or creates a new
+    /// empty macro with [name] if it does not exist.
+    /// </summary>
     public MateNode.Macro CreateOrFindMacroByName(
         string name,
         MateNode targetGroup,
