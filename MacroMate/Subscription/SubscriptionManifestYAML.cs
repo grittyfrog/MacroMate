@@ -31,4 +31,8 @@ public class MacroYAML {
     /// If present, all other fields are optional and are treated
     /// as overrides for the Markdown-parsed content
     public string? MarkdownUrl { get; set; } = null!;
+
+    public string? MarkdownNotesHeaderName { get; set; }
+
+    public int? MarkdownMacroCodeBlockIndex { get; set; }
 }

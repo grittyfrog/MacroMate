@@ -7,7 +7,10 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using MacroMate.Extensions.Dalamud.Macros;
 using MacroMate.Extensions.Dalamud.Str;
+using MacroMate.Extensions.Markdig;
 using MacroMate.MacroTree;
+using Markdig;
+using Markdig.Syntax;
 
 namespace MacroMate.Subscription;
 
@@ -75,9 +78,9 @@ public class SubscriptionManager {
             readManifestStep.State = SubscriptionState.StepState.SUCCESS;
 
             foreach (var macroYaml in manifest.Macros) {
-                var url = macroYaml.MarkdownUrl;
-                if (url == null) { continue; }
+                if (macroYaml.MarkdownUrl == null) { continue; }
 
+                var url = sGroup.RelativeUrl(macroYaml.MarkdownUrl);
                 await AddUrlETag($"Checking {url}", url, state, etags);
             }
 
@@ -143,17 +146,7 @@ public class SubscriptionManager {
 
             sGroup.Name = manifest.Name;
             foreach (var macroYaml in manifest.Macros) {
-                var yamlGroupStr = macroYaml.Group ?? "/";
-                var syncMacroStep = state.InProgress($"Sync '{yamlGroupStr}/{macroYaml.Name}'");
-                var parsedParentPath = MacroPath.ParseText(yamlGroupStr);
-                var parent = Env.MacroConfig.CreateOrFindGroupByPath(sGroup, parsedParentPath);
-                var macro = Env.MacroConfig.CreateOrFindMacroByName(macroYaml.Name!, parent);
-                syncMacroStep.State = SubscriptionState.StepState.SUCCESS;
-
-                await Env.Framework.RunOnTick(() => {
-                    macro.IconId = (uint?)macroYaml.IconId ?? VanillaMacro.DefaultIconId;
-                    macro.Lines = SeStringEx.ParseFromText(macroYaml.Lines ?? "");
-                });
+                await SyncMacro(macroYaml, state, sGroup, etags);
             }
 
             await Env.Framework.RunOnTick(() => {
@@ -170,5 +163,57 @@ public class SubscriptionManager {
         } finally {
             SubscriptionGroupTasks.Remove(sGroup.Id, out _);
         }
+    }
+
+    private async Task SyncMacro(MacroYAML macroYaml, SubscriptionState state, MateNode.SubscriptionGroup sGroup, List<string> etags) {
+        string name = "<Missing Name>";
+        string macroGroup = "/";
+        uint iconId = VanillaMacro.DefaultIconId;
+        string lines = "";
+        string notes;
+
+        // If we have a markdown URL we want to grab it first and use it as our "base" fields
+        if (macroYaml.MarkdownUrl != null) {
+            var url = sGroup.RelativeUrl(macroYaml.MarkdownUrl);
+            var fetchStep = state.InProgress($"Fetch '{url}'");
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            var response = await Env.HttpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            var mdString = await response.Content.ReadAsStringAsync();
+            fetchStep.State = SubscriptionState.StepState.SUCCESS;
+            if (response.Headers.ETag != null) {
+                etags.Add(response.Headers.ETag.Tag);
+            }
+
+            var parseStep = state.InProgress($"Parse Markdown from '{url}'");
+
+            var mdDoc = Markdown.Parse(mdString);
+
+            var macroCodeBlock = mdDoc.Descendants<CodeBlock>()
+                .Take((macroYaml.MarkdownMacroCodeBlockIndex ?? 0) + 1)
+                .LastOrDefault();
+            if (macroCodeBlock != null) {
+                lines = macroCodeBlock.ToRawLines();
+            }
+
+            parseStep.State = SubscriptionState.StepState.SUCCESS;
+        }
+
+        if (macroYaml.Name != null) { name = macroYaml.Name; }
+        if (macroYaml.Group != null) { macroGroup = macroYaml.Group; }
+        if (macroYaml.IconId != null) { iconId = (uint)macroYaml.IconId; }
+        if (macroYaml.Lines != null) { lines = macroYaml.Lines; }
+        if (macroYaml.Notes != null) { notes = macroYaml.Notes; }
+
+        var syncMacroStep = state.InProgress($"Sync '{macroGroup}/{name}'");
+        var parsedParentPath = MacroPath.ParseText(macroGroup);
+        var parent = Env.MacroConfig.CreateOrFindGroupByPath(sGroup, parsedParentPath);
+        var macro = Env.MacroConfig.CreateOrFindMacroByName(macroYaml.Name!, parent);
+        syncMacroStep.State = SubscriptionState.StepState.SUCCESS;
+
+        await Env.Framework.RunOnTick(() => {
+            macro.IconId = (uint?)macroYaml.IconId ?? VanillaMacro.DefaultIconId;
+            macro.Lines = SeStringEx.ParseFromText(lines);
+        });
     }
 }

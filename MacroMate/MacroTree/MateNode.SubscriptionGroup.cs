@@ -32,6 +32,22 @@ public abstract partial class MateNode : TreeNode<MateNode> {
         /// </summary>
         public List<string> KnownRemoteETags { get; set; } = new();
 
+        /// <summary>
+        /// Computes the relative URL of this host from the Subscription Url
+        /// </summary>
+        public string RelativeUrl(string suburl) {
+            var baseUrl = new Uri(SubscriptionUrl);
+            var baseUrlSegmentsNoLast = baseUrl.Segments.Take(baseUrl.Segments.Length - 1).ToList();
+            baseUrlSegmentsNoLast[baseUrlSegmentsNoLast.Count - 1] = baseUrlSegmentsNoLast[baseUrlSegmentsNoLast.Count - 1].TrimEnd('/');
+
+            var urlBuilder = new UriBuilder(baseUrl);
+            urlBuilder.Path = string.Concat(baseUrlSegmentsNoLast);
+            urlBuilder.Path += "/" + suburl.TrimStart('/');
+            urlBuilder.Query = "";
+
+            return urlBuilder.Uri.ToString();
+        }
+
         public bool HasUpdates() {
             return !LastSyncETags.ToHashSet().SetEquals(KnownRemoteETags.ToHashSet());
         }
