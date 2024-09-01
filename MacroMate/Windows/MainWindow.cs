@@ -407,6 +407,13 @@ public class MainWindow : Window, IDisposable {
         ImGuiExt.TextUnformattedHorizontalRTL(FontAwesomeIcon.Rss.ToIconString());
         ImGui.PopFont();
         ImGuiExt.HoverTooltip($"This group is provided by a 3rd party, make sure to verify the macros in this group before you run them.\n\nSubscription URL: {sGroup.SubscriptionUrl}");
+
+        if (sGroup.HasUpdates()) {
+            ImGui.PushFont(UiBuilder.IconFont);
+            ImGuiExt.TextUnformattedHorizontalRTL(FontAwesomeIcon.ArrowUpFromBracket.ToIconString());
+            ImGui.PopFont();
+            ImGuiExt.HoverTooltip($"Updates are available, use 'Subscription > Sync' to update");
+        }
     }
 
     private void DrawGroupLinkIcon(MateNode group) {
@@ -596,7 +603,7 @@ public class MainWindow : Window, IDisposable {
         if (ImGui.BeginPopup(nodeActionsPopupName)) {
             if (node is MateNode.SubscriptionGroup sGroup) {
                 if (ImGui.BeginMenu("Subscription")) {
-                    if (ImGui.Selectable("Sync from Subscription")) {
+                    if (ImGui.Selectable("Sync")) {
                         Env.SubscriptionManager.ScheduleSyncFromSubscription(sGroup);
                         Env.PluginWindowManager.SubscriptionStatusWindow.Subscription = sGroup;
                         Env.PluginWindowManager.ShowOrFocus(Env.PluginWindowManager.SubscriptionStatusWindow);

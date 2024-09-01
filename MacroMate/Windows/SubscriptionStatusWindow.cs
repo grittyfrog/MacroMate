@@ -26,15 +26,14 @@ public class SubscriptionStatusWindow : Window {
 
         foreach (var step in status.Steps) {
             var stateText = step.State switch {
-                SubscriptionState.StepState.IN_PROGRESS => ("|/-\\"[(int)(ImGui.GetTime() / 0.05f) % 3]).ToString(),
-                SubscriptionState.StepState.SUCCESS => "OK",
-                SubscriptionState.StepState.FAILED => "ERR",
-                _ => "???"
+                SubscriptionState.StepState.IN_PROGRESS => " ... " + ("|/-\\"[(int)(ImGui.GetTime() / 0.05f) % 3]).ToString(),
+                SubscriptionState.StepState.SUCCESS => " ... OK",
+                SubscriptionState.StepState.FAILED => $" ... ERR: {step.FailMessage}",
+                SubscriptionState.StepState.INFO => "",
+                _ => " ... ???"
             };
 
-            var errMessage = step.State == SubscriptionState.StepState.FAILED ? step.FailMessage : null;
-            var errMessageFormatted = errMessage != null ? $": {errMessage}" : "";
-            ImGui.TextUnformatted($"{step.Message} ... {stateText}{errMessageFormatted}");
+            ImGui.TextUnformatted($"{step.Message}{stateText}");
         }
 
 

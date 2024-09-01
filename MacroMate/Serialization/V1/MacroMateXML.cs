@@ -68,21 +68,30 @@ public class GroupXML : MateNodeXML {
 }
 
 public class SubscriptionGroupXML : MateNodeXML {
+    public required string SubscriptionUrl { get; set; }
+    public DateTimeOffset? LastSyncTime { get; set; }
+    public List<string> LastSyncETags { get; set; } = new();
+    public List<string> KnownRemoteETags { get; set; } = new();
+
     [XmlArrayItem("Group", typeof(GroupXML))]
     [XmlArrayItem("Macro", typeof(MacroXML))]
     [XmlArrayItem("SubscriptionGroup", typeof(SubscriptionGroupXML))]
     public required List<MateNodeXML> Nodes { get; set; } = new();
 
-    public required string SubscriptionUrl { get; set; }
-
     public override MateNode ToReal() => new MateNode.SubscriptionGroup {
         Name = Name,
-        SubscriptionUrl = SubscriptionUrl
+        SubscriptionUrl = SubscriptionUrl,
+        LastSyncTime = LastSyncTime,
+        LastSyncETags = LastSyncETags,
+        KnownRemoteETags = KnownRemoteETags
     }.Attach(Nodes.Select(node => node.ToReal()));
 
     public static SubscriptionGroupXML FromSubscriptionGroup(MateNode.SubscriptionGroup group) => new SubscriptionGroupXML {
         Name = group.Name,
         SubscriptionUrl = group.SubscriptionUrl,
+        LastSyncTime = group.LastSyncTime,
+        LastSyncETags = group.LastSyncETags,
+        KnownRemoteETags = group.KnownRemoteETags,
         Nodes = group.Children.Select(child => MateNodeXML.From(child)).ToList()
     };
 }

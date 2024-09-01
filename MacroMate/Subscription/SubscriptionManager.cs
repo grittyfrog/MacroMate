@@ -42,16 +42,16 @@ public class SubscriptionManager {
         return SubscriptionStates.GetOrAdd(sGroup.Id, (_) => new SubscriptionState());
     }
 
-    /// <summary>
-    /// Download the subscription group's referenced resources, does not apply updates
-    /// </summary>
     public void ScheduleCheckForUpdates(MateNode.SubscriptionGroup sGroup) {
+        if (SubscriptionGroupTasks.ContainsKey(sGroup.Id)) { return; }
+
+        SubscriptionGroupTasks[sGroup.Id] = CheckForUpdates(sGroup);
     }
 
     public void ScheduleSyncFromSubscription(MateNode.SubscriptionGroup sGroup) {
         if (SubscriptionGroupTasks.ContainsKey(sGroup.Id)) { return; }
 
-        SubscriptionGroupTasks[sGroup.Id] = SyncFromThirdParty(sGroup);
+        SubscriptionGroupTasks[sGroup.Id] = SyncFromSubscription(sGroup);
     }
 
     private void OnMacroMateConfigChanged() {
@@ -63,23 +63,78 @@ public class SubscriptionManager {
     }
 
     private async Task CheckForUpdates(MateNode.SubscriptionGroup sGroup) {
-        var request = new HttpRequestMessage(HttpMethod.Get, sGroup.SubscriptionUrl);
-        var response = await Env.HttpClient.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-
-        var manifestStr = await response.Content.ReadAsStringAsync();
-        var manifest = SubscriptionManifestYAML.From(manifestStr);
-    }
-
-    private async Task SyncFromThirdParty(MateNode.SubscriptionGroup sGroup) {
         var state = GetSubscriptionState(sGroup);
         state.Reset();
         try {
+            var etags = new List<string>();
+            var response = await AddUrlETag("Checking Macro Manifest", sGroup.SubscriptionUrl, state, etags);
+
+            var readManifestStep = state.InProgress("Read Macro Manifest");
+            var manifestStr = await response.Content.ReadAsStringAsync();
+            var manifest = SubscriptionManifestYAML.From(manifestStr);
+            readManifestStep.State = SubscriptionState.StepState.SUCCESS;
+
+            foreach (var macroYaml in manifest.Macros) {
+                var url = macroYaml.MarkdownUrl;
+                if (url == null) { continue; }
+
+                await AddUrlETag($"Checking {url}", url, state, etags);
+            }
+
+            await Env.Framework.RunOnTick(() => {
+                sGroup.KnownRemoteETags.Clear();
+                sGroup.KnownRemoteETags.AddRange(etags);
+                var msg = sGroup.HasUpdates() ? "Found updates" : "Up to date";
+                state.Info(msg);
+
+                Env.MacroConfig.NotifyEdit();
+            });
+        } catch (Exception ex) {
+            Env.PluginLog.Error($"Failed to check for subscription updates: {ex.Message}\n{ex.StackTrace}");
+            state.FailLast(ex.Message);
+        } finally {
+            SubscriptionGroupTasks.Remove(sGroup.Id, out _);
+        }
+
+    }
+
+    private async Task<HttpResponseMessage> AddUrlETag(
+        string message,
+        string url,
+        SubscriptionState state,
+        List<string> etags
+    ) {
+        var step = state.InProgress(message);
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        var response = await Env.HttpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        step.State = SubscriptionState.StepState.SUCCESS;
+
+        if (response.Headers.ETag == null) {
+            step.FailMessage = "response did not contain ETag, cannot check for updates";
+            step.State = SubscriptionState.StepState.FAILED;
+            return response;
+        }
+
+        var etag = response.Headers.ETag.Tag;
+        etags.Add(etag);
+
+        return response;
+    }
+
+    private async Task SyncFromSubscription(MateNode.SubscriptionGroup sGroup) {
+        var state = GetSubscriptionState(sGroup);
+        state.Reset();
+        try {
+            var etags = new List<string>();
             var fetchManifestStep = state.InProgress("Fetch Macro Manifest");
             var request = new HttpRequestMessage(HttpMethod.Get, sGroup.SubscriptionUrl);
             var response = await Env.HttpClient.SendAsync(request);
             response.EnsureSuccessStatusCode();
             fetchManifestStep.State = SubscriptionState.StepState.SUCCESS;
+            if (response.Headers.ETag != null) {
+                etags.Add(response.Headers.ETag.Tag);
+            }
 
             var readManifestStep = state.InProgress("Read Macro Manifest");
             var manifestStr = await response.Content.ReadAsStringAsync();
@@ -102,12 +157,18 @@ public class SubscriptionManager {
             }
 
             await Env.Framework.RunOnTick(() => {
+                sGroup.LastSyncTime = DateTimeOffset.Now;
+                sGroup.LastSyncETags.Clear();
+                sGroup.LastSyncETags.AddRange(etags);
+                sGroup.KnownRemoteETags.Clear();
+                sGroup.KnownRemoteETags.AddRange(etags);
                 Env.MacroConfig.NotifyEdit();
             });
-            SubscriptionGroupTasks.Remove(sGroup.Id, out _);
         } catch (Exception ex) {
-            Env.PluginLog.Error($"Failed to apply subscription updates: {ex.Message}\n{ex.StackTrace}");
+            Env.PluginLog.Error($"Failed to sync subscription updates: {ex.Message}\n{ex.StackTrace}");
             state.FailLast(ex.Message);
+        } finally {
+            SubscriptionGroupTasks.Remove(sGroup.Id, out _);
         }
     }
 }
