@@ -111,6 +111,7 @@ public class SubscriptionManager {
             var hasUpdate = false;
 
             var (manifestUpdated, manifest) = await CheckForManifestUpdate(state, sGroup);
+            hasUpdate |= manifestUpdated;
 
             if (manifest != null) {
                 foreach (var macroYaml in manifest.Macros) {
