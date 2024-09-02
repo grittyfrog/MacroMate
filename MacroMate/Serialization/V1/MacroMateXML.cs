@@ -18,6 +18,8 @@ public class MacroMateV1XML {
 
     public required uint? LinkPlaceholderIconId { get; set; } = VanillaMacro.InactiveIconId;
     public required bool? ShowVanillaMacroContextMenus { get; set; } = true;
+    public required bool? EnableSubscriptionAutoCheckForUpdates { get; set; } = true;
+    public required int? MinutesBetweenSubscriptionAutoCheckForUpdates { get; set; } = 120;
 
     [XmlElement("Root", typeof(GroupXML))]
     [XmlElement("RootMacro", typeof(MacroXML))]
@@ -26,12 +28,16 @@ public class MacroMateV1XML {
     public MacroConfig ToReal() => new MacroConfig {
         LinkPlaceholderIconId = LinkPlaceholderIconId ?? VanillaMacro.InactiveIconId,
         ShowVanillaMacroContextMenus = ShowVanillaMacroContextMenus ?? true,
+        EnableSubscriptionAutoCheckForUpdates = EnableSubscriptionAutoCheckForUpdates ?? true,
+        MinutesBetweenSubscriptionAutoCheckForUpdates = MinutesBetweenSubscriptionAutoCheckForUpdates ?? 120,
         Root = Root.ToReal(),
     };
 
     public static MacroMateV1XML From(MacroConfig config) => new() {
         LinkPlaceholderIconId = config.LinkPlaceholderIconId,
         ShowVanillaMacroContextMenus = config.ShowVanillaMacroContextMenus,
+        EnableSubscriptionAutoCheckForUpdates = config.EnableSubscriptionAutoCheckForUpdates,
+        MinutesBetweenSubscriptionAutoCheckForUpdates = config.MinutesBetweenSubscriptionAutoCheckForUpdates,
         Root = MateNodeXML.From(config.Root)
     };
 }

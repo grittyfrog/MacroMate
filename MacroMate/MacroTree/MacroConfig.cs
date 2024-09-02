@@ -35,6 +35,24 @@ public class MacroConfig {
         }
     }
 
+    public bool _enableSubscriptionAutoCheckForUpdates ;
+    public bool EnableSubscriptionAutoCheckForUpdates {
+        get { return _enableSubscriptionAutoCheckForUpdates; }
+        set {
+            _enableSubscriptionAutoCheckForUpdates = value;
+            NotifyEdit();
+        }
+    }
+
+    public int _minutesBetweenSubscriptionAutoCheckForUpdates = 120;
+    public int MinutesBetweenSubscriptionAutoCheckForUpdates {
+        get { return _minutesBetweenSubscriptionAutoCheckForUpdates; }
+        set {
+            _minutesBetweenSubscriptionAutoCheckForUpdates = value;
+            NotifyEdit();
+        }
+    }
+
     private MateNode _root;
     public MateNode Root {
         get { return _root; }
@@ -56,9 +74,13 @@ public class MacroConfig {
     /// We want to update in place to not break other parts of the tree
     public void OverwiteFrom(MacroConfig other) {
         this._linkPlaceholderIconId = other.LinkPlaceholderIconId;
+        this._showVanillaMacroContextMenus = other.ShowVanillaMacroContextMenus;
+        this._enableSubscriptionAutoCheckForUpdates = other.EnableSubscriptionAutoCheckForUpdates;
+        this._minutesBetweenSubscriptionAutoCheckForUpdates = other.MinutesBetweenSubscriptionAutoCheckForUpdates;
         this._root = other.Root;
         NotifyEdit();
     }
+
 
     /// Update ActiveMacros to reflect the current conditions
     public void ActivateMacrosForConditions(CurrentConditions conditions) {
@@ -336,13 +358,19 @@ public class MacroConfig {
         }
         macro.IconId = targetVanillaMacro.IconId;
         macro.Lines = replacementLines.Build();
-        Env.MacroConfig.NotifyEdit();
+        NotifyEdit();
     }
 
     /// Notifies the config that it has been edited.
+    private bool notifyEditScheduled = false;
     public void NotifyEdit() {
-        if (ConfigChange != null) {
-            ConfigChange();
+        if (!notifyEditScheduled && ConfigChange != null) {
+            notifyEditScheduled = true;
+            Env.Framework.RunOnTick(() => {
+                notifyEditScheduled = false;
+                ConfigChange();
+            });
         }
     }
+
 }

@@ -169,6 +169,12 @@ public class MainWindow : Window, IDisposable {
                     ImGui.SetTooltip("When disabled no Macro Mate context menu actions will be shown in the vanilla macro UI");
                 }
 
+                var enableSubscriptionAutoCheckForUpdates = Env.MacroConfig.EnableSubscriptionAutoCheckForUpdates;
+                if (ImGui.Checkbox("Automatically Check for Subscription Updates", ref enableSubscriptionAutoCheckForUpdates)) {
+                    Env.MacroConfig.EnableSubscriptionAutoCheckForUpdates = enableSubscriptionAutoCheckForUpdates;
+                }
+                ImGuiExt.HoverTooltip("When disabled Macro Mate will not automatically check for subscription updates. You will need to manually use the 'Check for Updates' action");
+
                 ImGui.EndMenu();
             }
 

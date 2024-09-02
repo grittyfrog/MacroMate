@@ -20,14 +20,9 @@ namespace MacroMate.Subscription;
 /// </summary>
 public class SubscriptionManager {
     /// <summary>
-    /// Time we should wait after login to update.
+    /// Time we should wait after login to check for updates.
     /// </summary>
-    private static readonly TimeSpan UpdateTimeAfterLogin = TimeSpan.FromSeconds(20);
-
-    /// <summary>
-    /// Time we should wait between scheduled update checks.
-    /// </summary>
-    private static readonly TimeSpan TimeBetweenUpdateChecks = TimeSpan.FromHours(2);
+    private static readonly TimeSpan CheckForUpdatesTimeAfterLogin = TimeSpan.FromSeconds(20);
 
     private List<MateNode.SubscriptionGroup> SubscriptionGroups  = new();
 
@@ -57,7 +52,7 @@ public class SubscriptionManager {
 
     private void OnLogin() {
         if (firstLogin) {
-            nextCheckForUpdatesTime = DateTimeOffset.Now + UpdateTimeAfterLogin;
+            nextCheckForUpdatesTime = DateTimeOffset.Now + CheckForUpdatesTimeAfterLogin;
             firstLogin = false;
         }
     }
@@ -87,6 +82,7 @@ public class SubscriptionManager {
     }
 
     private void OnFrameworkUpdate(IFramework framework) {
+        if (!Env.MacroConfig.EnableSubscriptionAutoCheckForUpdates) { return; }
         if (SubscriptionGroups.Count == 0) { return; }
         if (nextCheckForUpdatesTime == null) { return; }
 
@@ -95,7 +91,7 @@ public class SubscriptionManager {
             foreach (var sGroup in SubscriptionGroups) {
                 ScheduleCheckForUpdates(sGroup);
             }
-            nextCheckForUpdatesTime = nextCheckForUpdatesTime + TimeBetweenUpdateChecks;
+            nextCheckForUpdatesTime = nextCheckForUpdatesTime + TimeSpan.FromMinutes(Env.MacroConfig.MinutesBetweenSubscriptionAutoCheckForUpdates);
         }
     }
 
