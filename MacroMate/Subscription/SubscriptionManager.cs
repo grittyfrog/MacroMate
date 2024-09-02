@@ -96,6 +96,7 @@ public class SubscriptionManager {
         if (DateTimeOffset.Now > nextAutoCheckForUpdatesTime) {
             Env.PluginLog.Info("Checking subscriptions for updates");
             foreach (var sGroup in SubscriptionGroups) {
+                if (sGroup.HasUpdate) { continue; }
                 ScheduleCheckForUpdates(sGroup);
             }
             lastAutoCheckForUpdatesTime = DateTimeOffset.Now;
