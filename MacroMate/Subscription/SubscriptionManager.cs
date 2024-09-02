@@ -107,6 +107,7 @@ public class SubscriptionManager {
         var state = GetSubscriptionState(sGroup);
         state.Reset();
         try {
+            var hasUpdate = false;
             var etags = new List<string>();
             var response = await AddUrlETag("Checking Macro Manifest", sGroup.SubscriptionUrl, state, etags);
 
@@ -119,13 +120,12 @@ public class SubscriptionManager {
                 if (macroYaml.MarkdownUrl == null) { continue; }
 
                 var url = sGroup.RelativeUrl(macroYaml.MarkdownUrl);
-                await AddUrlETag($"Checking {url}", url, state, etags);
+                var mdResponse = await AddUrlETag($"Checking {url}", url, state, etags);
             }
 
             await Env.Framework.RunOnTick(() => {
-                sGroup.KnownRemoteETags.Clear();
-                sGroup.KnownRemoteETags.AddRange(etags);
-                var msg = sGroup.HasUpdates() ? "Found updates" : "Up to date";
+                sGroup.HasUpdate = hasUpdate;
+                var msg = sGroup.HasUpdate ? "Found updates" : "Up to date";
                 state.Info(msg);
 
                 Env.MacroConfig.NotifyEdit();
@@ -191,8 +191,7 @@ public class SubscriptionManager {
                 sGroup.LastSyncTime = DateTimeOffset.Now;
                 sGroup.LastSyncETags.Clear();
                 sGroup.LastSyncETags.AddRange(etags);
-                sGroup.KnownRemoteETags.Clear();
-                sGroup.KnownRemoteETags.AddRange(etags);
+                sGroup.HasUpdate = false;
                 Env.MacroConfig.NotifyEdit();
             });
         } catch (Exception ex) {
@@ -208,7 +207,7 @@ public class SubscriptionManager {
         string macroGroup = "/";
         uint iconId = VanillaMacro.DefaultIconId;
         string lines = "";
-        string notes;
+        string notes = "";
 
         // If we have a markdown URL we want to grab it first and use it as our "base" fields
         if (macroYaml.MarkdownUrl != null) {
@@ -251,6 +250,7 @@ public class SubscriptionManager {
 
         await Env.Framework.RunOnTick(() => {
             macro.IconId = (uint?)macroYaml.IconId ?? VanillaMacro.DefaultIconId;
+            macro.Notes = notes;
             macro.Lines = SeStringEx.ParseFromText(lines);
         });
     }

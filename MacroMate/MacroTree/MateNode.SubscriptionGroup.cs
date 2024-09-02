@@ -24,13 +24,11 @@ public abstract partial class MateNode : TreeNode<MateNode> {
         public List<string> LastSyncETags { get; set; } = new();
 
         /// <summary>
-        /// The ETags we saw last time we checked for updates (or updated). This is our
-        /// best approximation of the current ETag state of the remote subscription.
+        /// True if we believe this repository has an update, false otherwise.
         ///
-        /// Used to determine if there are updated
-        /// if
+        /// Controlled by the 'check for updates' mechanism
         /// </summary>
-        public List<string> KnownRemoteETags { get; set; } = new();
+        public bool HasUpdate { get; set; } = false;
 
         /// <summary>
         /// Computes the relative URL of this host from the Subscription Url
@@ -46,10 +44,6 @@ public abstract partial class MateNode : TreeNode<MateNode> {
             urlBuilder.Query = "";
 
             return urlBuilder.Uri.ToString();
-        }
-
-        public bool HasUpdates() {
-            return !LastSyncETags.ToHashSet().SetEquals(KnownRemoteETags.ToHashSet());
         }
     }
 }

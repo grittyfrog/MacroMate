@@ -379,7 +379,7 @@ public class MainWindow : Window, IDisposable {
         ImGui.PopFont();
         ImGuiExt.HoverTooltip($"This group is provided by a 3rd party, make sure to verify the macros in this group before you run them.\n\nSubscription URL: {sGroup.SubscriptionUrl}");
 
-        if (sGroup.HasUpdates()) {
+        if (sGroup.HasUpdate) {
             ImGui.PushFont(UiBuilder.IconFont);
             ImGuiExt.TextUnformattedHorizontalRTL(FontAwesomeIcon.ArrowUpFromBracket.ToIconString());
             ImGui.PopFont();

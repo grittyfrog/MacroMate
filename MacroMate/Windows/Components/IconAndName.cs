@@ -7,6 +7,7 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud;
+using MacroMate.Extensions.Imgui;
 using MacroMate.MacroTree;
 
 namespace MacroMate.Windows.Components;
@@ -29,7 +30,7 @@ public static class IconAndName {
                     Env.MacroConfig.NotifyEdit();
                 });
             }
-            if (ImGui.IsItemHovered() && ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
+            if (ImGui.IsItemHovered()) {
                 ImGui.SetTooltip($"icon id: {macro.IconId}");
             }
         }
@@ -38,6 +39,12 @@ public static class IconAndName {
         ImGui.BeginGroup();
         ImGui.AlignTextToFramePadding();
         ImGui.Text("Name");
+
+        if (macro.Notes != string.Empty) {
+            ImGui.SameLine();
+            ImGuiComponents.IconButton(FontAwesomeIcon.StickyNote);
+            ImGuiExt.HoverTooltip(macro.Notes);
+        }
 
         if (macro.Link.IsBound()) {
             ImGui.SameLine();
@@ -49,7 +56,7 @@ public static class IconAndName {
             }
         }
 
-        ImGui.SetNextItemWidth(-1);
+        ImGui.SetNextItemWidth(MathF.Min(ImGui.GetContentRegionAvail().X - iconSize.X, 500f * ImGuiHelpers.GlobalScale));
         var name = macro.Name;
         if (ImGui.InputText("###name", ref name, 255)) {
             macro.Name = name;

@@ -77,7 +77,6 @@ public class SubscriptionGroupXML : MateNodeXML {
     public required string SubscriptionUrl { get; set; }
     public DateTimeOffset? LastSyncTime { get; set; }
     public List<string> LastSyncETags { get; set; } = new();
-    public List<string> KnownRemoteETags { get; set; } = new();
 
     [XmlArrayItem("Group", typeof(GroupXML))]
     [XmlArrayItem("Macro", typeof(MacroXML))]
@@ -89,7 +88,6 @@ public class SubscriptionGroupXML : MateNodeXML {
         SubscriptionUrl = SubscriptionUrl,
         LastSyncTime = LastSyncTime,
         LastSyncETags = LastSyncETags,
-        KnownRemoteETags = KnownRemoteETags
     }.Attach(Nodes.Select(node => node.ToReal()));
 
     public static SubscriptionGroupXML FromSubscriptionGroup(MateNode.SubscriptionGroup group) => new SubscriptionGroupXML {
@@ -97,7 +95,6 @@ public class SubscriptionGroupXML : MateNodeXML {
         SubscriptionUrl = group.SubscriptionUrl,
         LastSyncTime = group.LastSyncTime,
         LastSyncETags = group.LastSyncETags,
-        KnownRemoteETags = group.KnownRemoteETags,
         Nodes = group.Children.Select(child => MateNodeXML.From(child)).ToList()
     };
 }
@@ -108,6 +105,7 @@ public class MacroXML : MateNodeXML {
     public List<uint>? MacroSlots { get; set; }
     public bool? LinkWithMacroChain { get; set; }
     public string? Lines { get; set; }
+    public string? Notes { get; set; }
     public bool? AlwaysLinked { get; set; }
     public OrConditionXML? OrCondition { get; set; }
 
@@ -120,6 +118,7 @@ public class MacroXML : MateNodeXML {
         },
         LinkWithMacroChain = LinkWithMacroChain ?? false,
         Lines = Lines?.Let(lines => SeStringEx.ParseFromText(lines)) ?? "",
+        Notes = Notes ?? "",
         AlwaysLinked = AlwaysLinked ?? false,
         ConditionExpr = OrCondition?.ToReal() ?? ConditionExpr.Or.Empty
     };
@@ -132,6 +131,7 @@ public class MacroXML : MateNodeXML {
             MacroSlots = macro.Link.Slots,
             LinkWithMacroChain = macro.LinkWithMacroChain,
             Lines = macro.Lines.Unparse(),
+            Notes = macro.Notes,
             AlwaysLinked = macro.AlwaysLinked,
             OrCondition = OrConditionXML.From(macro.ConditionExpr)
         };
