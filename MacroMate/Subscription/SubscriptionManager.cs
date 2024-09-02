@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Dalamud.Plugin.Services;
 using MacroMate.Extensions.Dalamud.Macros;
 using MacroMate.Extensions.Dalamud.Str;
 using MacroMate.Extensions.Markdig;
@@ -35,10 +36,30 @@ public class SubscriptionManager {
     // Class used to communicate the state of subscription processing for specific SubscriptionGroup
     private ConcurrentDictionary<Guid, SubscriptionState> SubscriptionStates = new();
 
+    private bool firstLogin = true;
+    private DateTimeOffset? nextCheckForUpdatesTime = null;
+
     public SubscriptionManager() {
         Env.MacroConfig.ConfigChange += OnMacroMateConfigChanged;
+        Env.Framework.Update += this.OnFrameworkUpdate;
+
+        // If we are already logged run the "First Login" to make plugin reloads consistent with
+        // first login.
+        if (Env.ClientState.LocalPlayer != null) {
+            OnLogin();
+        }
+
+
+        Env.ClientState.Login += OnLogin;
 
         OnMacroMateConfigChanged();
+    }
+
+    private void OnLogin() {
+        if (firstLogin) {
+            nextCheckForUpdatesTime = DateTimeOffset.Now + UpdateTimeAfterLogin;
+            firstLogin = false;
+        }
     }
 
     public SubscriptionState GetSubscriptionState(MateNode.SubscriptionGroup sGroup) {
@@ -63,6 +84,19 @@ public class SubscriptionManager {
         SubscriptionGroups = Env.MacroConfig.Root.Descendants()
             .OfType<MateNode.SubscriptionGroup>()
             .ToList();
+    }
+
+    private void OnFrameworkUpdate(IFramework framework) {
+        if (SubscriptionGroups.Count == 0) { return; }
+        if (nextCheckForUpdatesTime == null) { return; }
+
+        if (DateTimeOffset.Now > nextCheckForUpdatesTime) {
+            Env.PluginLog.Info("Checking subscriptions for updates");
+            foreach (var sGroup in SubscriptionGroups) {
+                ScheduleCheckForUpdates(sGroup);
+            }
+            nextCheckForUpdatesTime = nextCheckForUpdatesTime + TimeBetweenUpdateChecks;
+        }
     }
 
     private async Task CheckForUpdates(MateNode.SubscriptionGroup sGroup) {
