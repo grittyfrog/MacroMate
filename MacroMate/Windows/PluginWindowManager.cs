@@ -8,6 +8,7 @@ namespace MacroMate.Windows;
 
 public class PluginWindowManager : IDisposable {
     public MainWindow MainWindow { get; private set; } = new();
+    public SettingsWindow SettingsWindow { get; private set; } = new();
     public MacroWindow MacroWindow { get; private set; } = new();
     public IconPickerDialog IconPicker { get; private set; } = new();
     public MacroLinkPicker MacroLinkPicker { get; private set; } = new();
@@ -18,6 +19,7 @@ public class PluginWindowManager : IDisposable {
 
     public PluginWindowManager() {
         Env.WindowSystem.AddWindow(MainWindow);
+        Env.WindowSystem.AddWindow(SettingsWindow);
         Env.WindowSystem.AddWindow(MacroWindow);
         Env.WindowSystem.AddWindow(IconPicker);
         Env.WindowSystem.AddWindow(MacroLinkPicker);
@@ -28,6 +30,7 @@ public class PluginWindowManager : IDisposable {
 
         Env.PluginInterface.UiBuilder.Draw += DrawUI;
         Env.PluginInterface.UiBuilder.OpenMainUi += DrawMainUI;
+        Env.PluginInterface.UiBuilder.OpenConfigUi += DrawSettingsUI;
     }
 
     public void ShowOrFocus(Window window) {
@@ -49,6 +52,12 @@ public class PluginWindowManager : IDisposable {
     private void DrawMainUI() {
         if (MainWindow != null) {
             MainWindow.IsOpen =  true;
+        }
+    }
+
+    private void DrawSettingsUI() {
+        if (SettingsWindow != null) {
+            SettingsWindow.IsOpen =  true;
         }
     }
 }

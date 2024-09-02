@@ -139,43 +139,8 @@ public class MainWindow : Window, IDisposable {
                 ImGui.OpenPopup(sortPopupId);
             }
 
-            if (ImGui.BeginMenu("Settings")) {
-                ImGui.BeginGroup();
-                var macroIcon = Env.TextureProvider.GetMacroIcon(Env.MacroConfig.LinkPlaceholderIconId).GetWrapOrEmpty();
-                if (macroIcon != null) {
-                    ImGui.Image(macroIcon.ImGuiHandle, new Vector2(ImGui.GetTextLineHeight()) * 1.3f);
-                    ImGui.SameLine();
-                }
-                ImGui.SameLine();
-                ImGui.AlignTextToFramePadding();
-                if (ImGui.MenuItem("Set Link Placeholder Icon")) {
-                    Env.PluginWindowManager.IconPicker.Open(Env.MacroConfig.LinkPlaceholderIconId, selectedIconId => {
-                        Env.MacroConfig.LinkPlaceholderIconId = selectedIconId;
-                    });
-                }
-                ImGui.EndGroup();
-                if (ImGui.IsItemHovered()) {
-                    ImGui.SetTooltip("Select the icon used for macro slots that are managed by Macro Mate but currently unlinked (right click to reset to default)");
-                }
-                if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
-                    Env.MacroConfig.LinkPlaceholderIconId = VanillaMacro.InactiveIconId;
-                }
-
-                var showVanillaMacroContextMenus = Env.MacroConfig.ShowVanillaMacroContextMenus;
-                if (ImGui.Checkbox("Show Vanilla Macro Context Menus", ref showVanillaMacroContextMenus)) {
-                    Env.MacroConfig.ShowVanillaMacroContextMenus = showVanillaMacroContextMenus;
-                }
-                if (ImGui.IsItemHovered()) {
-                    ImGui.SetTooltip("When disabled no Macro Mate context menu actions will be shown in the vanilla macro UI");
-                }
-
-                var enableSubscriptionAutoCheckForUpdates = Env.MacroConfig.EnableSubscriptionAutoCheckForUpdates;
-                if (ImGui.Checkbox("Automatically Check for Subscription Updates", ref enableSubscriptionAutoCheckForUpdates)) {
-                    Env.MacroConfig.EnableSubscriptionAutoCheckForUpdates = enableSubscriptionAutoCheckForUpdates;
-                }
-                ImGuiExt.HoverTooltip("When disabled Macro Mate will not automatically check for subscription updates. You will need to manually use the 'Check for Updates' action");
-
-                ImGui.EndMenu();
+            if (ImGui.MenuItem("Settings")) {
+                Env.PluginWindowManager.ShowOrFocus(Env.PluginWindowManager.SettingsWindow);
             }
 
             if (ImGui.MenuItem("Backups")) {
