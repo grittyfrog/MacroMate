@@ -32,7 +32,8 @@ public class SubscriptionManager {
     private ConcurrentDictionary<Guid, SubscriptionState> SubscriptionStates = new();
 
     private bool firstLogin = true;
-    private DateTimeOffset? nextCheckForUpdatesTime = null;
+    private DateTimeOffset? lastAutoCheckForUpdatesTime = null;
+    private DateTimeOffset? nextAutoCheckForUpdatesTime = null;
 
     public SubscriptionManager() {
         Env.MacroConfig.ConfigChange += OnMacroMateConfigChanged;
@@ -52,7 +53,7 @@ public class SubscriptionManager {
 
     private void OnLogin() {
         if (firstLogin) {
-            nextCheckForUpdatesTime = DateTimeOffset.Now + CheckForUpdatesTimeAfterLogin;
+            nextAutoCheckForUpdatesTime = DateTimeOffset.Now + CheckForUpdatesTimeAfterLogin;
             firstLogin = false;
         }
     }
@@ -79,19 +80,26 @@ public class SubscriptionManager {
         SubscriptionGroups = Env.MacroConfig.Root.Descendants()
             .OfType<MateNode.SubscriptionGroup>()
             .ToList();
+
+        // Only set this if we've done at least one auto-update to give the on-login check time to run
+        if (lastAutoCheckForUpdatesTime != null) {
+            nextAutoCheckForUpdatesTime = lastAutoCheckForUpdatesTime +
+                TimeSpan.FromMinutes(Env.MacroConfig.MinutesBetweenSubscriptionAutoCheckForUpdates);
+        }
     }
 
     private void OnFrameworkUpdate(IFramework framework) {
         if (!Env.MacroConfig.EnableSubscriptionAutoCheckForUpdates) { return; }
         if (SubscriptionGroups.Count == 0) { return; }
-        if (nextCheckForUpdatesTime == null) { return; }
+        if (nextAutoCheckForUpdatesTime == null) { return; }
 
-        if (DateTimeOffset.Now > nextCheckForUpdatesTime) {
+        if (DateTimeOffset.Now > nextAutoCheckForUpdatesTime) {
             Env.PluginLog.Info("Checking subscriptions for updates");
             foreach (var sGroup in SubscriptionGroups) {
                 ScheduleCheckForUpdates(sGroup);
             }
-            nextCheckForUpdatesTime = nextCheckForUpdatesTime + TimeSpan.FromMinutes(Env.MacroConfig.MinutesBetweenSubscriptionAutoCheckForUpdates);
+            lastAutoCheckForUpdatesTime = DateTimeOffset.Now;
+            nextAutoCheckForUpdatesTime = nextAutoCheckForUpdatesTime + TimeSpan.FromMinutes(Env.MacroConfig.MinutesBetweenSubscriptionAutoCheckForUpdates);
         }
     }
 
