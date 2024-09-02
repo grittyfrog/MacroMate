@@ -27,9 +27,7 @@ public class SubscriptionStatusWindow : Window {
         foreach (var step in status.Steps) {
             var stateText = step.State switch {
                 SubscriptionState.StepState.IN_PROGRESS => " ... " + ("|/-\\"[(int)(ImGui.GetTime() / 0.05f) % 3]).ToString(),
-                SubscriptionState.StepState.SUCCESS => " ... OK",
-                SubscriptionState.StepState.FAILED => $" ... ERR: {step.FailMessage}",
-                SubscriptionState.StepState.INFO => "",
+                SubscriptionState.StepState.FINISHED => step.Outcome != null ? $" ... {step.Outcome}" : "",
                 _ => " ... ???"
             };
 

@@ -6,6 +6,12 @@ using Dalamud.Game.Text.SeStringHandling.Payloads;
 namespace MacroMate.Extensions.Dalamud.Str;
 
 public static partial class SeStringEx {
+    public static bool IsSame(this SeString self, SeString other) {
+        var selfStr = self.ToString().ReplaceLineEndings();
+        var otherStr = other.ToString().ReplaceLineEndings();
+        return selfStr.Equals(otherStr);
+    }
+
     /// <summary>Normalize all newline characters to actual NewLinePayloads</summary>
     public static SeString NormalizeNewlines(this SeString self) {
         return SeStringEx.JoinFromLines(self.SplitIntoLines());

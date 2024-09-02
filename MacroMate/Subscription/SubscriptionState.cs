@@ -6,11 +6,16 @@ namespace MacroMate.Subscription;
 /// The state of a single subscription group
 /// </summary>
 public class SubscriptionState {
-    public enum StepState { INFO, IN_PROGRESS, SUCCESS, FAILED };
+    public enum StepState { IN_PROGRESS, FINISHED };
     public class Step {
         public required StepState State { get; set; }
         public required string Message { get; set; }
-        public string? FailMessage { get; set; }
+        public string? Outcome { get; set; }
+
+        public void Finish(string msg = "OK") {
+            State = StepState.FINISHED;
+            Outcome = msg;
+        }
     }
 
     public List<Step> Steps = new();
@@ -26,13 +31,14 @@ public class SubscriptionState {
     }
 
     public Step Success(string message) {
-        var step = new Step { State = StepState.SUCCESS, Message = message };
+        var step = new Step { State = StepState.FINISHED, Message = message };
+        step.Outcome = "OK";
         Steps.Add(step);
         return step;
     }
 
     public Step Info(string message) {
-        var step = new Step { State = StepState.INFO, Message = message };
+        var step = new Step { State = StepState.FINISHED, Message = message };
         Steps.Add(step);
         return step;
     }
@@ -41,7 +47,7 @@ public class SubscriptionState {
         if (Steps.Count == 0) { return; }
 
         var last = Steps[Steps.Count - 1];
-        last.State = StepState.FAILED;
-        last.FailMessage = failMessage;
+        last.Outcome = failMessage;
+        last.State = StepState.FINISHED;
     }
 }

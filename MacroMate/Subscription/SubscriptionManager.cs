@@ -108,19 +108,16 @@ public class SubscriptionManager {
         state.Reset();
         try {
             var hasUpdate = false;
-            var etags = new List<string>();
-            var response = await AddUrlETag("Checking Macro Manifest", sGroup.SubscriptionUrl, state, etags);
 
-            var readManifestStep = state.InProgress("Read Macro Manifest");
-            var manifestStr = await response.Content.ReadAsStringAsync();
-            var manifest = SubscriptionManifestYAML.From(manifestStr);
-            readManifestStep.State = SubscriptionState.StepState.SUCCESS;
+            var (manifestUpdated, manifest) = await CheckForManifestUpdate(state, sGroup);
 
-            foreach (var macroYaml in manifest.Macros) {
-                if (macroYaml.MarkdownUrl == null) { continue; }
+            if (manifest != null) {
+                foreach (var macroYaml in manifest.Macros) {
+                    if (macroYaml.MarkdownUrl == null) { continue; }
 
-                var url = sGroup.RelativeUrl(macroYaml.MarkdownUrl);
-                var mdResponse = await AddUrlETag($"Checking {url}", url, state, etags);
+                    var url = sGroup.RelativeUrl(macroYaml.MarkdownUrl);
+                    hasUpdate |= await CheckForMarkdownUpdates(macroYaml, url, state, sGroup);
+                }
             }
 
             await Env.Framework.RunOnTick(() => {
@@ -136,31 +133,84 @@ public class SubscriptionManager {
         } finally {
             SubscriptionGroupTasks.Remove(sGroup.Id, out _);
         }
-
     }
 
-    private async Task<HttpResponseMessage> AddUrlETag(
-        string message,
+    /// <summary>
+    /// Check if the SubscriptionManifest has an update.
+    /// </summary>
+    /// <returns>(true, null) or (false, manifest)</returns>
+    private async Task<(bool, SubscriptionManifestYAML?)> CheckForManifestUpdate(
+        SubscriptionState state,
+        MateNode.SubscriptionGroup sGroup
+    ) {
+        var step = state.InProgress($"Checking {sGroup.SubscriptionUrl}");
+        var request = new HttpRequestMessage(HttpMethod.Get, sGroup.SubscriptionUrl);
+        var response = await Env.HttpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        if (response.Headers.ETag != null && !sGroup.LastSyncETags.Contains(response.Headers.ETag.Tag)) {
+            step.Finish("Has changes - ETag mismatch");
+            return (true, null);
+        }
+
+        var manifestStr = await response.Content.ReadAsStringAsync();
+        var manifest = SubscriptionManifestYAML.From(manifestStr);
+
+        step.Finish("No changes - ETag match");
+        return (false, manifest);
+    }
+
+    private async Task<bool> CheckForMarkdownUpdates(
+        MacroYAML macroYaml,
         string url,
         SubscriptionState state,
-        List<string> etags
+        MateNode.SubscriptionGroup sGroup
     ) {
-        var step = state.InProgress(message);
+        var step = state.InProgress($"Checking {url}");
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         var response = await Env.HttpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
-        step.State = SubscriptionState.StepState.SUCCESS;
 
-        if (response.Headers.ETag == null) {
-            step.FailMessage = "response did not contain ETag, cannot check for updates";
-            step.State = SubscriptionState.StepState.FAILED;
-            return response;
+        // If we have an etag and it already matches then we know this file doesn't have any updates
+        if (response.Headers.ETag != null && sGroup.LastSyncETags.Contains(response.Headers.ETag.Tag)) {
+            step.Finish("No changes - ETag match");
+            return false;
         }
 
-        var etag = response.Headers.ETag.Tag;
-        etags.Add(etag);
+        // If there isn't a corresponding macro in the tree for this node then this is a new macro and we have
+        // a update
+        var path = macroYaml.Group ?? "/";
+        var parsedParentPath = MacroPath.ParseText(macroYaml.Group ?? "/");
+        var existingParentGroup = sGroup.Walk(parsedParentPath);
+        if (existingParentGroup == null) {
+            step.Finish($"Has changes - new group {path}");
+            return true;
+        }
 
-        return response;
+        var existingMacro = existingParentGroup.Children
+            .OfType<MateNode.Macro>()
+            .FirstOrDefault(child => child.Name == (macroYaml.Name ?? ""));
+        if (existingMacro == null) {
+            step.Finish($"Has changes - new macro {macroYaml.Name}");
+            return true;
+        }
+
+        var mdString = await response.Content.ReadAsStringAsync();
+
+        // If we didn't get an etag match we need to check the markdown content against our own to see if there
+        // is a change.
+        var mdLines = ExtractMacroLinesFromMarkdown(url, mdString, macroYaml, state);
+        if (mdLines != null) {
+            var mdSeString = SeStringEx.ParseFromText(mdLines);
+            if (mdSeString.IsSame(existingMacro.Lines)) {
+                step.Finish("No changes - macro code block unmodified");
+                return false;
+            }
+        }
+
+        // Otherwise we need to assume that we have changed, since the etag doesn't match
+        step.Finish("Has changes");
+        return true;
     }
 
     private async Task SyncFromSubscription(MateNode.SubscriptionGroup sGroup) {
@@ -172,7 +222,7 @@ public class SubscriptionManager {
             var request = new HttpRequestMessage(HttpMethod.Get, sGroup.SubscriptionUrl);
             var response = await Env.HttpClient.SendAsync(request);
             response.EnsureSuccessStatusCode();
-            fetchManifestStep.State = SubscriptionState.StepState.SUCCESS;
+            fetchManifestStep.Finish();
             if (response.Headers.ETag != null) {
                 etags.Add(response.Headers.ETag.Tag);
             }
@@ -180,7 +230,7 @@ public class SubscriptionManager {
             var readManifestStep = state.InProgress("Read Macro Manifest");
             var manifestStr = await response.Content.ReadAsStringAsync();
             var manifest = SubscriptionManifestYAML.From(manifestStr);
-            readManifestStep.State = SubscriptionState.StepState.SUCCESS;
+            readManifestStep.Finish();
 
             sGroup.Name = manifest.Name;
             foreach (var macroYaml in manifest.Macros) {
@@ -217,23 +267,15 @@ public class SubscriptionManager {
             var response = await Env.HttpClient.SendAsync(request);
             response.EnsureSuccessStatusCode();
             var mdString = await response.Content.ReadAsStringAsync();
-            fetchStep.State = SubscriptionState.StepState.SUCCESS;
+            fetchStep.Finish();
             if (response.Headers.ETag != null) {
                 etags.Add(response.Headers.ETag.Tag);
             }
 
-            var parseStep = state.InProgress($"Parse Markdown from '{url}'");
-
-            var mdDoc = Markdown.Parse(mdString);
-
-            var macroCodeBlock = mdDoc.Descendants<CodeBlock>()
-                .Take((macroYaml.MarkdownMacroCodeBlockIndex ?? 0) + 1)
-                .LastOrDefault();
-            if (macroCodeBlock != null) {
-                lines = macroCodeBlock.ToRawLines();
+            var extractedLines = ExtractMacroLinesFromMarkdown(url, mdString, macroYaml, state);
+            if (extractedLines != null) {
+                lines = extractedLines;
             }
-
-            parseStep.State = SubscriptionState.StepState.SUCCESS;
         }
 
         if (macroYaml.Name != null) { name = macroYaml.Name; }
@@ -246,12 +288,27 @@ public class SubscriptionManager {
         var parsedParentPath = MacroPath.ParseText(macroGroup);
         var parent = Env.MacroConfig.CreateOrFindGroupByPath(sGroup, parsedParentPath);
         var macro = Env.MacroConfig.CreateOrFindMacroByName(macroYaml.Name!, parent);
-        syncMacroStep.State = SubscriptionState.StepState.SUCCESS;
+        syncMacroStep.Finish();
 
         await Env.Framework.RunOnTick(() => {
             macro.IconId = (uint?)macroYaml.IconId ?? VanillaMacro.DefaultIconId;
             macro.Notes = notes;
             macro.Lines = SeStringEx.ParseFromText(lines);
         });
+    }
+
+    private string? ExtractMacroLinesFromMarkdown(
+        string url,
+        string markdownString,
+        MacroYAML macroYaml,
+        SubscriptionState state
+    ) {
+        var mdDoc = Markdown.Parse(markdownString);
+
+        var macroCodeBlock = mdDoc.Descendants<CodeBlock>()
+            .Take((macroYaml.MarkdownMacroCodeBlockIndex ?? 0) + 1)
+            .LastOrDefault();
+        var lines = macroCodeBlock?.ToRawLines();
+        return lines;
     }
 }

@@ -77,6 +77,7 @@ public class SubscriptionGroupXML : MateNodeXML {
     public required string SubscriptionUrl { get; set; }
     public DateTimeOffset? LastSyncTime { get; set; }
     public List<string> LastSyncETags { get; set; } = new();
+    public bool HasUpdate { get; set; } = false;
 
     [XmlArrayItem("Group", typeof(GroupXML))]
     [XmlArrayItem("Macro", typeof(MacroXML))]
@@ -88,6 +89,7 @@ public class SubscriptionGroupXML : MateNodeXML {
         SubscriptionUrl = SubscriptionUrl,
         LastSyncTime = LastSyncTime,
         LastSyncETags = LastSyncETags,
+        HasUpdate = HasUpdate
     }.Attach(Nodes.Select(node => node.ToReal()));
 
     public static SubscriptionGroupXML FromSubscriptionGroup(MateNode.SubscriptionGroup group) => new SubscriptionGroupXML {
@@ -95,6 +97,7 @@ public class SubscriptionGroupXML : MateNodeXML {
         SubscriptionUrl = group.SubscriptionUrl,
         LastSyncTime = group.LastSyncTime,
         LastSyncETags = group.LastSyncETags,
+        HasUpdate = group.HasUpdate,
         Nodes = group.Children.Select(child => MateNodeXML.From(child)).ToList()
     };
 }
