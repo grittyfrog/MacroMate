@@ -1,3 +1,4 @@
+using System.Numerics;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using MacroMate.MacroTree;
@@ -10,7 +11,15 @@ public class SubscriptionStatusWindow : Window {
 
     public MateNode.SubscriptionGroup? Subscription { get; set; }
 
-    public SubscriptionStatusWindow() : base(NAME, ImGuiWindowFlags.AlwaysAutoResize) {}
+    public SubscriptionStatusWindow() : base(NAME) {
+        this.SizeConstraints = new WindowSizeConstraints {
+            MinimumSize = new Vector2(200, 100),
+            MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
+        };
+
+        this.SizeCondition = ImGuiCond.FirstUseEver;
+        this.Size = new Vector2(500, 400);
+    }
 
     public override void Draw() {
         if (Subscription == null) { return; }
