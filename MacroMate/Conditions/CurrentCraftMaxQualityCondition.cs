@@ -19,6 +19,7 @@ public record class CurrentCraftMaxQualityCondition(
 
     class ConditionFactory : INumericCondition.IFactory {
         public string ConditionName => "Current Craft - Max Quality";
+        public string ExpressionName => "CurrentCraft.MaxQuality";
 
         public INumericCondition? FromConditions(CurrentConditions conditions) =>
             conditions.craftMaxQualityCondition;

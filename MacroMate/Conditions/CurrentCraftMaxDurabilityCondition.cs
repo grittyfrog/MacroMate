@@ -19,6 +19,7 @@ public record class CurrentCraftMaxDurabilityCondition(
 
     class ConditionFactory : INumericCondition.IFactory {
         public string ConditionName => "Current Craft - Max Durability";
+        public string ExpressionName => "CurrentCraft.MaxDurability";
 
         public INumericCondition? FromConditions(CurrentConditions conditions) =>
             conditions.craftMaxDurabilityCondition;

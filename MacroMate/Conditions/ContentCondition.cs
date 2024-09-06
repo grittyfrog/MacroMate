@@ -30,6 +30,7 @@ public record class ContentCondition(
 
     class ConditionFactory : IValueCondition.IFactory {
         public string ConditionName => "Content";
+        public string ExpressionName => "Content";
 
         public IValueCondition? Current() => ContentCondition.Current();
         public IValueCondition? FromConditions(CurrentConditions conditions) => conditions.content;

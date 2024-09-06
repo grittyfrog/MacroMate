@@ -44,6 +44,7 @@ public record class PvpStateCondition(PvpStateCondition.State state) : IValueCon
 
     class ConditionFactory : IValueCondition.IFactory {
         public string ConditionName => "PvP State";
+        public string ExpressionName => "PvPState";
 
         public IValueCondition? Current() => PvpStateCondition.Current();
         public IValueCondition Default() => new PvpStateCondition();

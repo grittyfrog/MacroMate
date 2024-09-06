@@ -30,6 +30,7 @@ public record class JobCondition(
 
     class ConditionFactory : IValueCondition.IFactory {
         public string ConditionName => "Job";
+        public string ExpressionName => "Job";
 
         public IValueCondition? Current() => JobCondition.Current();
         public IValueCondition Default() => new JobCondition();

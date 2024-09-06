@@ -141,6 +141,8 @@ public record class TargetNameCondition(
 
     class ConditionFactory : IValueCondition.IFactory {
         public string ConditionName => "Target";
+        public string ExpressionName => "Target";
+
         public IValueCondition? Current() => TargetNameCondition.Current();
         public IValueCondition Default() => new TargetNameCondition();
         public IValueCondition? FromConditions(CurrentConditions conditions) => conditions.targetNpc;

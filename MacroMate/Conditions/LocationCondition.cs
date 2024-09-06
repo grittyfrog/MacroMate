@@ -67,6 +67,8 @@ public record class LocationCondition(
 
     class ConditionFactory : IValueCondition.IFactory {
         public string ConditionName => "Location";
+        public string ExpressionName => "Location";
+
         public IValueCondition? Current() => LocationCondition.Current();
         public IValueCondition Default() => new LocationCondition();
         public IValueCondition? FromConditions(CurrentConditions conditions) => conditions.location;

@@ -86,6 +86,7 @@ public partial record class PlayerConditionCondition(
 
     class ConditionFactory : IValueCondition.IFactory {
         public string ConditionName => "Player Condition";
+        public string ExpressionName => "PlayerCondition";
 
         public IValueCondition? Current() => PlayerConditionCondition.Current();
         public IValueCondition? BestInitialValue() {

@@ -5,6 +5,7 @@ namespace MacroMate.Conditions;
 
 public interface ICondition {
     string ConditionName => FactoryRef.ConditionName;
+    string ExpressionName => FactoryRef.ExpressionName;
 
     ICondition.IFactory FactoryRef { get; }
 
@@ -16,6 +17,11 @@ public interface ICondition {
 
     public interface IFactory {
         string ConditionName { get; }
+
+        /// <summary>
+        /// The name of this condition when used in an expression string
+        /// </summary>
+        string ExpressionName { get; }
 
         ICondition? Current();
 

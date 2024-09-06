@@ -19,6 +19,7 @@ public record class CurrentCraftDifficultyCondition(
 
     class ConditionFactory : INumericCondition.IFactory {
         public string ConditionName => "Current Craft - Difficulty";
+        public string ExpressionName => "CurrentCraft.Difficulty";
 
         public INumericCondition? FromConditions(CurrentConditions conditions) =>
             conditions.craftDifficultyCondition;
