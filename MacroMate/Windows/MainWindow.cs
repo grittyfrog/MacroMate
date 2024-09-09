@@ -575,7 +575,7 @@ public class MainWindow : Window, IDisposable {
             if (node is MateNode.SubscriptionGroup sGroup) {
                 if (ImGui.BeginMenu("Subscription")) {
                     if (ImGui.Selectable("Sync")) {
-                        Env.SubscriptionManager.ScheduleSyncFromSubscription(sGroup);
+                        Env.SubscriptionManager.ScheduleSync(sGroup);
                         Env.PluginWindowManager.SubscriptionStatusWindow.Subscription = sGroup;
                         Env.PluginWindowManager.ShowOrFocus(Env.PluginWindowManager.SubscriptionStatusWindow);
                     }
@@ -593,6 +593,10 @@ public class MainWindow : Window, IDisposable {
                         Env.PluginWindowManager.ShowOrFocus(Env.PluginWindowManager.SubscriptionStatusWindow);
                     }
                     ImGuiExt.HoverTooltip("Show the last shown status window");
+
+                    if (ImGui.Selectable("Copy URL to Clipboard")) {
+                        ImGui.SetClipboardText(sGroup.SubscriptionUrl);
+                    }
 
                     ImGui.EndMenu();
                 }
@@ -704,7 +708,7 @@ public class MainWindow : Window, IDisposable {
 
             if (ImGui.Button("Save")) {
                 var sGroup = Env.MacroConfig.CreateSubscriptionGroup(parent, subscriptionGroupPopupUrl);
-                Env.SubscriptionManager.ScheduleSyncFromSubscription(sGroup);
+                Env.SubscriptionManager.ScheduleSync(sGroup);
                 Env.PluginWindowManager.SubscriptionStatusWindow.Subscription = sGroup;
                 Env.PluginWindowManager.ShowOrFocus(Env.PluginWindowManager.SubscriptionStatusWindow);
                 ImGui.CloseCurrentPopup();

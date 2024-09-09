@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Numerics;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
@@ -27,22 +28,55 @@ public class SubscriptionStatusWindow : Window {
         ImGui.TextUnformatted(Subscription.Name);
         ImGui.Separator();
 
-        var status = Env.SubscriptionManager.GetSubscriptionState(Subscription);
-        if (status == null) {
+        var rootTaskDetails = Env.SubscriptionManager.GetSubscriptionTaskDetails(Subscription);
+        if (rootTaskDetails.Children.IsEmpty) {
             ImGui.Text("No operation active");
             return;
         }
 
-        foreach (var step in status.Steps) {
-            var stateText = step.State switch {
-                SubscriptionState.StepState.IN_PROGRESS => " ... " + ("|/-\\"[(int)(ImGui.GetTime() / 0.05f) % 3]).ToString(),
-                SubscriptionState.StepState.FINISHED => step.Outcome != null ? $" ... {step.Outcome}" : "",
-                _ => " ... ???"
-            };
+        foreach (var taskDetail in rootTaskDetails.Children.OrderBy(c => c.CreatedAt)) {
+            DrawTaskDetails(taskDetail, isRoot: true);
+        }
+    }
 
-            ImGui.TextUnformatted($"{step.Message}{stateText}");
+    private void DrawTaskDetails(SubscriptionTaskDetails taskDetails, bool isRoot) {
+        ImGui.PushID(taskDetails.Id.ToString());
+        var taskPopup = DrawTaskPopup(taskDetails);
+
+        var loadingSpinner = taskDetails.IsLoading ? " " + ("|/-\\"[(int)(ImGui.GetTime() / 0.05f) % 3]).ToString() : "";
+        var body = isRoot ? taskDetails.Summary : taskDetails.Message;
+        var message = body + loadingSpinner;
+
+        if (taskDetails.Children.IsEmpty) {
+            ImGui.TextUnformatted(message);
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
+                ImGui.OpenPopup(taskPopup);
+            }
+        } else if (ImGui.TreeNode(message)) {
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
+                ImGui.OpenPopup(taskPopup);
+            }
+
+            foreach (var child in taskDetails.Children.OrderBy(c => c.CreatedAt)) {
+                DrawTaskDetails(child, isRoot: false);
+            }
+            ImGui.TreePop();
         }
 
+        ImGui.PopID();
+    }
 
+    private uint DrawTaskPopup(SubscriptionTaskDetails taskDetails) {
+        var popupName = $"subscription_status_window/task_popup/{taskDetails.Id}";
+        var popupId = ImGui.GetID(popupName);
+
+        if (ImGui.BeginPopup(popupName)) {
+            if (ImGui.Selectable("Copy Text to Clipboard")) {
+                ImGui.SetClipboardText(taskDetails.Message);
+            }
+            ImGui.EndPopup();
+        }
+
+        return popupId;
     }
 }
