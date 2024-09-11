@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Dalamud.Game.Text.SeStringHandling;
@@ -116,46 +117,43 @@ public class SubscriptionManager {
     private async Task Sync(MateNode.SubscriptionGroup sGroup) {
         var taskDetails = SubscriptionGroupTaskDetails[sGroup.Id] = new SubscriptionTaskDetails();
         await taskDetails.Catching(async () => {
-            var etags = new ConcurrentBag<string>();
-            var (manifest, _) = await FetchManifest(sGroup, etags, taskDetails);
+            var urlToEtags = new ConcurrentDictionary<string, string>();
+            var (manifest, _) = await FetchManifest(sGroup, urlToEtags, taskDetails);
 
             await Env.Framework.RunOnTick(() => { sGroup.Name = manifest.Name; });
 
-            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 2 };
-            await Parallel.ForEachAsync(manifest.Macros, parallelOptions, async (macroYaml, token) => {
-                await SyncMacro(sGroup, macroYaml, etags, taskDetails);
-                await CheckMacroForUpdates(sGroup, macroYaml, etags, taskDetails);
+            // We create the groups / macros first non-async to avoid race conditions where
+            // groups are created multiple times.
+            var macroYamlAndMacro = manifest.Macros.Select(macroYaml => {
+                var parsedParentPath = MacroPath.ParseText(macroYaml.Group ?? "/");
+                var parent = Env.MacroConfig.CreateOrFindGroupByPath(sGroup, parsedParentPath);
+                var macro = Env.MacroConfig.CreateOrFindMacroByName(macroYaml.Name!, parent);
+                return (macroYaml, macro);
+            });
+
+            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 4 };
+            await Parallel.ForEachAsync(macroYamlAndMacro, parallelOptions, async (macroYamlAndMacro, token) => {
+                var (macroYaml, macro) = macroYamlAndMacro;
+
+                var childDetails = taskDetails.Child($"Sync '{macro.PathString}'");
+                await SyncOrCheckMacro(sGroup, macroYaml, macro, urlToEtags, childDetails, sync: true);
             });
 
             await Env.Framework.RunOnTick(() => {
                 sGroup.LastSyncTime = DateTimeOffset.Now;
-                sGroup.LastSyncETags.Clear();
-                sGroup.LastSyncETags.AddRange(etags);
                 sGroup.HasUpdate = false;
+                Env.MacroConfig.SubscriptionUrlCache.ClearForSubscription(sGroup.Id);
+                Env.MacroConfig.SubscriptionUrlCache.AddEntries(sGroup, urlToEtags);
                 Env.MacroConfig.NotifyEdit();
             });
         });
-    }
-
-    private async Task SyncMacro(
-        MateNode.SubscriptionGroup sGroup,
-        MacroYAML macroYaml,
-        ConcurrentBag<string> etags,
-        SubscriptionTaskDetails taskDetails
-    ) {
-        var parsedParentPath = MacroPath.ParseText(macroYaml.Group ?? "/");
-        var parent = Env.MacroConfig.CreateOrFindGroupByPath(sGroup, parsedParentPath);
-        var macro = Env.MacroConfig.CreateOrFindMacroByName(macroYaml.Name!, parent);
-
-        var childDetails = taskDetails.Child($"Sync '{parsedParentPath}/{macro.Name}'");
-        await SyncOrCheckMacro(sGroup, macroYaml, macro, etags, childDetails, sync: true);
     }
 
     private async Task SyncOrCheckMacro(
         MateNode.SubscriptionGroup sGroup,
         MacroYAML macroYaml,
         MateNode.Macro macro,
-        ConcurrentBag<string> etags,
+        ConcurrentDictionary<string, string> urlToEtags,
         SubscriptionTaskDetails taskDetails,
         bool sync
     ) {
@@ -172,7 +170,7 @@ public class SubscriptionManager {
             newLines = SeStringEx.ParseFromText(macroYaml.Lines);
             if (!macro.Lines.IsSame(newLines)) { updatedFields.Add("lines"); }
         } else {
-            var (mdLines, mdLinesModified) = await FetchMacroMarkdownLinesIfModified(sGroup, macroYaml, macro, etags, taskDetails);
+            var (mdLines, mdLinesModified) = await FetchMacroMarkdownLinesIfModified(sGroup, macroYaml, macro, urlToEtags, taskDetails);
             if (mdLinesModified) { updatedFields.Add("lines"); }
             newLines = mdLines ?? "";
         }
@@ -191,24 +189,24 @@ public class SubscriptionManager {
             }
             return;
         } else {
-            taskDetails.Child($"No updates");
+            taskDetails.Child($"No changes");
         }
     }
 
     private async Task CheckForUpdates(MateNode.SubscriptionGroup sGroup) {
         var taskDetails = SubscriptionGroupTaskDetails[sGroup.Id] = new SubscriptionTaskDetails();
         await taskDetails.Catching(async () => {
-            var etags = new ConcurrentBag<string>();
-            var (manifest, manifestUpdated) = await FetchManifest(sGroup, etags, taskDetails);
+            var urlToEtags = new ConcurrentDictionary<string, string>();
+            var (manifest, manifestUpdated) = await FetchManifest(sGroup, urlToEtags, taskDetails);
 
             if (manifestUpdated == true) {
                 await Env.Framework.RunOnTick(() => { sGroup.HasUpdate = true; });
                 return;
             }
 
-            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 3 };
+            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 4 };
             await Parallel.ForEachAsync(manifest.Macros, parallelOptions, async (macroYaml, token) => {
-                await CheckMacroForUpdates(sGroup, macroYaml, etags, taskDetails);
+                await CheckMacroForUpdates(sGroup, macroYaml, urlToEtags, taskDetails);
             });
 
             await Env.Framework.RunOnTick(() => { sGroup.HasUpdate = false; });
@@ -218,7 +216,7 @@ public class SubscriptionManager {
     private async Task CheckMacroForUpdates(
         MateNode.SubscriptionGroup sGroup,
         MacroYAML macroYaml,
-        ConcurrentBag<string> etags,
+        ConcurrentDictionary<string, string> urlToEtags,
         SubscriptionTaskDetails taskDetails
     ) {
         var childDetails = taskDetails.Child($"Check '{macroYaml.Name}'");
@@ -240,12 +238,12 @@ public class SubscriptionManager {
             return;
         }
 
-        await SyncOrCheckMacro(sGroup, macroYaml, existingMacro, etags, childDetails, sync: false);
+        await SyncOrCheckMacro(sGroup, macroYaml, existingMacro, urlToEtags, childDetails, sync: false);
     }
 
     private async Task<(SubscriptionManifestYAML, bool)> FetchManifest(
         MateNode.SubscriptionGroup sGroup,
-        ConcurrentBag<string> etags,
+        ConcurrentDictionary<string, string> urlToEtags,
         SubscriptionTaskDetails taskDetails
     ) {
         var childTask = taskDetails.Child("Fetch Manifest");
@@ -258,12 +256,14 @@ public class SubscriptionManager {
             return response;
         });
 
-        if (response.Headers.ETag != null) { etags.Add(response.Headers.ETag.Tag); }
+        var hasKnownEtag = Env.MacroConfig.SubscriptionUrlCache.TryGetEtagForUrl(sGroup.SubscriptionUrl, out var knownEtag);
+
+        if (response.Headers.ETag != null) { urlToEtags[sGroup.SubscriptionUrl] = response.Headers.ETag.Tag; }
 
         var manifestStr = await response.Content.ReadAsStringAsync();
         var manifest = SubscriptionManifestYAML.From(manifestStr);
 
-        if (response.Headers.ETag != null && !sGroup.LastSyncETags.Contains(response.Headers.ETag.Tag)) {
+        if (response.Headers.ETag != null && !hasKnownEtag) {
             childTask.Child($"Has changes - ETag mismatch {response.Headers.ETag.Tag}");
             return (manifest, true);
         } else {
@@ -280,7 +280,7 @@ public class SubscriptionManager {
         MateNode.SubscriptionGroup sGroup,
         MacroYAML macroYaml,
         MateNode.Macro existingMacro,
-        ConcurrentBag<string> etags,
+        ConcurrentDictionary<string, string> urlToEtags,
         SubscriptionTaskDetails taskDetails
     ) {
         // If we don't have a MarkdownUrl there aren't any additional checks to make
@@ -290,29 +290,30 @@ public class SubscriptionManager {
 
         // If we have a markdown URL we want to use it to check if there are any additional updates
         var url = sGroup.RelativeUrl(macroYaml.MarkdownUrl);
-        var response = await taskDetails.Child("Download Markdown Headers").Loading(async () => {
-            var request = new HttpRequestMessage(HttpMethod.Head, url);
+        var response = await taskDetails.Child("Checking Markdown Headers").Loading(async () => {
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            if (Env.MacroConfig.SubscriptionUrlCache.TryGetEtagForUrl(url, out var knownEtag)) {
+                request.Headers.IfNoneMatch.ParseAdd(knownEtag);
+            }
+
             var response = await Env.HttpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
             return response;
         });
 
-        if (response.Headers.ETag != null) { etags.Add(response.Headers.ETag.Tag); }
+        if (response.Headers.ETag != null) { urlToEtags[url] = response.Headers.ETag.Tag; }
 
-        // If we have an etag and it already matches then we know this file doesn't have any updates
-        if (response.Headers.ETag != null && sGroup.LastSyncETags.Contains(response.Headers.ETag.Tag)) {
+        // If we got a 304 we know the ETag matches and no changes have taken place since we last synced
+        if (response.StatusCode == HttpStatusCode.NotModified) {
             taskDetails.Child("No changes - ETag match");
             return (null, false);
         } else {
+            response.EnsureSuccessStatusCode();
             taskDetails.Child($"May have changes - ETag mismatch {response.Headers.ETag?.Tag}");
         }
 
         // If we didn't get an etag match we need to check the markdown content against our own to see
         // if there is a change.
         var mdString = await taskDetails.Child("Downloading Markdown").Loading(async () => {
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-            var response = await Env.HttpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStringAsync();
         });
 

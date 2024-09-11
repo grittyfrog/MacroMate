@@ -8,6 +8,7 @@ using MacroMate.Extensions.Dalamud.Macros;
 using System;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using MacroMate.Subscription;
 
 namespace MacroMate.MacroTree;
 
@@ -35,7 +36,7 @@ public class MacroConfig {
         }
     }
 
-    public bool _enableSubscriptionAutoCheckForUpdates ;
+    public bool _enableSubscriptionAutoCheckForUpdates;
     public bool EnableSubscriptionAutoCheckForUpdates {
         get { return _enableSubscriptionAutoCheckForUpdates; }
         set {
@@ -52,6 +53,8 @@ public class MacroConfig {
             NotifyEdit();
         }
     }
+
+    public SubscriptionUrlCache SubscriptionUrlCache { get; set; } = new();
 
     private MateNode _root;
     public MateNode Root {
@@ -78,6 +81,7 @@ public class MacroConfig {
         this._enableSubscriptionAutoCheckForUpdates = other.EnableSubscriptionAutoCheckForUpdates;
         this._minutesBetweenSubscriptionAutoCheckForUpdates = other.MinutesBetweenSubscriptionAutoCheckForUpdates;
         this._root = other.Root;
+        this.SubscriptionUrlCache = other.SubscriptionUrlCache;
         NotifyEdit();
     }
 

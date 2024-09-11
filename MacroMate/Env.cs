@@ -35,6 +35,7 @@ public class Env {
         HttpClient = new HttpClient(new SocketsHttpHandler {
             AutomaticDecompression = DecompressionMethods.All,
             ConnectCallback = HappyEyeballsCallback.ConnectCallback,
+            MaxConnectionsPerServer = 4 // Github won't allow more then 10 max connections
         });
 
         FontManager = new FontManager();

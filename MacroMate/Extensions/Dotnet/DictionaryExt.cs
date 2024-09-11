@@ -18,4 +18,13 @@ public static class DictionaryExt {
         self.Add(key, v);
         return v;
     }
+
+    public static void AddRange<TKey, TValue>(
+        this IDictionary<TKey, TValue> self,
+        IEnumerable<KeyValuePair<TKey, TValue>> values
+    ) {
+        foreach (var value in values) {
+            self[value.Key] = value.Value;
+        }
+    }
 }

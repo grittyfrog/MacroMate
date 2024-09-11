@@ -53,6 +53,8 @@ public abstract partial class MateNode : TreeNode<MateNode> {
             ConditionExpr = other.ConditionExpr;
         }
 
+        public string PathString => string.Join("/", SelfAndAncestors().Reverse().Skip(1).Select(n => n.Name));
+
         /// Get the Vanilla Macros that can be produced by this macro.
         ///
         /// Each block of 15 lines in this Macro will produce one Vanilla macro
