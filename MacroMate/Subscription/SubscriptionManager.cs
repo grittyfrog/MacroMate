@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
@@ -28,6 +30,10 @@ public class SubscriptionManager {
     private ConcurrentDictionary<Guid, Task> SubscriptionGroupTasks = new();
 
     private ConcurrentDictionary<Guid, SubscriptionTaskDetails> SubscriptionGroupTaskDetails = new();
+
+    private Channel<Func<CancellationToken, ValueTask>> JobQueue = Channel.CreateUnbounded<Func<CancellationToken, ValueTask>>(
+        new UnboundedChannelOptions { SingleWriter = false, SingleReader = true, AllowSynchronousContinuations = true }
+    );
 
     private bool firstLogin = true;
     private DateTimeOffset? lastAutoCheckForUpdatesTime = null;
@@ -71,6 +77,21 @@ public class SubscriptionManager {
                 SubscriptionGroupTasks.Remove(sGroup.Id, out var _);
             }
         });
+    }
+
+    private async ValueTask ConsumeScheduledJobs(CancellationToken cancellationToken) {
+        var reader = JobQueue.Reader;
+        while (await reader.WaitToReadAsync()) {
+            while (reader.TryRead(out var job)) {
+                try {
+                    await job(cancellationToken);
+                } catch (OperationCanceledException) {
+                    // Prevent throwing if canellationToken was signaled
+                } catch (Exception ex) {
+                    Env.PluginLog.Error($"Subscription job error: {ex}");
+                }
+            }
+        }
     }
 
     public SubscriptionTaskDetails GetSubscriptionTaskDetails(MateNode.SubscriptionGroup sGroup) {
@@ -166,13 +187,13 @@ public class SubscriptionManager {
         if (macro.Notes != newNotes) { updatedFields.Add("notes"); }
 
         SeString newLines;
-        if (macroYaml.Lines != null) {
-            newLines = SeStringEx.ParseFromText(macroYaml.Lines);
-            if (!macro.Lines.IsSame(newLines)) { updatedFields.Add("lines"); }
-        } else {
+        if (macroYaml.MarkdownUrl != null) {
             var (mdLines, mdLinesModified) = await FetchMacroMarkdownLinesIfModified(sGroup, macroYaml, macro, urlToEtags, taskDetails);
             if (mdLinesModified) { updatedFields.Add("lines"); }
             newLines = mdLines ?? "";
+        } else {
+            newLines = SeStringEx.ParseFromText(macroYaml.Lines ?? "");
+            if (!macro.Lines.IsSame(newLines)) { updatedFields.Add("lines"); }
         }
 
         if (updatedFields.Count > 0) {

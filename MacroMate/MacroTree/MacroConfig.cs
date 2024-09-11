@@ -261,6 +261,7 @@ public class MacroConfig {
 
     public void Delete(MateNode node) {
         Root.Delete(node.Id);
+        Env.MacroConfig.SubscriptionUrlCache.ClearForSubscription(node.Id);
         NotifyEdit();
     }
 
