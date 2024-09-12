@@ -37,6 +37,17 @@ public class SubscriptionTaskDetails {
         });
     }
 
+    public async Task Loading(Func<Task> block) {
+        await Catching(async () => {
+            try {
+                Interlocked.Increment(ref _loadingCount);
+                await block();
+            } finally {
+                Interlocked.Decrement(ref _loadingCount);
+            }
+        });
+    }
+
     public async Task Catching(Func<Task> block) {
         try {
             await block();

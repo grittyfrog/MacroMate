@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
@@ -31,9 +30,9 @@ public class SubscriptionManager {
 
     private ConcurrentDictionary<Guid, SubscriptionTaskDetails> SubscriptionGroupTaskDetails = new();
 
-    private Channel<Func<CancellationToken, ValueTask>> JobQueue = Channel.CreateUnbounded<Func<CancellationToken, ValueTask>>(
-        new UnboundedChannelOptions { SingleWriter = false, SingleReader = true, AllowSynchronousContinuations = true }
-    );
+    private SemaphoreSlim JobSemaphore = new SemaphoreSlim(1, 1);
+
+    private CancellationTokenSource CancellationTokenSource = new();
 
     private bool firstLogin = true;
     private DateTimeOffset? lastAutoCheckForUpdatesTime = null;
@@ -79,21 +78,6 @@ public class SubscriptionManager {
         });
     }
 
-    private async ValueTask ConsumeScheduledJobs(CancellationToken cancellationToken) {
-        var reader = JobQueue.Reader;
-        while (await reader.WaitToReadAsync()) {
-            while (reader.TryRead(out var job)) {
-                try {
-                    await job(cancellationToken);
-                } catch (OperationCanceledException) {
-                    // Prevent throwing if canellationToken was signaled
-                } catch (Exception ex) {
-                    Env.PluginLog.Error($"Subscription job error: {ex}");
-                }
-            }
-        }
-    }
-
     public SubscriptionTaskDetails GetSubscriptionTaskDetails(MateNode.SubscriptionGroup sGroup) {
         return SubscriptionGroupTaskDetails.GetOrAdd(sGroup.Id, new SubscriptionTaskDetails());
     }
@@ -137,37 +121,44 @@ public class SubscriptionManager {
 
     private async Task Sync(MateNode.SubscriptionGroup sGroup) {
         var taskDetails = SubscriptionGroupTaskDetails[sGroup.Id] = new SubscriptionTaskDetails();
-        await taskDetails.Catching(async () => {
-            var urlToEtags = new ConcurrentDictionary<string, string>();
-            var (manifest, _) = await FetchManifest(sGroup, urlToEtags, taskDetails);
-
-            await Env.Framework.RunOnTick(() => { sGroup.Name = manifest.Name; });
-
-            // We create the groups / macros first non-async to avoid race conditions where
-            // groups are created multiple times.
-            var macroYamlAndMacro = manifest.Macros.Select(macroYaml => {
-                var parsedParentPath = MacroPath.ParseText(macroYaml.Group ?? "/");
-                var parent = Env.MacroConfig.CreateOrFindGroupByPath(sGroup, parsedParentPath);
-                var macro = Env.MacroConfig.CreateOrFindMacroByName(macroYaml.Name!, parent);
-                return (macroYaml, macro);
-            });
-
-            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 4 };
-            await Parallel.ForEachAsync(macroYamlAndMacro, parallelOptions, async (macroYamlAndMacro, token) => {
-                var (macroYaml, macro) = macroYamlAndMacro;
-
-                var childDetails = taskDetails.Child($"Sync '{macro.PathString}'");
-                await SyncOrCheckMacro(sGroup, macroYaml, macro, urlToEtags, childDetails, sync: true);
-            });
-
-            await Env.Framework.RunOnTick(() => {
-                sGroup.LastSyncTime = DateTimeOffset.Now;
-                sGroup.HasUpdate = false;
-                Env.MacroConfig.SubscriptionUrlCache.ClearForSubscription(sGroup.Id);
-                Env.MacroConfig.SubscriptionUrlCache.AddEntries(sGroup, urlToEtags);
-                Env.MacroConfig.NotifyEdit();
-            });
+        await taskDetails.Child("Waiting for existing jobs to finish").Loading(async () => {
+            await JobSemaphore.WaitAsync();
         });
+        try {
+            await taskDetails.Catching(async () => {
+                var urlToEtags = new ConcurrentDictionary<string, string>();
+                var (manifest, _) = await FetchManifest(sGroup, urlToEtags, taskDetails);
+
+                await Env.Framework.RunOnTick(() => { sGroup.Name = manifest.Name; });
+
+                // We create the groups / macros first non-async to avoid race conditions where
+                // groups are created multiple times.
+                var macroYamlAndMacro = manifest.Macros.Select(macroYaml => {
+                    var parsedParentPath = MacroPath.ParseText(macroYaml.Group ?? "/");
+                    var parent = Env.MacroConfig.CreateOrFindGroupByPath(sGroup, parsedParentPath);
+                    var macro = Env.MacroConfig.CreateOrFindMacroByName(macroYaml.Name!, parent);
+                    return (macroYaml, macro);
+                });
+
+                var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 4 };
+                await Parallel.ForEachAsync(macroYamlAndMacro, parallelOptions, async (macroYamlAndMacro, token) => {
+                    var (macroYaml, macro) = macroYamlAndMacro;
+
+                    var childDetails = taskDetails.Child($"Sync '{macro.PathString}'");
+                    await SyncOrCheckMacro(sGroup, macroYaml, macro, urlToEtags, childDetails, sync: true);
+                });
+
+                await Env.Framework.RunOnTick(() => {
+                    sGroup.LastSyncTime = DateTimeOffset.Now;
+                    sGroup.HasUpdate = false;
+                    Env.MacroConfig.SubscriptionUrlCache.ClearForSubscription(sGroup.Id);
+                    Env.MacroConfig.SubscriptionUrlCache.AddEntries(sGroup, urlToEtags);
+                    Env.MacroConfig.NotifyEdit();
+                });
+            });
+        } finally {
+            JobSemaphore.Release();
+        }
     }
 
     private async Task SyncOrCheckMacro(
@@ -216,22 +207,29 @@ public class SubscriptionManager {
 
     private async Task CheckForUpdates(MateNode.SubscriptionGroup sGroup) {
         var taskDetails = SubscriptionGroupTaskDetails[sGroup.Id] = new SubscriptionTaskDetails();
-        await taskDetails.Catching(async () => {
-            var urlToEtags = new ConcurrentDictionary<string, string>();
-            var (manifest, manifestUpdated) = await FetchManifest(sGroup, urlToEtags, taskDetails);
-
-            if (manifestUpdated == true) {
-                await Env.Framework.RunOnTick(() => { sGroup.HasUpdate = true; });
-                return;
-            }
-
-            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 4 };
-            await Parallel.ForEachAsync(manifest.Macros, parallelOptions, async (macroYaml, token) => {
-                await CheckMacroForUpdates(sGroup, macroYaml, urlToEtags, taskDetails);
-            });
-
-            await Env.Framework.RunOnTick(() => { sGroup.HasUpdate = false; });
+        await taskDetails.Child("Waiting for existing jobs to finish").Loading(async () => {
+            await JobSemaphore.WaitAsync();
         });
+        try {
+            await taskDetails.Catching(async () => {
+                var urlToEtags = new ConcurrentDictionary<string, string>();
+                var (manifest, manifestUpdated) = await FetchManifest(sGroup, urlToEtags, taskDetails);
+
+                if (manifestUpdated == true) {
+                    await Env.Framework.RunOnTick(() => { sGroup.HasUpdate = true; });
+                    return;
+                }
+
+                var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 4 };
+                await Parallel.ForEachAsync(manifest.Macros, parallelOptions, async (macroYaml, token) => {
+                    await CheckMacroForUpdates(sGroup, macroYaml, urlToEtags, taskDetails);
+                });
+
+                await Env.Framework.RunOnTick(() => { sGroup.HasUpdate = false; });
+            });
+        } finally {
+            JobSemaphore.Release();
+        }
     }
 
     private async Task CheckMacroForUpdates(

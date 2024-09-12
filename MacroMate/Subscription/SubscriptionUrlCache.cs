@@ -42,19 +42,4 @@ public class SubscriptionUrlCache {
             .Where(kv => kv.Value.SubscriptionGroupId != subscriptionGroupId)
             .ToDictionary();
     }
-
-    /// <summary>
-    /// Delete any entries that belong to subscription groups that no longer exist.
-    /// </summary>
-    public void ClearUnused() {
-        var subscriptionGroupIds = Env.MacroConfig.Root
-            .Descendants()
-            .OfType<MateNode.SubscriptionGroup>()
-            .Select(sg => sg.Id)
-            .ToHashSet();
-
-        Entries = Entries
-            .Where(kv => subscriptionGroupIds.Contains(kv.Value.SubscriptionGroupId))
-            .ToDictionary();
-    }
 }

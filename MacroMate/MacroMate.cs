@@ -28,7 +28,6 @@ public class MacroMate {
         var savedConfig = Env.SaveManager.Load();
         if (savedConfig != null) {
             Env.MacroConfig.OverwiteFrom(savedConfig);
-            Env.MacroConfig.SubscriptionUrlCache.ClearUnused();
         }
     }
 

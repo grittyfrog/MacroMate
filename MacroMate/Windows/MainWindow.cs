@@ -774,6 +774,7 @@ public class MainWindow : Window, IDisposable {
                 Env.MacroConfig.NotifyEdit();
                 ImGui.CloseCurrentPopup();
             }
+
             ImGui.SameLine();
             if (ImGui.Button("No!")) {
                 ImGui.CloseCurrentPopup();
