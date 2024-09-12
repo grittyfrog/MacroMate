@@ -82,6 +82,14 @@ public class SubscriptionManager {
         return SubscriptionGroupTaskDetails.GetOrAdd(sGroup.Id, new SubscriptionTaskDetails());
     }
 
+    /// <summary>
+    /// Returns true if we are running any Sync / Check for Updates on this group.
+    /// </summary>
+    public bool IsLoading(MateNode.SubscriptionGroup sGroup) {
+        var taskDetails = GetSubscriptionTaskDetails(sGroup);
+        return taskDetails.IsLoading;
+    }
+
     private void OnLogin() {
         if (firstLogin) {
             nextAutoCheckForUpdatesTime = DateTimeOffset.Now + CheckForUpdatesTimeAfterLogin;

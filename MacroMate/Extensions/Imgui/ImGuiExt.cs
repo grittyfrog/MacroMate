@@ -1,8 +1,10 @@
 using System;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using ImGuiNET;
+using MacroMate.Extensions.Dalamud;
 
 namespace MacroMate.Extensions.Imgui;
 
@@ -133,5 +135,53 @@ public static class ImGuiExt {
             }
             return ret != 0;
         }
+    }
+
+    public static void Spinner(string label, float radius, float thickness, uint color) {
+        var style = ImGui.GetStyle();
+        ImGui.PushID(label);
+
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + style.FramePadding.Y);
+        var size = new Vector2(radius * 2, radius * 2);
+
+        ImGui.Dummy(size);
+        var dummyPos = ImGui.GetItemRectMin();
+        var dummySize = ImGui.GetItemRectSize();
+        var center = new Vector2(
+            dummyPos.X + (dummySize.X / 2),
+            dummyPos.Y + (dummySize.Y / 2)
+        );
+
+        // Render
+        ImGui.GetWindowDrawList().PathClear();
+
+        var numSegments = 30;
+        var start = Math.Abs(Math.Sin(ImGui.GetTime() * 1.8f) * (numSegments - 5));
+
+        var aMin = Math.PI * 2.0f * ((float)start / (float)numSegments);
+        var aMax = Math.PI * 2.0f * (((float)numSegments - 3) / (float)numSegments);
+
+        for (var i = 0; i < numSegments; ++i) {
+            var a = aMin + ((float)i / (float)numSegments) * (aMax - aMin);
+            ImGui.GetWindowDrawList().PathLineTo(
+                new Vector2(
+                    center.X + (float)Math.Cos(a + (float)ImGui.GetTime() * 8) * (radius - thickness / 2),
+                    center.Y + (float)Math.Sin(a + (float)ImGui.GetTime() * 8) * (radius - thickness / 2)
+                )
+            );
+        }
+
+        ImGui.GetWindowDrawList().PathStroke(color, ImDrawFlags.None, thickness);
+
+        ImGui.PopID();
+    }
+
+    public static void SpinnerRTL(string label, float radius, int thickness, uint color) {
+        var style = ImGui.GetStyle();
+        var spinnerSize = new Vector2(radius * 2, (radius + style.FramePadding.Y) * 2); // Keep in sync with Spinner()
+        var startPos = ImGui.GetCursorPosX() - spinnerSize.X;
+        ImGui.SetCursorPosX(startPos);
+        Spinner(label, radius, thickness, color);
+        ImGui.SameLine(startPos - ImGui.GetStyle().FramePadding.X);
     }
 }

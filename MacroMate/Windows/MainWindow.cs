@@ -385,6 +385,12 @@ public class MainWindow : Window, IDisposable {
             ImGui.PopFont();
             ImGuiExt.HoverTooltip($"Updates are available, use 'Subscription > Sync' to update");
         }
+
+        if (Env.SubscriptionManager.IsLoading(sGroup)) {
+            var spinnerRadius = ImGui.GetTextLineHeight() / 2;
+            var spinnerColor = ImGui.ColorConvertFloat4ToU32(Colors.SkyBlue);
+            ImGuiExt.SpinnerRTL($"main_window/sgroup_icons/spinner/{sGroup.Id}", spinnerRadius, 5, spinnerColor);
+        }
     }
 
     private void DrawGroupLinkIcon(MateNode group) {

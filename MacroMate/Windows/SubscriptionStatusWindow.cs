@@ -1,7 +1,10 @@
 using System.Linq;
 using System.Numerics;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
+using MacroMate.Extensions.Dalamud;
+using MacroMate.Extensions.Imgui;
 using MacroMate.MacroTree;
 using MacroMate.Subscription;
 
@@ -43,23 +46,28 @@ public class SubscriptionStatusWindow : Window {
         ImGui.PushID(taskDetails.Id.ToString());
         var taskPopup = DrawTaskPopup(taskDetails);
 
-        var loadingSpinner = taskDetails.IsLoading ? " " + ("|/-\\"[(int)(ImGui.GetTime() / 0.05f) % 3]).ToString() : "";
-        var body = isRoot ? taskDetails.Summary : taskDetails.Message;
-        var message = body + loadingSpinner;
+        var message = isRoot ? taskDetails.Summary : taskDetails.Message;
+        var treeNodeFlags = taskDetails.Children.IsEmpty ? ImGuiTreeNodeFlags.Leaf : ImGuiTreeNodeFlags.None;
 
-        if (taskDetails.Children.IsEmpty) {
-            ImGui.TextUnformatted(message);
-            if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
-                ImGui.OpenPopup(taskPopup);
-            }
-        } else if (ImGui.TreeNode(message)) {
-            if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
-                ImGui.OpenPopup(taskPopup);
-            }
+        var treeNodeOpen = ImGui.TreeNodeEx(message, treeNodeFlags);
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
+            ImGui.OpenPopup(taskPopup);
+        }
 
+        if (taskDetails.IsLoading) {
+            var spinnerLabel = $"###subscription_status_window/spinner/{taskDetails.Id}";
+            var spinnerRadius = ImGui.GetTextLineHeight() / 4;
+            var spinnerThickness = 2 * ImGuiHelpers.GlobalScale;
+            ImGui.SameLine();
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + spinnerRadius);
+            ImGuiExt.Spinner(spinnerLabel, spinnerRadius, spinnerThickness, ImGui.ColorConvertFloat4ToU32(Colors.SkyBlue));
+        }
+
+        if (treeNodeOpen) {
             foreach (var child in taskDetails.Children.OrderBy(c => c.CreatedAt)) {
                 DrawTaskDetails(child, isRoot: false);
             }
+
             ImGui.TreePop();
         }
 
