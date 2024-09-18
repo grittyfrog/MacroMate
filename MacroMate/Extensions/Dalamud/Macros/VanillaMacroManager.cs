@@ -132,26 +132,37 @@ public unsafe class VanillaMacroManager : IDisposable {
             return;
         }
 
-        var macro = raptureMacroModule->GetMacro((uint)macroSet, macroSlot);
-        macro->Name.SetString(vanillaMacro.Title.Truncate(20));
+        try {
+            var macro = raptureMacroModule->GetMacro((uint)macroSet, macroSlot);
+            macro->Name.SetString(vanillaMacro.Title.Truncate(20));
 
-        bool iconIdChanged = macro->IconId != vanillaMacro.IconId;
-        macro->SetIcon(vanillaMacro.IconId);
+            bool iconIdChanged = macro->IconId != vanillaMacro.IconId;
+            macro->SetIcon(vanillaMacro.IconId);
 
-        // We don't want to use NewLinePayload since it encodes to an extra newline, instead we just encode everything to '\r'.
-        // We also don't use macro-LineSpan[index] = ... here since it causes memory access errors
-        var macroLinePayload = macroText.ReplaceNewlinesWithCR();
-        var macroLinePayloadUtf8 = Utf8String.FromSequence(macroLinePayload.EncodeWithNullTerminator());
-        raptureMacroModule->ReplaceMacroLines(macro, macroLinePayloadUtf8);
-        macroLinePayloadUtf8->Dtor();
-        IMemorySpace.Free(macroLinePayloadUtf8);
+            foreach (ref var line in macro->Lines) {
+                line.Clear();
+            }
 
-        // Update the MacroAddon if it's open (since it doesn't auto-refresh)
-        if (iconIdChanged) {
-            SetVanillaMacroUISlotIcon(macroSet, macroSlot, vanillaMacro.IconId);
+            foreach (var (line, index) in vanillaMacro.Lines.Value.SplitIntoLines().WithIndex()) {
+                var encoded = line.Encode();
+                if (line.Payloads.Count == 0 || encoded.Length == 0 || encoded.Any(c => c == 0))  {
+                    continue;
+                }
+
+                fixed (byte* encodedPtr = encoded) {
+                    macro->Lines[index].SetString(encodedPtr);
+                }
+            }
+
+            // Update the MacroAddon if it's open (since it doesn't auto-refresh)
+            if (iconIdChanged) {
+                SetVanillaMacroUISlotIcon(macroSet, macroSlot, vanillaMacro.IconId);
+            }
+
+            raptureHotbarModule->ReloadMacroSlots((byte)macroSet, (byte)macroSlot);
+        } catch (Exception e) {
+            Env.PluginLog.Error($"Failed to set macro {vanillaMacro.Title} to {macroSet} ({macroSlot}): {e}");
         }
-
-        raptureHotbarModule->ReloadMacroSlots((byte)macroSet, (byte)macroSlot);
     }
 
     public void DeleteMacro(VanillaMacroSet macroSet, uint macroSlot) {
