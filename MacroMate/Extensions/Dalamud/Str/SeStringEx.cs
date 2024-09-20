@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -96,5 +97,63 @@ public static partial class SeStringEx {
         }
 
         return builder.Build();
+    }
+
+    /// <summary>
+    /// Insert [text] into [self] at [offset].
+    ///
+    /// Offset is calculated based on the TextValue rendering of this SeString
+    /// </summary>
+    public static SeString InsertAtTextValueIndex(this SeString self, SeString text, int offset) {
+        var updatedString = new SeStringBuilder();
+        var textOffset = 0;
+
+        var remainingPayloads = new Queue<Payload>(self.Payloads);
+        while (remainingPayloads.TryDequeue(out var payload)) {
+            Env.PluginLog.Info($"Checking payload: {payload}, offset: {offset}");
+            var textPayload = payload as ITextProvider;
+            if (textPayload == null || textPayload.Text == null) {
+                updatedString.Add(payload);
+                continue;
+            }
+
+            var startOffset = textOffset;
+            var endOffset = textOffset + new StringInfo(textPayload.Text).LengthInTextElements;
+            textOffset = endOffset;
+
+            // If our offset is within the range then we want to insert
+            if (startOffset <= offset && offset <= endOffset) {
+                // If we are a text payload we can splice the text, otherwise just put it at the front.
+                if (textPayload is TextPayload tp && tp.Text != null) {
+                    var textPayloadInsertOffset = offset - startOffset;
+                    if (text.Payloads.Count == 1 && text.Payloads[0] is TextPayload newTextPayload) {
+                        var newText = tp.Text.Insert(textPayloadInsertOffset, newTextPayload.Text ?? "");
+                        updatedString.AddText(newText);
+                    } else {
+                        var beforeText = textPayload.Text[0..textPayloadInsertOffset];
+                        var afterText = textPayload.Text[textPayloadInsertOffset..];
+                        updatedString.AddText(beforeText);
+                        text.Payloads.ForEach(pl => { updatedString.Add(pl); });
+                        if (afterText.Count() > 0) {
+                            updatedString.AddText(afterText);
+                        }
+                    }
+                } else {
+                    // If we can't split the payload just put it at the end
+                    updatedString.Add(payload);
+                    text.Payloads.ForEach(pl => { updatedString.Add(pl); });
+                }
+                break;
+            } else {
+                updatedString.Add(payload);
+            }
+        }
+
+        // Any remaining payloads can just be appended
+        while (remainingPayloads.TryDequeue(out var payload)) {
+            updatedString.Add(payload);
+        }
+
+        return updatedString.Build();
     }
 }

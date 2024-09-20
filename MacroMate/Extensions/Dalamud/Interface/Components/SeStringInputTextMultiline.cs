@@ -126,6 +126,11 @@ public class SeStringInputTextMultiline {
         return edited;
     }
 
+    public int? GetCursorPos() {
+        // Internal cursor is UTF-16 so it matches C# representation
+        unsafe { return TextState->Stb.Cursor; }
+    }
+
     /// Gets the SeString represented by the selection, or null if no selection
     public SeString? SelectedSeString() {
         string selectedText;
