@@ -268,26 +268,4 @@ public class MacroWindow : Window, IDisposable {
 
         Env.MacroConfig.NotifyEdit();
     }
-
-    /**
-     * Hack to make pasting multi-line text from the game work (I.e. the chat log / macro windoow)
-     *
-     * Ideally we'd override the global clipboard handler in ImGui but that seems extreme for
-     * a single plugin, maybe as a Dalamud PR?
-     */
-    private void InputTextXIVPasteHack() {
-        try {
-            if (ImGui.IsItemFocused()) {
-                var clipboardText = ImGui.GetClipboardText();
-                if ((clipboardText.Contains("\r") || clipboardText.Contains("\n")) && !clipboardText.Contains("\r\n")) {
-                    // We want to normalize all line endings to \r\n so ImGui and FFXIV can accept them when pasted.
-                    //
-                    // Line endings from XIV only have '\r'.
-                    ImGui.SetClipboardText(clipboardText.ReplaceLineEndings("\r\n"));
-                }
-            }
-        } catch (NullReferenceException) {
-            // Sometimes ImGui throws a NullReferenceException here, we just want to ignore it.
-        }
-    }
 }
