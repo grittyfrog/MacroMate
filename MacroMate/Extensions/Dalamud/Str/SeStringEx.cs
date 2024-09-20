@@ -108,9 +108,14 @@ public static partial class SeStringEx {
         var updatedString = new SeStringBuilder();
         var textOffset = 0;
 
+        // If we are empty just insert and leave
+        if (self.Payloads.Count == 0) {
+            text.Payloads.ForEach(pl => { updatedString.Add(pl); });
+            return updatedString.Build();
+        }
+
         var remainingPayloads = new Queue<Payload>(self.Payloads);
         while (remainingPayloads.TryDequeue(out var payload)) {
-            Env.PluginLog.Info($"Checking payload: {payload}, offset: {offset}");
             var textPayload = payload as ITextProvider;
             if (textPayload == null || textPayload.Text == null) {
                 updatedString.Add(payload);
@@ -132,7 +137,9 @@ public static partial class SeStringEx {
                     } else {
                         var beforeText = textPayload.Text[0..textPayloadInsertOffset];
                         var afterText = textPayload.Text[textPayloadInsertOffset..];
-                        updatedString.AddText(beforeText);
+                        if (beforeText.Count() > 0) {
+                            updatedString.AddText(beforeText);
+                        }
                         text.Payloads.ForEach(pl => { updatedString.Add(pl); });
                         if (afterText.Count() > 0) {
                             updatedString.AddText(afterText);

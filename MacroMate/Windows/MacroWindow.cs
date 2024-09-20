@@ -11,6 +11,8 @@ using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Str;
 using MacroMate.Extensions.Dalamaud.Interface.Components;
 using Dalamud.Interface.Utility;
+using System.Linq;
+using Dalamud.Game.Text;
 
 namespace MacroMate.Windows;
 
@@ -253,10 +255,48 @@ public class MacroWindow : Window, IDisposable {
                 }
             }
 
+            if (ImGui.Selectable("Insert Special Character")) {
+                OpenMacroSpecialCharacterPopup(macro);
+            }
+
             ImGui.EndPopup();
         }
 
         return macroTextRightClickPopupId;
+    }
+
+    private void OpenMacroSpecialCharacterPopup(MateNode.Macro macro) {
+        var seSpecialChars = Enum.GetValues<SeIconChar>()
+            .Select(c => c.ToIconChar())
+            .ToList();
+
+        var seUnicodeChars = """
+        π™′＾¿¿‰øØ×∞∩£¥¢Ð€ªº†‡¤ ŒœÅ
+        ωψ↑↓→←⇔⇒♂♀♪¶§±＜＞≥≤≡÷½¼¾©®ª¹²³
+        ※⇔｢｣«»≪≫《》【】℉℃‡。·••‥…¨°º‰
+        ╲╳╱☁☀☃♭♯✓〃¹²³
+        ●◎○■□▲△▼▽∇♥♡★☆◆◇♦♦♣♠♤♧¶
+        αß∇ΘΦΩδ∂∃∀∈∋∑√∝∞∠∟∥∪∩∨∧∫∮∬
+        ∴∵∽≠≦≤≥≧⊂⊃⊆⊇⊥⊿⌒─━│┃│¦
+        ┗┓└┏┐┌┘┛├┝┠┣┤┥┫┬┯┰┳┴┷┸┻╋
+        ┿╂┼￢￣，－．／：；＜＝＞［＼］＿｀｛｜｝～＠
+        ⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇
+        ⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳
+        №ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹ
+        ０１２３４５６７８９！？＂＃＄％＆＇（）＊＋￠￤￥
+        ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ
+        ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ
+        """.Where(c => !Char.IsWhiteSpace(c));
+
+        var specialChars = seSpecialChars.Concat(seUnicodeChars).ToList();
+
+        Env.PluginWindowManager.CharPicker.Open(specialChars, (choice) => {
+            macro.Lines = macro.Lines.InsertAtTextValueIndex(
+                choice.ToString(),
+                (seStringInputTextMultiline.GetCursorPos() ?? 0) + Env.PluginWindowManager.CharPicker.ConsecutiveInserts
+            );
+            Env.MacroConfig.NotifyEdit();
+        });
     }
 
     private void Save() {

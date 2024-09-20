@@ -5,6 +5,8 @@ using System.Linq;
 namespace MacroMate.Extensions.Dotnet;
 
 public static class EnumerableExt {
+    public static IEnumerable<int> RangeSE(int start, int end) => Enumerable.Range(start, end - start);
+
     public static IEnumerable<(T item, int index)> WithIndex<T>(this IEnumerable<T> source) {
         return source.Select((item, index) => (item, index));
     }
