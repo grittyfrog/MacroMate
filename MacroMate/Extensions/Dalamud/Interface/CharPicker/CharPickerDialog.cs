@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
+using MacroMate.Extensions.Imgui;
 
 namespace MacroMate.Extensions.Dalamud.Interface.CharPicker;
 
@@ -48,16 +50,45 @@ public class CharPickerDialog : Window {
 
         if (!IsFocused) { ConsecutiveInserts = 0; }
 
-        ImGuiClip.ClippedDraw(Choices, (choice) => {
-            var text = (choice).ToString();
+        void DrawButton(char c, bool hlFav) {
             ImGui.SetWindowFontScale(1.3f);
-            if (ImGui.Button(text, new Vector2(36 * ImGuiHelpers.GlobalScale))) {
+            if (ImGui.Button(c.ToString(), new Vector2(36 * ImGuiHelpers.GlobalScale))) {
                 if (Callback != null) {
-                    Callback(choice);
+                    Callback(c);
                     ConsecutiveInserts += 1;
                 }
             }
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
+                if (Env.MacroConfig.CharPickerDialogFavourites.Contains(c)) {
+                    Env.MacroConfig.CharPickerDialogFavourites.Remove(c);
+                } else {
+                    Env.MacroConfig.CharPickerDialogFavourites.Add(c);
+                }
+                Env.MacroConfig.NotifyEdit();
+            }
+            if (hlFav && Env.MacroConfig.CharPickerDialogFavourites.Contains(c)) {
+                ImGuiExt.ItemBorder(
+                    ImGui.ColorConvertFloat4ToU32(Colors.HighlightGold),
+                    rounding: ImGui.GetStyle().FrameRounding,
+                    thickness: 3.0f
+                );
+            }
             ImGui.SetWindowFontScale(1);
-        }, columns, lineHeight: buttonSize);
+        }
+
+        var favourtes = Choices.Where(choice => Env.MacroConfig.CharPickerDialogFavourites.Contains(choice)).ToList();
+
+        // Draw Favourites first
+        ImGui.TextUnformatted("Favourites");
+        ImGuiExt.HoverTooltip("Right click to add/remove to favourites");
+        ImGui.Separator();
+        ImGuiClip.ClippedDraw(favourtes, (choice) => { DrawButton(choice, hlFav: false); }, columns, lineHeight: buttonSize);
+
+        ImGui.NewLine();
+
+        ImGui.TextUnformatted("All");
+        ImGui.Separator();
+        ImGuiClip.ClippedDraw(Choices, (choice) => { DrawButton(choice, hlFav: true); }, columns, lineHeight: buttonSize);
+
     }
 }

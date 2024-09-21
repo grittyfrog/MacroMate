@@ -95,9 +95,8 @@ public static class MacroLinkEditor {
 
         // Draw the gold border if selected
         if (macroLink.Slots.Contains(macroSlot)) {
-            var gold = new Vector4(1.0f, 0.8f, 0.0f, 1.0f);
             ImGuiExt.ItemBorder(
-                ImGui.ColorConvertFloat4ToU32(gold),
+                ImGui.ColorConvertFloat4ToU32(Colors.HighlightGold),
                 rounding: ImGui.GetStyle().FrameRounding,
                 thickness: 3.0f
             );

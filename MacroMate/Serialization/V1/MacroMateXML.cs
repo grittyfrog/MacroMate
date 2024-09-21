@@ -20,6 +20,7 @@ public class MacroMateV1XML {
     public required bool? ShowVanillaMacroContextMenus { get; set; } = true;
     public required bool? EnableSubscriptionAutoCheckForUpdates { get; set; } = true;
     public required int? MinutesBetweenSubscriptionAutoCheckForUpdates { get; set; } = 120;
+    public required List<char>? CharPickerDialogFavourites { get; set; } = new();
 
     [XmlElement("Root", typeof(GroupXML))]
     [XmlElement("RootMacro", typeof(MacroXML))]
@@ -33,6 +34,7 @@ public class MacroMateV1XML {
         EnableSubscriptionAutoCheckForUpdates = EnableSubscriptionAutoCheckForUpdates ?? true,
         MinutesBetweenSubscriptionAutoCheckForUpdates = MinutesBetweenSubscriptionAutoCheckForUpdates ?? 120,
         Root = Root.ToReal(),
+        CharPickerDialogFavourites = (CharPickerDialogFavourites ?? new()).ToHashSet(),
         SubscriptionUrlCache = SubscriptionUrlCache?.ToReal() ?? new()
     };
 
@@ -42,6 +44,7 @@ public class MacroMateV1XML {
         EnableSubscriptionAutoCheckForUpdates = config.EnableSubscriptionAutoCheckForUpdates,
         MinutesBetweenSubscriptionAutoCheckForUpdates = config.MinutesBetweenSubscriptionAutoCheckForUpdates,
         Root = MateNodeXML.From(config.Root),
+        CharPickerDialogFavourites = config.CharPickerDialogFavourites.ToList(),
         SubscriptionUrlCache = SubscriptionUrlCacheXML.From(config.SubscriptionUrlCache)
     };
 }

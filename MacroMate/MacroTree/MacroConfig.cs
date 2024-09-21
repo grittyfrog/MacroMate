@@ -54,6 +54,8 @@ public class MacroConfig {
         }
     }
 
+    public HashSet<char> CharPickerDialogFavourites { get; set; } = new();
+
     public SubscriptionUrlCache SubscriptionUrlCache { get; set; } = new();
 
     private MateNode _root;
@@ -82,9 +84,9 @@ public class MacroConfig {
         this._minutesBetweenSubscriptionAutoCheckForUpdates = other.MinutesBetweenSubscriptionAutoCheckForUpdates;
         this._root = other.Root;
         this.SubscriptionUrlCache = other.SubscriptionUrlCache;
+        this.CharPickerDialogFavourites = other.CharPickerDialogFavourites;
         NotifyEdit();
     }
-
 
     /// Update ActiveMacros to reflect the current conditions
     public void ActivateMacrosForConditions(CurrentConditions conditions) {

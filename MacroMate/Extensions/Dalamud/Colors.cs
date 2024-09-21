@@ -48,4 +48,6 @@ public static class Colors {
         54 / 255.0f,
         1.0f
     ); // #DD3636
+
+    public static Vector4 HighlightGold = new(1.0f, 0.8f, 0.0f, 1.0f);
 }
