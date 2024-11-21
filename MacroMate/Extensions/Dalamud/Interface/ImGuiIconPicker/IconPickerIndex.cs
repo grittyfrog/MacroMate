@@ -446,17 +446,10 @@ public class IconPickerIndex {
             (row) => new[] { row.Name, row.Description }
         );
 
-        // TODO: Broken in 7.1, fix later
-        // ApplyIconNamesFrom<ManeuversArmor>(
-        //     (row) => row.NeutralMapIcon,
-        //     (row) => new[] { row.Unknown10 }
-        // );
-
-        // TODO: Broken in 7.1, fix later
-        // ApplyIconNamesFrom<MapMarker>(
-        //     (row) => (uint)row.Icon,
-        //     (row) => new[] { row.PlaceNameSubtext.ValueNullable?.Name }
-        // );
+        ApplyIconNamesFromSubrow<MapMarker>(
+            (row) => new[] { (uint)row.Icon },
+            (row) => new[] { row.PlaceNameSubtext.ValueNullable?.Name }
+        );
 
         ApplyIconNamesFrom<MapSymbol>(
             (row) => (uint)row.Icon,
@@ -479,11 +472,10 @@ public class IconPickerIndex {
             (row) => row.Reward.Select(item => item.ValueNullable?.Name)
         );
 
-        // TODO: Broken in 7.1, fix later
-        // ApplyIconNamesFrom<MJIBuilding>(
-        //     (row) => row.Icon,
-        //     (row) => new[] { row.Name.ValueNullable?.Text }
-        // );
+        ApplyIconNamesFromSubrow<MJIBuilding>(
+            (row) => new[] { row.Icon },
+            (row) => new[] { row.Name.ValueNullable?.Text }
+        );
 
         ApplyIconNamesFrom<MJIGatheringObject>(
             (row) => (uint)row.MapIcon,
@@ -645,6 +637,50 @@ public class IconPickerIndex {
             }
         }
     }
+
+    private void ApplyIconNamesFromSubrow<Row>(
+        Func<Row, IEnumerable<uint>> icons,
+        Func<Row, IEnumerable<ReadOnlySeString>> names
+    ) where Row : struct, IExcelSubrow<Row> {
+        var excelSheet = Env.DataManager.GetSubrowExcelSheet<Row>();
+        if (excelSheet == null) { return; }
+
+        foreach (var row in excelSheet.SelectMany(x => x)) {
+            var usefulNames = names(row)
+                .WithoutNull()
+                .Select(name => name.ExtractText())
+                .Where(name => !name.IsNullOrEmpty())
+                .ToList();
+            if (usefulNames.Count == 0) { continue; }
+
+            var usefulIcons = icons(row)
+                .Where(icon => icon != 0);
+
+            foreach (var usefulIcon in usefulIcons) {
+                // If no icon info exists then this isn't a valid id
+                var existingIconInfo = iconInfos.GetValueOrDefault((uint)usefulIcon);
+                if (existingIconInfo == null) { continue; }
+
+                var iconInfo = new IconInfo {
+                    IconId = usefulIcon!,
+                    Names = usefulNames
+                };
+
+                AddOrMergeIconInfo(iconInfo);
+            }
+        }
+    }
+
+    private void ApplyIconNamesFromSubrow<Row>(
+        Func<Row, IEnumerable<uint>> icons,
+        Func<Row, IEnumerable<ReadOnlySeString?>> names
+    ) where Row : struct, IExcelSubrow<Row> {
+        ApplyIconNamesFromSubrow<Row>(
+            (row) => icons(row),
+            (row) => names(row).WithoutNull()
+        );
+    }
+
 
     private void ApplyIconNamesFrom<Row>(
         Func<Row, uint> icon,
