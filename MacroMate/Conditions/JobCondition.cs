@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using MacroMate.Extensions.Dalamaud.Excel;
 
 namespace MacroMate.Conditions;
@@ -25,7 +25,7 @@ public record class JobCondition(
         var player = Env.ClientState.LocalPlayer;
         if (player == null) { return null; }
 
-        return new JobCondition(player.ClassJob.Id);
+        return new JobCondition(player.ClassJob.RowId);
     }
 
     class ConditionFactory : IValueCondition.IFactory {

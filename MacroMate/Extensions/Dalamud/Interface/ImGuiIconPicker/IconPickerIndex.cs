@@ -4,11 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Dalamud.Utility;
 using Lumina.Excel;
-using Lumina.Excel.GeneratedSheets;
-using Lumina.Text;
+using Lumina.Excel.Sheets;
+using Lumina.Text.ReadOnly;
 using MacroMate.Extensions.Dotnet;
-using MacroMate.Extensions.Lumina;
-using FFXIVAction = Lumina.Excel.GeneratedSheets.Action;
+using FFXIVAction = Lumina.Excel.Sheets.Action;
 
 namespace MacroMate.Extensions.Dalamud.Interface.ImGuiIconPicker;
 
@@ -40,13 +39,18 @@ public class IconPickerIndex {
         if (State != IndexState.UNINDEXED) { return; }
 
         Task.Run(() => {
-            State = IndexState.INDEXING;
-            ComputeValidIconIds();
-            ApplyHardcodedCategories();
-            ApplyGamedataIconInfo();
-            IndexIcons();
-            State = IndexState.INDEXED;
-            onFinish();
+            try {
+                State = IndexState.INDEXING;
+                ComputeValidIconIds();
+                ApplyHardcodedCategories();
+                ApplyGamedataIconInfo();
+                IndexIcons();
+                State = IndexState.INDEXED;
+                onFinish();
+            } catch (Exception ex) {
+                Env.PluginLog.Error($"Failed to index icons\n{ex}");
+            }
+
         });
     }
 
@@ -264,17 +268,17 @@ public class IconPickerIndex {
 
         ApplyIconNamesFrom<FFXIVAction>(
             (row) => row.Icon,
-            (row) => new[] { row.Name, row.ClassJob.Value?.Name, row.ActionCategory.Value?.Name }
+            (row) => new[] { row.Name, row.ClassJob.ValueNullable?.Name, row.ActionCategory.ValueNullable?.Name }
         );
 
         ApplyIconNamesFrom<Adventure>(
             (row) => (uint)row.IconList,
-            (row) => new[] { row.Name, row.PlaceName.Value?.Name }
+            (row) => new[] { row.Name, row.PlaceName.ValueNullable?.Name }
         );
 
         ApplyIconNamesFrom<AOZContentBriefingBNpc>(
             (row) => new[] { row.TargetSmall, row.TargetLarge },
-            (row) => new[] { row.BNpcName.Value?.Singular }
+            (row) => new[] { row.BNpcName.ValueNullable?.Singular }.WithoutNull()
         );
 
         ApplyIconNamesFrom<BeastTribe>(
@@ -294,7 +298,7 @@ public class IconPickerIndex {
 
         ApplyIconNamesFrom<CabinetCategory>(
             (row) => (uint)row.Icon,
-            (row) => new[] { row.Category.Value?.Text }
+            (row) => new[] { row.Category.ValueNullable?.Text }
         );
 
         ApplyIconNamesFrom<CharaCardPlayStyle>(
@@ -339,7 +343,7 @@ public class IconPickerIndex {
 
         ApplyIconNamesFrom<CraftAction>(
             (row) => row.Icon,
-            (row) => new[] { row.Name, row.ClassJob.Value?.Name, row.ClassJobCategory.Value?.Name }
+            (row) => new[] { row.Name, row.ClassJob.ValueNullable?.Name, row.ClassJobCategory.ValueNullable?.Name }
         );
 
         ApplyIconNamesFrom<DeepDungeonEquipment>(
@@ -364,7 +368,7 @@ public class IconPickerIndex {
 
         ApplyIconNamesFrom<Emote>(
             (row) => row.Icon,
-            (row) => new[] { row.Name, row.EmoteCategory.Value?.Name }
+            (row) => new[] { row.Name, row.EmoteCategory.ValueNullable?.Name }
         );
 
         ApplyIconNamesFrom<EventAction>(
@@ -384,7 +388,7 @@ public class IconPickerIndex {
 
         ApplyIconNamesFrom<GardeningSeed>(
             (row) => row.Icon,
-            (row) => new[] { row.Item.Value?.Singular }
+            (row) => new[] { row.Item.ValueNullable?.Singular }
         );
 
         ApplyIconNamesFrom<GatheringType>(
@@ -394,7 +398,7 @@ public class IconPickerIndex {
 
         ApplyIconNamesFrom<GcArmyCaptureTactics>(
             (row) => row.Icon,
-            (row) => new[] { row.Name.Value?.Name }
+            (row) => new[] { row.Name.ValueNullable?.Name }
         );
 
         ApplyIconNamesFrom<GeneralAction>(
@@ -403,8 +407,8 @@ public class IconPickerIndex {
         );
 
         ApplyIconNamesFrom<GroupPoseStamp>(
-            (row) => new[] { (uint)row.StampIcon },
-            (row) => new[] { row.Name, row.Category.Value?.Name }
+            (row) => (uint)row.StampIcon,
+            (row) => new[] { row.Name, row.Category.ValueNullable?.Name }
         );
 
         ApplyIconNamesFrom<GuardianDeity>(
@@ -442,19 +446,21 @@ public class IconPickerIndex {
             (row) => new[] { row.Name, row.Description }
         );
 
-        ApplyIconNamesFrom<ManeuversArmor>(
-            (row) => row.Icon,
-            (row) => new[] { row.Unknown10 }
-        );
+        // TODO: Broken in 7.1, fix later
+        // ApplyIconNamesFrom<ManeuversArmor>(
+        //     (row) => row.NeutralMapIcon,
+        //     (row) => new[] { row.Unknown10 }
+        // );
 
-        ApplyIconNamesFrom<MapMarker>(
-            (row) => row.Icon,
-            (row) => new[] { row.PlaceNameSubtext.Value?.Name }
-        );
+        // TODO: Broken in 7.1, fix later
+        // ApplyIconNamesFrom<MapMarker>(
+        //     (row) => (uint)row.Icon,
+        //     (row) => new[] { row.PlaceNameSubtext.ValueNullable?.Name }
+        // );
 
         ApplyIconNamesFrom<MapSymbol>(
             (row) => (uint)row.Icon,
-            (row) => new[] { row.PlaceName.Value?.Name }
+            (row) => new[] { row.PlaceName.ValueNullable?.Name }
         );
 
         ApplyIconNamesFrom<Marker>(
@@ -470,17 +476,18 @@ public class IconPickerIndex {
         // TODO: This doesn't have the actual animal names, can we get them?
         ApplyIconNamesFrom<MJIAnimals>(
             (row) => (uint)row.Icon,
-            (row) => row.Reward.Select(item => item.Value?.Name)
+            (row) => row.Reward.Select(item => item.ValueNullable?.Name)
         );
 
-        ApplyIconNamesFrom<MJIBuilding>(
-            (row) => (uint)row.Icon,
-            (row) => new[] { row.Name.Value?.Text }
-        );
+        // TODO: Broken in 7.1, fix later
+        // ApplyIconNamesFrom<MJIBuilding>(
+        //     (row) => row.Icon,
+        //     (row) => new[] { row.Name.ValueNullable?.Text }
+        // );
 
         ApplyIconNamesFrom<MJIGatheringObject>(
             (row) => (uint)row.MapIcon,
-            (row) => new[] { row.Name.Value?.Singular }
+            (row) => new[] { row.Name.ValueNullable?.Singular }
         );
 
         ApplyIconNamesFrom<MJIHudMode>(
@@ -490,12 +497,12 @@ public class IconPickerIndex {
 
         ApplyIconNamesFrom<MobHuntTarget>(
             (row) => row.Icon,
-            (row) => new[] { row.Name.Value?.Singular }
+            (row) => new[] { row.Name.ValueNullable?.Singular }
         );
 
         ApplyIconNamesFrom<MonsterNoteTarget>(
             (row) => (uint)row.Icon,
-            (row) => new[] { row.BNpcName.Value?.Singular }
+            (row) => new[] { row.BNpcName.ValueNullable?.Singular }
         );
 
         ApplyIconNamesFrom<Mount>(
@@ -520,7 +527,7 @@ public class IconPickerIndex {
 
         ApplyIconNamesFrom<PublicContent>(
             (row) => (uint)row.MapIcon,
-            (row) => new[] { row.ContentFinderCondition.Value?.Name }
+            (row) => new[] { row.ContentFinderCondition.ValueNullable?.Name }
         );
 
         ApplyIconNamesFrom<PvPSelectTrait>(
@@ -545,17 +552,21 @@ public class IconPickerIndex {
 
         ApplyIconNamesFrom<Relic>(
             (row) => (uint)row.Icon,
-            (row) => new[] { row.ItemAtma.Value?.Name, row.ItemAnimus.Value?.Name }
+            (row) => new[] { row.ItemAtma.ValueNullable?.Name, row.ItemAnimus.ValueNullable?.Name }
         );
 
         ApplyIconNamesFrom<Relic3>(
             (row) => (uint)row.Icon,
-            (row) => new[] { row.ItemAnimus.Value?.Name, row.ItemScroll.Value?.Name, row.ItemNovus.Value?.Name }
+            (row) => new[] {
+                row.ItemAnimus.ValueNullable?.Name,
+                row.ItemScroll.ValueNullable?.Name,
+                row.ItemNovus.ValueNullable?.Name
+            }.WithoutNull()
         );
 
         ApplyIconNamesFrom<SatisfactionNpc>(
             (row) => (uint)row.Icon,
-            (row) => new[] { row.Npc.Value?.Singular }
+            (row) => new[] { row.Npc.ValueNullable?.Singular }
         );
 
         ApplyIconNamesFrom<Status>(
@@ -580,7 +591,7 @@ public class IconPickerIndex {
 
         ApplyIconNamesFrom<TreasureHuntRank>(
             (row) => (uint)row.Icon,
-            (row) => new[] { row.ItemName.Value?.Name, row.KeyItemName.Value?.Name }
+            (row) => new[] { row.ItemName.ValueNullable?.Name, row.KeyItemName.ValueNullable?.Name }
         );
 
         ApplyIconNamesFrom<VVDNotebookContents>(
@@ -595,25 +606,24 @@ public class IconPickerIndex {
 
         ApplyIconNamesFrom<WeeklyBingoOrderData>(
             (row) => row.Icon,
-            (row) => new[] { row.Text.Value?.Description }
+            (row) => new[] { row.Text.ValueNullable?.Description }
         );
     }
 
     private void IndexWeird() {
     }
 
-
     private void ApplyIconNamesFrom<Row>(
         Func<Row, IEnumerable<uint>> icons,
-        Func<Row, IEnumerable<SeString?>> names
-    ) where Row : ExcelRow {
+        Func<Row, IEnumerable<ReadOnlySeString>> names
+    ) where Row : struct, IExcelRow<Row> {
         var excelSheet = Env.DataManager.GetExcelSheet<Row>();
         if (excelSheet == null) { return; }
 
         foreach (var row in excelSheet) {
             var usefulNames = names(row)
                 .WithoutNull()
-                .Select(name => name.Text())
+                .Select(name => name.ExtractText())
                 .Where(name => !name.IsNullOrEmpty())
                 .ToList();
             if (usefulNames.Count == 0) { continue; }
@@ -638,8 +648,18 @@ public class IconPickerIndex {
 
     private void ApplyIconNamesFrom<Row>(
         Func<Row, uint> icon,
-        Func<Row, IEnumerable<SeString?>> names
-    ) where Row : ExcelRow {
+        Func<Row, IEnumerable<ReadOnlySeString?>> names
+    ) where Row : struct, IExcelRow<Row> {
+        ApplyIconNamesFrom<Row>(
+            (row) => new[] { icon(row) },
+            (row) => names(row).WithoutNull()
+        );
+    }
+
+    private void ApplyIconNamesFrom<Row>(
+        Func<Row, uint> icon,
+        Func<Row, IEnumerable<ReadOnlySeString>> names
+    ) where Row : struct, IExcelRow<Row> {
         ApplyIconNamesFrom((row) => new[] { icon(row) }, names);
     }
 }

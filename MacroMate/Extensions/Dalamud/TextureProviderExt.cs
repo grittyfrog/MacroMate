@@ -1,4 +1,5 @@
 using Dalamud.Interface.Textures;
+using Dalamud.Interface.Textures.Internal;
 using Dalamud.Plugin.Services;
 using MacroMate.Extensions.Dalamud.Macros;
 

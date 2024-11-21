@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using Lumina.Excel.Sheets;
 using MacroMate.Extensions.Dalamaud.Excel;
 using MacroMate.Extensions.Dotnet;
-using Lumina.Excel.GeneratedSheets;
 
 namespace MacroMate.Conditions;
 
@@ -44,7 +44,7 @@ public record class ContentCondition(
                 20, // Hall of the novice? Things like "Defeat an occupied Target!"
             };
             return Env.DataManager.GetExcelSheet<ContentFinderCondition>()!
-                .Where(cfc => cfc.Name != "" && cfc.ContentType.Row != 0 && !excludedContentTypes.Contains(cfc.ContentType.Row))
+                .Where(cfc => cfc.Name != "" && cfc.ContentType.RowId != 0 && !excludedContentTypes.Contains(cfc.ContentType.RowId))
                 .Select(cfc => new ContentCondition(cfc.RowId) as IValueCondition);
         }
     }

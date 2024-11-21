@@ -59,7 +59,7 @@ public class ConditionManager : IDisposable {
         this.loggedIn = true;
     }
 
-    private void OnLogout() {
+    private void OnLogout(int type, int code) {
         this.loggedIn = false;
     }
 }

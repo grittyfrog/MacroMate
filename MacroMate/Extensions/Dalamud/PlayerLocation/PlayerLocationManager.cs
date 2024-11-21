@@ -1,6 +1,6 @@
 using MacroMate.Extensions.Dalamaud.Excel;
 using MacroMate.Extensions.Dotnet;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
 namespace MacroMate.Extensions.Dalamud.PlayerLocation;
@@ -13,10 +13,13 @@ namespace MacroMate.Extensions.Dalamud.PlayerLocation;
 public unsafe class PlayerLocationManager {
     public ExcelId<ContentFinderCondition>? Content {
         get {
-            var territoryType = Env.DataManager.GetExcelSheet<TerritoryType>()!.GetRow(Env.ClientState.TerritoryType);
-            return territoryType
-                ?.Let(type => new ExcelId<ContentFinderCondition>(type.ContentFinderCondition.Row))
-                ?.DefaultIf(cfc => cfc.Id == 0);
+            var territoryTypeFound = Env.DataManager.GetExcelSheet<TerritoryType>().TryGetRow(Env.ClientState.TerritoryType, out var territoryType);
+            if (territoryTypeFound) {
+                var cfc = new ExcelId<ContentFinderCondition>(territoryType.ContentFinderCondition.RowId);
+                return cfc.DefaultIf(x => x.Id == 0);
+            }
+
+            return null;
         }
     }
 
@@ -27,7 +30,7 @@ public unsafe class PlayerLocationManager {
     public ExcelId<PlaceName>? TerritoryName {
         get {
             var territoryType = Env.DataManager.GetExcelSheet<TerritoryType>()!.GetRow(Env.ClientState.TerritoryType);
-            return territoryType?.Let(type => new ExcelId<PlaceName>(type.PlaceName.Row));
+            return new ExcelId<PlaceName>(territoryType.PlaceName.RowId);
         }
     }
 }

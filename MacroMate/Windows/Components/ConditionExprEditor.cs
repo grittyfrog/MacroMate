@@ -181,17 +181,28 @@ public class ConditionExprEditor : IDisposable {
         } else if (op.Condition is INumericCondition numCondition) {
             edited |= DrawNumConditionInputText(andIndex, opIndex, op, numCondition, ref conditionExpr);
         }
-
         if (conditionActive) {
-            var yesIcon = Env.TextureProvider.GetFromGameIcon(76574).GetWrapOrEmpty();
-            if (yesIcon != null) {
+            var yesIconAvailable = Env.TextureProvider.TryGetFromGameIcon(60081, out var yesIconTexture);
+            if (yesIconAvailable && yesIconTexture != null) {
                 ImGui.SameLine();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
-                ImGui.Image(yesIcon.ImGuiHandle, new Vector2(ImGui.GetTextLineHeight()));
+                ImGui.Image(
+                    yesIconTexture.GetWrapOrEmpty().ImGuiHandle,
+                    new Vector2(ImGui.GetTextLineHeight()),
+                    new Vector2(0, 0),
+                    new Vector2(1, 1),
+                    Colors.ActiveGreen
+                );
 
-                if (ImGui.IsItemHovered()) {
-                    ImGui.SetTooltip("This condition is active");
-                }
+            } else {
+                ImGui.SameLine();
+                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text("✓");
+            }
+
+            if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("This condition is active");
             }
         }
 

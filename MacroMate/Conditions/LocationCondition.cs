@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MacroMate.Extensions.Dalamaud.Excel;
 using MacroMate.Extensions.Dotnet;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 
 namespace MacroMate.Conditions;
 
@@ -75,8 +75,8 @@ public record class LocationCondition(
 
         public IEnumerable<IValueCondition> TopLevel() {
             return Env.DataManager.GetExcelSheet<TerritoryType>()!
-                .Where(territoryType => territoryType.PlaceName.Row != 0)
-                .DistinctBy(territoryType => territoryType.PlaceName.Row)
+                .Where(territoryType => territoryType.PlaceName.RowId != 0)
+                .DistinctBy(territoryType => territoryType.PlaceName.RowId)
                 .Select(territoryType =>
                     new LocationCondition(territoryId: territoryType.RowId) as IValueCondition
                 );
@@ -94,18 +94,19 @@ public record class LocationCondition(
             //
             // First, a territory might have multiple maps (i.e. multiple floors), so we need all of them
             var locationMaps = Env.DataManager.GetExcelSheet<Map>()!
-                .Where(map => map.TerritoryType.Row == locationCondition.territory.Id);
+                .Where(map => map.TerritoryType.RowId == locationCondition.territory.Id);
             var locationMapMarkerRanges = locationMaps.Select(map => (uint)map.MapMarkerRange).ToHashSet();
 
             // Now for each of the maps we want to pull all the named sub-locations that are part of
             // that map
-            return Env.DataManager.GetExcelSheet<MapMarker>()!
+            return Env.DataManager.GetSubrowExcelSheet<MapMarker>()!
+                .SelectMany(x => x)
                 .Where(mapMarker =>
-                    locationMapMarkerRanges.Contains(mapMarker.RowId) && mapMarker.PlaceNameSubtext.Row != 0
+                    locationMapMarkerRanges.Contains(mapMarker.RowId) && mapMarker.PlaceNameSubtext.RowId != 0
                 )
-                .DistinctBy(mapMarker => mapMarker.PlaceNameSubtext.Row)
+                .DistinctBy(mapMarker => mapMarker.PlaceNameSubtext.RowId)
                 .Select(mapMarker =>
-                    locationCondition with { regionOrSubAreaName = new ExcelId<PlaceName>(mapMarker.PlaceNameSubtext.Row) } as IValueCondition
+                    locationCondition with { regionOrSubAreaName = new ExcelId<PlaceName>(mapMarker.PlaceNameSubtext.RowId) } as IValueCondition
                 );
         }
     }

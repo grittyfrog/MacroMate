@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Game.ClientState.Objects.Types;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using Dalamud.Game.ClientState.Objects.Enums;
 using MacroMate.Extensions.Lumina;
 using System;
@@ -114,20 +114,20 @@ public record class TargetNameCondition(
         ObjectKind.None => null,
         ObjectKind.Player => null, // Not supported
         ObjectKind.BattleNpc =>
-            Env.DataManager.GetExcelSheet<BNpcName>()?.GetRow(TargetId)?.Singular?.Text(),
+            Env.DataManager.GetExcelSheet<BNpcName>()?.GetRow(TargetId).Singular.ExtractText(),
         ObjectKind.EventNpc =>
-            Env.DataManager.GetExcelSheet<ENpcResident>()?.GetRow(TargetId)?.Singular?.Text(),
+            Env.DataManager.GetExcelSheet<ENpcResident>()?.GetRow(TargetId).Singular.ExtractText(),
         ObjectKind.Treasure => null, // Not supported
         ObjectKind.Aetheryte => null,
         ObjectKind.GatheringPoint => null,
-        ObjectKind.EventObj => Env.DataManager.GetExcelSheet<EObjName>()?.GetRow(TargetId)?.Singular?.Text(),
+        ObjectKind.EventObj => Env.DataManager.GetExcelSheet<EObjName>()?.GetRow(TargetId).Singular.ExtractText(),
         ObjectKind.MountType => null,
-        ObjectKind.Companion => Env.DataManager.GetExcelSheet<Companion>()?.GetRow(TargetId)?.Singular?.Text(), // Minion
+        ObjectKind.Companion => Env.DataManager.GetExcelSheet<Companion>()?.GetRow(TargetId).Singular.ExtractText(), // Minion
         ObjectKind.Retainer => null,
         ObjectKind.Area => null,
         ObjectKind.Housing =>
             Env.DataManager.GetExcelSheet<HousingFurniture>()
-              ?.GetRow(TargetId)?.Item?.Value?.Name?.Text(),
+              ?.GetRow(TargetId).Item.ValueNullable?.Name.ExtractText(),
         ObjectKind.Cutscene => null,
         ObjectKind.CardStand => null,
         ObjectKind.Ornament => null,
@@ -179,7 +179,7 @@ public record class TargetNameCondition(
                 // for identical NPCs. But we still use the IDs under the hood to allow macros to work cross-language.
                 return Env.DataManager.GetExcelSheet<ENpcResident>()!
                     .Where(enpc => enpc.Singular != "")
-                    .DistinctBy(enpc => enpc.Singular.Text())
+                    .DistinctBy(enpc => enpc.Singular.ExtractText())
                     .Select(enpc => new TargetNameCondition(ObjectKind.EventNpc, enpc.RowId));
             }
 
@@ -187,7 +187,7 @@ public record class TargetNameCondition(
                 // Same as enpc -- identical names, different ids
                 return Env.DataManager.GetExcelSheet<EObjName>()!
                     .Where(eobj => eobj.Singular != "")
-                    .DistinctBy(eobj => eobj.Singular.Text())
+                    .DistinctBy(eobj => eobj.Singular.ExtractText())
                     .Select(eobj => new TargetNameCondition(ObjectKind.EventObj, eobj.RowId));
             }
 

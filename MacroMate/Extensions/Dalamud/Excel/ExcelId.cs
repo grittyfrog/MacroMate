@@ -2,7 +2,7 @@ using MacroMate.Extensions.Lumina;
 using Dalamud;
 using Dalamud.Game;
 using Lumina.Excel;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System.Text;
 using Dalamud.Game.ClientState.Objects.Enums;
 
@@ -20,7 +20,7 @@ public interface ExcelId {
 /// Modified version of https://github.com/goatcorp/Dalamud/blob/04fb5e01d13f3392faf9e731496aff9a175fee37/Dalamud/Game/ClientState/Resolvers/ExcelResolver%7BT%7D.cs#L10
 /// </summary>
 /// <typeparam name="T">The type of Lumina sheet to resolve.</typeparam>
-public record class ExcelId<T>(uint Id) : ExcelId where T : ExcelRow {
+public record class ExcelId<T>(uint Id) : ExcelId where T : struct, IExcelRow<T> {
     public ExcelId() : this(0) {}
 
     /// <summary>
@@ -37,16 +37,16 @@ public record class ExcelId<T>(uint Id) : ExcelId where T : ExcelRow {
 
     public string Name() {
         var gameData = GameData;
-        if (gameData is BNpcName bNpcName) { return bNpcName.Singular.Text(); }
-        if (gameData is ENpcResident eNpc) { return eNpc.Singular.Text(); }
-        if (gameData is ContentFinderCondition cfc) { return cfc.Name.Text(); }
+        if (gameData is BNpcName bNpcName) { return bNpcName.Singular.ExtractText(); }
+        if (gameData is ENpcResident eNpc) { return eNpc.Singular.ExtractText(); }
+        if (gameData is ContentFinderCondition cfc) { return cfc.Name.ExtractText(); }
         if (gameData is TerritoryType tt) {
-            if (tt.PlaceName.Value is {} pn) { return pn.Name.Text(); }
+            if (tt.PlaceName.Value is {} pn) { return pn.Name.ExtractText(); }
         }
-        if (gameData is PlaceName placeName) { return placeName.Name.Text(); }
-        if (gameData is ClassJob job) { return job.Abbreviation.Text(); }
+        if (gameData is PlaceName placeName) { return placeName.Name.ExtractText(); }
+        if (gameData is ClassJob job) { return job.Abbreviation.ExtractText(); }
         if (gameData is HousingFurniture hf) {
-            if (hf.Item.Value is {} hfItem) { return hfItem.Name.Text(); }
+            if (hf.Item.Value is {} hfItem) { return hfItem.Name.ExtractText(); }
         }
 
         return $"<unknown>";

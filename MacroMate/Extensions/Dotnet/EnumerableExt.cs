@@ -15,6 +15,10 @@ public static class EnumerableExt {
         return source.Where(item => item != null)!;
     }
 
+    public static IEnumerable<T> WithoutNull<T>(this IEnumerable<T?> source) where T : struct {
+        return source.Where(item => item.HasValue).Select(item => item!.Value);
+    }
+
     public static IEnumerable<B> SelectNonNull<A, B>(this IEnumerable<A?> source, Func<A?, B?> f) {
         return source.Select(a => f(a)).WithoutNull();
     }

@@ -13,7 +13,7 @@ public class ExcelIdXML {
         Id = excelId.Id;
     }
 
-    public ExcelId<T> ToReal<T>() where T : ExcelRow => new ExcelId<T>(Id);
+    public ExcelId<T> ToReal<T>() where T : struct, IExcelRow<T> => new ExcelId<T>(Id);
 
     [XmlIgnore]
     public XmlComment? Comment { get; set; } = null;
