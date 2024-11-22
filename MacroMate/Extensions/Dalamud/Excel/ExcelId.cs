@@ -26,14 +26,29 @@ public record class ExcelId<T>(uint Id) : ExcelId where T : struct, IExcelRow<T>
     /// <summary>
     /// Gets GameData linked to this excel row.
     /// </summary>
-    public T? GameData => Env.DataManager.GetExcelSheet<T>()?.GetRow(this.Id);
+    public T? GameData {
+        get {
+            if (Env.DataManager.GetExcelSheet<T>().TryGetRow(this.Id, out var row)) {
+                return row;
+            }
+
+            return null;
+        }
+    }
 
     /// <summary>
     /// Gets GameData linked to this excel row with the specified language.
     /// </summary>
     /// <param name="language">The language.</param>
     /// <returns>The ExcelRow in the specified language.</returns>
-    public T? GetWithLanguage(ClientLanguage language) => Env.DataManager.GetExcelSheet<T>(language)?.GetRow(this.Id);
+    public T? GetWithLanguage(ClientLanguage language) {
+        if (Env.DataManager.GetExcelSheet<T>(language).TryGetRow(this.Id, out var row)) {
+            return row;
+        }
+
+        return null;
+    }
+
 
     public string Name() {
         var gameData = GameData;

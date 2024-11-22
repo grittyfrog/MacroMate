@@ -29,8 +29,11 @@ public unsafe class PlayerLocationManager {
 
     public ExcelId<PlaceName>? TerritoryName {
         get {
-            var territoryType = Env.DataManager.GetExcelSheet<TerritoryType>()!.GetRow(Env.ClientState.TerritoryType);
-            return new ExcelId<PlaceName>(territoryType.PlaceName.RowId);
+            if (Env.DataManager.GetExcelSheet<TerritoryType>().TryGetRow(Env.ClientState.TerritoryType, out var territoryType)) {
+                return new ExcelId<PlaceName>(territoryType.PlaceName.RowId);
+            }
+
+            return null;
         }
     }
 }

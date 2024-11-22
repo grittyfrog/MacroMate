@@ -114,20 +114,20 @@ public record class TargetNameCondition(
         ObjectKind.None => null,
         ObjectKind.Player => null, // Not supported
         ObjectKind.BattleNpc =>
-            Env.DataManager.GetExcelSheet<BNpcName>()?.GetRow(TargetId).Singular.ExtractText(),
+            Env.DataManager.GetExcelSheet<BNpcName>()?.GetRowOrNull(TargetId)?.Singular.ExtractText(),
         ObjectKind.EventNpc =>
-            Env.DataManager.GetExcelSheet<ENpcResident>()?.GetRow(TargetId).Singular.ExtractText(),
+            Env.DataManager.GetExcelSheet<ENpcResident>()?.GetRowOrNull(TargetId)?.Singular.ExtractText(),
         ObjectKind.Treasure => null, // Not supported
         ObjectKind.Aetheryte => null,
         ObjectKind.GatheringPoint => null,
-        ObjectKind.EventObj => Env.DataManager.GetExcelSheet<EObjName>()?.GetRow(TargetId).Singular.ExtractText(),
+        ObjectKind.EventObj => Env.DataManager.GetExcelSheet<EObjName>()?.GetRowOrNull(TargetId)?.Singular.ExtractText(),
         ObjectKind.MountType => null,
-        ObjectKind.Companion => Env.DataManager.GetExcelSheet<Companion>()?.GetRow(TargetId).Singular.ExtractText(), // Minion
+        ObjectKind.Companion => Env.DataManager.GetExcelSheet<Companion>()?.GetRowOrNull(TargetId)?.Singular.ExtractText(), // Minion
         ObjectKind.Retainer => null,
         ObjectKind.Area => null,
         ObjectKind.Housing =>
             Env.DataManager.GetExcelSheet<HousingFurniture>()
-              ?.GetRow(TargetId).Item.ValueNullable?.Name.ExtractText(),
+              ?.GetRowOrNull(TargetId)?.Item.ValueNullable?.Name.ExtractText(),
         ObjectKind.Cutscene => null,
         ObjectKind.CardStand => null,
         ObjectKind.Ornament => null,
