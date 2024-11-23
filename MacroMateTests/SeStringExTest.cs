@@ -17,13 +17,15 @@ public class SeStringExTest {
         var input = new SeStringBuilder()
             .Append("Hello\nWorld")
             .Add(new NewLinePayload())
-            .Append("Goodbye")
+            .Append("Goodbye\n")
+            .Append("Another Line")
             .Build();
 
         var splits = input.SplitIntoLines().ToList();
-        splits[0].TextValue.ShouldBe("Hello");
-        splits[1].TextValue.ShouldBe("World");
-        splits[2].TextValue.ShouldBe("Goodbye");
+        splits[0].Payloads[0].ShouldBeOfType<TextPayload>().Text.ShouldBe("Hello");
+        splits[1].Payloads[0].ShouldBeOfType<TextPayload>().Text.ShouldBe("World");
+        splits[2].Payloads[0].ShouldBeOfType<TextPayload>().Text.ShouldBe("Goodbye");
+        splits[3].Payloads[0].ShouldBeOfType<TextPayload>().Text.ShouldBe("Another Line");
     }
 
     [Fact]
@@ -101,7 +103,6 @@ public class SeStringExTest {
             .Add(new NewLinePayload())
             .Append("Goodbye")
             .Build();
-
         var split = input.SplitIntoLines();
         var rejoined = SeStringEx.JoinFromLines(split);
 

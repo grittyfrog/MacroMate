@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using MacroMate.Extensions.Dotnet;
 
 namespace MacroMate.Extensions.Dalamud.Str;
 
@@ -28,9 +29,6 @@ public static partial class SeStringEx {
         }).ToList());
     }
 
-    public static int CountNewlines(this SeString self) =>
-        self.Payloads.Count(p => p.Type == PayloadType.NewLine);
-
     /// <summary>Get the number of characters used by this string</summary>
     public static int Length(this SeString self) {
         // TODO: Some payloads don't actually use the number of rendered characters
@@ -55,14 +53,15 @@ public static partial class SeStringEx {
         foreach (var payload in self.Payloads) {
             if (payload.Type == PayloadType.NewLine) {
                 if (chunk.Payloads.Count > 0) {
-                    yield return chunk;
+                    yield return chunk.CompressText();
                     chunk = new SeString();
                 }
             } else if (payload is TextPayload textPayload && textPayload.Text != null) {
                 var splits = textPayload.Text.Split(new string[] { "\r\n", "\n", "\r" }, System.StringSplitOptions.None);
                 chunk.Append(splits[0]);
-                foreach (var split in splits.Skip(1)) {
-                    yield return chunk;
+
+                foreach (var (split, index) in splits.WithIndex().Skip(1)) {
+                    yield return chunk.CompressText();
                     chunk = new SeString();
                     chunk.Append(split);
                 }
@@ -71,9 +70,33 @@ public static partial class SeStringEx {
             }
         }
 
-        if (chunk.Payloads.Count > 0) {
-            yield return chunk;
+        if (chunk.Payloads.Count > 0 && chunk.TextValue != "") {
+            yield return chunk.CompressText();
         }
+    }
+
+    /// <summary>
+    /// Joins adjacent text payloads
+    /// </summary>
+    public static SeString CompressText(this SeString self) {
+        var compressed = new SeString();
+
+        foreach (var payload in self.Payloads) {
+            if (compressed.Payloads.Count == 0) {
+                compressed.Append(payload);
+                continue;
+            }
+
+            var currentPayload = compressed.Payloads.Last();
+            if (currentPayload is TextPayload ctp && payload is TextPayload ntp) {
+                ctp.Text = ctp.Text + ntp.Text;
+                continue;
+            }
+
+            compressed.Append(payload);
+        }
+
+        return compressed;
     }
 
     /// <summary>

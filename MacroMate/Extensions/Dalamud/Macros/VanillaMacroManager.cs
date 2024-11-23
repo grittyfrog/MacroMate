@@ -66,7 +66,8 @@ public unsafe class VanillaMacroManager : IDisposable {
     }
 
     public void ExecuteMacro(SeString lines) {
-        if (lines.CountNewlines() > 15) {
+        var vanillaMacroLines = lines.SplitIntoLines();
+        if (vanillaMacroLines.Count() > 15) {
             Env.ChatGui.PrintError($"Macro has too many lines (max 15)");
             return;
         }
@@ -83,7 +84,7 @@ public unsafe class VanillaMacroManager : IDisposable {
         }
 
         try {
-            foreach (var (line, index) in lines.SplitIntoLines().WithIndex()) {
+            foreach (var (line, index) in vanillaMacroLines.WithIndex()) {
                 if (line.Payloads.Count == 0 || line.Encode().Length == 0) {
                     macro.Lines[index].Clear();
                     continue;
@@ -127,7 +128,8 @@ public unsafe class VanillaMacroManager : IDisposable {
 
         var macroText = vanillaMacro.Lines.Value;
 
-        if (macroText.CountNewlines() > 15) {
+        var vanillaMacroLines = vanillaMacro.Lines.Value.SplitIntoLines();
+        if (vanillaMacroLines.Count() > 15) {
             Env.ChatGui.PrintError($"Macro {macroSlot} has too many lines (max 15)");
             return;
         }
@@ -143,7 +145,7 @@ public unsafe class VanillaMacroManager : IDisposable {
                 line.Clear();
             }
 
-            foreach (var (line, index) in vanillaMacro.Lines.Value.SplitIntoLines().WithIndex()) {
+            foreach (var (line, index) in vanillaMacroLines.WithIndex()) {
                 var encoded = line.Encode();
                 if (line.Payloads.Count == 0 || encoded.Length == 0 || encoded.Any(c => c == 0))  {
                     continue;
