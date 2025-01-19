@@ -1,6 +1,8 @@
 using System;
+using System.Linq;
 using Dalamud.Game.Command;
 using Dalamud.Game.Text.SeStringHandling;
+using MacroMate.Extensions.Dotnet;
 using MacroMate.MacroTree;
 
 namespace MacroMate.Commands;
@@ -26,6 +28,7 @@ public class PluginCommandManager : IDisposable {
         var subarguments = subcommandIndex == -1 ? null : arguments.Substring(subcommandIndex).Trim();
         switch (subcommand) {
             case "open": OnOpenSubcommand(command, subarguments); break;
+            case "run": OnRunSubcommand(command, subarguments); break;
             case "help": PrintHelp(); return;
             default:
                 Env.ChatGui.PrintError($"unrecognized subcommand: '{subcommand}'");
@@ -41,6 +44,7 @@ public class PluginCommandManager : IDisposable {
             .Append("\n")
             .Append("Subcommands:\n")
             .Append("  open <path> - opens the macro identified by path (see Help for path details)\n")
+            .Append("  run <path> - runs the macro identified by path (see Help for path details)\n")
             .Append("  help - print this message")
             .Build();
 
@@ -65,6 +69,37 @@ public class PluginCommandManager : IDisposable {
                  return;
             }
         } catch (ArgumentException ex) {
+            Env.ChatGui.PrintError(ex.Message);
+        }
+    }
+
+    /// Syntax: `/mm run <path>`. Assumes `arguments` is the full path (to allow for spaces)
+    private void OnRunSubcommand(string command, string? path)
+    {
+        if (path == null || path == "") {
+            Env.ChatGui.PrintError($"Expected {command} run <path> (try {command} help)");
+            return;
+        }
+
+        try {
+            var parsedPath = MacroPath.ParseText(path);
+            var target = Env.MacroConfig.Root.Walk(parsedPath);
+            if (target == null) { Env.ChatGui.PrintError($"no node found at '{path}'"); return; }
+            if (target is MateNode.Macro macroTarget) {
+                var vanillaMacros = macroTarget.VanillaMacros().ToList();
+                if (vanillaMacros.Count == 1)
+                {
+                    Env.VanillaMacroManager.ExecuteMacro(vanillaMacros.First());
+                } else
+                {
+                    foreach (var vanillaMacro in vanillaMacros)
+                    {
+                        Env.VanillaMacroManager.ExecuteMacro(vanillaMacro);
+                    }
+                }
+            }
+        } catch (ArgumentException ex)
+        {
             Env.ChatGui.PrintError(ex.Message);
         }
     }
