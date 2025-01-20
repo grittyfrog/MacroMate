@@ -87,19 +87,13 @@ public class PluginCommandManager : IDisposable {
             if (target == null) { Env.ChatGui.PrintError($"no node found at '{path}'"); return; }
             if (target is MateNode.Macro macroTarget) {
                 var vanillaMacros = macroTarget.VanillaMacros().ToList();
-                if (vanillaMacros.Count == 1)
-                {
+                if (vanillaMacros.Count == 1) {
                     Env.VanillaMacroManager.ExecuteMacro(vanillaMacros.First());
-                } else
-                {
-                    foreach (var vanillaMacro in vanillaMacros)
-                    {
-                        Env.VanillaMacroManager.ExecuteMacro(vanillaMacro);
-                    }
+                } else {
+                    Env.ChatGui.PrintError("The run command can only be used with short macros (<= 15 lines)");
                 }
             }
-        } catch (ArgumentException ex)
-        {
+        } catch (ArgumentException ex) {
             Env.ChatGui.PrintError(ex.Message);
         }
     }
