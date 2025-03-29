@@ -36,6 +36,7 @@ public abstract partial class MateNode : TreeNode<MateNode> {
             IconId = this.IconId,
             Link = this.Link.Clone(),
             Lines = this.Lines,
+            LinkWithMacroChain = this.LinkWithMacroChain,
             ConditionExpr = ConditionExpr
         };
 
