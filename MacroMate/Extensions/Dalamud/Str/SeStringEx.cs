@@ -41,7 +41,7 @@ public static partial class SeStringEx {
     /// <summary>Get the length of the longest line in this string</summary>
     public static int MaxLineLength(this SeString self) {
         if (self.Payloads.Count == 0) { return 0; }
-        return Enumerable.Max(self.SplitIntoLines().Select(s => s.Length()));
+        return Enumerable.Max(self.SplitIntoLines().Select(s => s.Length()).DefaultIfEmpty());
     }
 
     public static bool IsNotEmpty(this SeString self) {
