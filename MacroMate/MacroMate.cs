@@ -19,7 +19,9 @@ public class MacroMate {
         Env.MacroConfig.ConfigChange += OnConfigChange;
 
         CurrentVanillaLinks = Env.MacroConfig.AllVanillaLinks();
-        Refresh(Env.ConditionManager.CurrentConditions());
+        Env.Framework.RunOnTick(() => {
+            Refresh(Env.ConditionManager.CurrentConditions());
+        });
     }
 
     public bool CanLoadConfig() => Env.SaveManager.CanLoad();
