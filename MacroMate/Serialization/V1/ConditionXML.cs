@@ -17,6 +17,7 @@ namespace MacroMate.Serialization.V1;
 [XmlInclude(typeof(JobConditionXML))]
 [XmlInclude(typeof(PvpStateConditionXML))]
 [XmlInclude(typeof(PlayerConditionConditionXML))]
+[XmlInclude(typeof(HUDLayoutConditionXML))]
 [XmlInclude(typeof(CurrentCraftMaxDurabilityConditionXML))]
 [XmlInclude(typeof(CurrentCraftMaxQualityConditionXML))]
 [XmlInclude(typeof(CurrentCraftDifficultyConditionXML))]
@@ -30,6 +31,7 @@ public abstract class ConditionXML {
         JobCondition cond => JobConditionXML.From(cond),
         PvpStateCondition cond => PvpStateConditionXML.From(cond),
         PlayerConditionCondition cond => PlayerConditionConditionXML.From(cond),
+        HUDLayoutCondition cond => HUDLayoutConditionXML.From(cond),
         CurrentCraftMaxDurabilityCondition cond => CurrentCraftMaxDurabilityConditionXML.From(cond),
         CurrentCraftMaxQualityCondition cond => CurrentCraftMaxQualityConditionXML.From(cond),
         CurrentCraftDifficultyCondition cond => CurrentCraftDifficultyConditionXML.From(cond),
@@ -178,6 +180,17 @@ public class PlayerConditionConditionXML : ConditionXML {
 
     public static PlayerConditionConditionXML From(PlayerConditionCondition cond) => new() {
         Conditions = cond.Conditions.ToList()
+    };
+}
+
+[XmlType("HUDLayoutCondition")]
+public class HUDLayoutConditionXML : ConditionXML {
+    public required int HudLayout { get; set; }
+
+    public override ICondition ToReal() => new HUDLayoutCondition(HudLayout);
+
+    public static HUDLayoutConditionXML From(HUDLayoutCondition cond) => new() {
+        HudLayout = cond.HudLayout
     };
 }
 
