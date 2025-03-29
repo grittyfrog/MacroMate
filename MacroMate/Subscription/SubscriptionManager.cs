@@ -42,16 +42,17 @@ public class SubscriptionManager {
         Env.MacroConfig.ConfigChange += OnMacroMateConfigChanged;
         Env.Framework.Update += this.OnFrameworkUpdate;
 
-        // If we are already logged run the "First Login" to make plugin reloads consistent with
-        // first login.
-        if (Env.ClientState.LocalPlayer != null) {
-            OnLogin();
-        }
-
-
         Env.ClientState.Login += OnLogin;
 
-        OnMacroMateConfigChanged();
+        // If we are already logged run the "First Login" to make plugin reloads consistent with
+        // first login.
+        Env.Framework.RunOnTick(() => {
+            if (Env.ClientState.LocalPlayer != null) {
+                OnLogin();
+            }
+
+            OnMacroMateConfigChanged();
+        });
     }
 
     public void ScheduleCheckForUpdates(MateNode.SubscriptionGroup sGroup) {

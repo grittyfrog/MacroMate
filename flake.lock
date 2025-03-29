@@ -3,11 +3,11 @@
     "dalamud-distrib-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1732147569,
-        "narHash": "sha256-M59TE7Gjoeed3YNC5fNt8xXxJ7F29/uqgdxPIzaY9aY=",
+        "lastModified": 1743202546,
+        "narHash": "sha256-lhuJSjhHWc02W2d50GpdtHqOxYvwJcb+KTXUAnZnj9Y=",
         "owner": "goatcorp",
         "repo": "dalamud-distrib",
-        "rev": "28a41f0e381ac8101ac5c882c5d4b5523fb2c697",
+        "rev": "d852a0745c3ea0ce4a91e8005da3afa6ef18bf3c",
         "type": "github"
       },
       "original": {
@@ -36,11 +36,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1732014248,
-        "narHash": "sha256-y/MEyuJ5oBWrWAic/14LaIr/u5E0wRVzyYsouYY3W6w=",
+        "lastModified": 1743095683,
+        "narHash": "sha256-gWd4urRoLRe8GLVC/3rYRae1h+xfQzt09xOfb0PaHSk=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "23e89b7da85c3640bbc2173fe04f4bd114342367",
+        "rev": "5e5402ecbcb27af32284d4a62553c019a3a49ea6",
         "type": "github"
       },
       "original": {

@@ -21,7 +21,7 @@
           stdenv = pkgs.clangStdenv;
         };
 
-        dotnet = pkgs.dotnet-sdk_8;
+        dotnet = pkgs.dotnet-sdk_9;
 
         dalamud-channel = "/stg"; # See https://github.com/goatcorp/dalamud-distrib
 

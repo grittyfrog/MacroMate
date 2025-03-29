@@ -11,7 +11,9 @@ public class ConditionManager : IDisposable {
     public event OnConditionChangeDelegate? ConditionChange;
 
     public ConditionManager() {
-        this.loggedIn = Env.ClientState.LocalPlayer != null;
+        Env.Framework.RunOnTick(() => {
+            this.loggedIn = Env.ClientState.LocalPlayer != null;
+        });
 
         Env.Framework.Update += this.OnFrameworkUpdate;
         Env.ClientState.Login += this.OnLogin;
