@@ -30,7 +30,7 @@ jobs:
         run: nix develop --command .github/scripts/prepare-alpha.sh
 
       - name: Upload Alpha Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: MacroMate-release-${{ github.sha }}
           path: |
