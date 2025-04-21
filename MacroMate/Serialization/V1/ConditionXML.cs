@@ -5,7 +5,10 @@ using System.Xml;
 using System.Xml.Serialization;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
+using Lumina.Excel.Sheets;
 using MacroMate.Conditions;
+using MacroMate.Extensions.Dalamaud.Excel;
+using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dotnet;
 
 namespace MacroMate.Serialization.V1;
@@ -17,6 +20,7 @@ namespace MacroMate.Serialization.V1;
 [XmlInclude(typeof(JobConditionXML))]
 [XmlInclude(typeof(PvpStateConditionXML))]
 [XmlInclude(typeof(PlayerConditionConditionXML))]
+[XmlInclude(typeof(PlayerStatusConditionXML))]
 [XmlInclude(typeof(HUDLayoutConditionXML))]
 [XmlInclude(typeof(CurrentCraftMaxDurabilityConditionXML))]
 [XmlInclude(typeof(CurrentCraftMaxQualityConditionXML))]
@@ -31,6 +35,7 @@ public abstract class ConditionXML {
         JobCondition cond => JobConditionXML.From(cond),
         PvpStateCondition cond => PvpStateConditionXML.From(cond),
         PlayerConditionCondition cond => PlayerConditionConditionXML.From(cond),
+        PlayerStatusCondition cond => PlayerStatusConditionXML.From(cond),
         HUDLayoutCondition cond => HUDLayoutConditionXML.From(cond),
         CurrentCraftMaxDurabilityCondition cond => CurrentCraftMaxDurabilityConditionXML.From(cond),
         CurrentCraftMaxQualityCondition cond => CurrentCraftMaxQualityConditionXML.From(cond),
@@ -182,6 +187,41 @@ public class PlayerConditionConditionXML : ConditionXML {
         Conditions = cond.Conditions.ToList()
     };
 }
+
+[XmlType("PlayerStatusCondition")]
+public class PlayerStatusConditionXML : ConditionXML {
+    public enum StatusTypeXML { NONE, WELL_FED, MEDICATED }
+
+    public required StatusTypeXML StatusType { get; set; }
+    public ExcelIdXML? ItemId { get; set; }
+    public bool? IsHighQuality { get; set; }
+
+    public override ICondition ToReal() {
+        if (StatusType == StatusTypeXML.NONE) { return new PlayerStatusCondition(new List<WellFedOrMedicated>()); }
+
+        var wellFedOrMed = new WellFedOrMedicated(
+            ConsumableType: StatusType == StatusTypeXML.WELL_FED ? ItemInfo.Type.FOOD : ItemInfo.Type.MEDICINE,
+            Item: ItemId?.ToReal<Item>() ?? new ExcelId<Item>(0),
+            IsHighQuality: IsHighQuality ?? false
+        );
+
+        return new PlayerStatusCondition(new List<WellFedOrMedicated>() { wellFedOrMed });
+    }
+
+    public static PlayerStatusConditionXML From(PlayerStatusCondition cond) {
+        if (cond.Statuses.Count == 0) {
+            return new PlayerStatusConditionXML { StatusType = StatusTypeXML.NONE };
+        }
+
+        var status = cond.Statuses.First();
+        return new PlayerStatusConditionXML {
+            StatusType = status.ConsumableType == ItemInfo.Type.FOOD ? StatusTypeXML.WELL_FED : StatusTypeXML.MEDICATED,
+            ItemId = new ExcelIdXML(status.Item),
+            IsHighQuality = status.IsHighQuality
+        };
+    }
+}
+
 
 [XmlType("HUDLayoutCondition")]
 public class HUDLayoutConditionXML : ConditionXML {

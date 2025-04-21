@@ -20,7 +20,7 @@ public class MacroMate {
 
         CurrentVanillaLinks = Env.MacroConfig.AllVanillaLinks();
         Env.Framework.RunOnTick(() => {
-            Refresh(Env.ConditionManager.CurrentConditions());
+            Refresh(Env.ConditionManager.Conditions);
         });
     }
 
@@ -38,7 +38,7 @@ public class MacroMate {
         if (backupConfig != null) {
             Env.MacroConfig.OverwiteFrom(backupConfig);
             Env.SaveManager.Save(Env.MacroConfig);
-            Refresh(Env.ConditionManager.CurrentConditions());
+            Refresh(Env.ConditionManager.Conditions);
         }
     }
 
@@ -88,7 +88,7 @@ public class MacroMate {
         Env.SaveManager.Save(Env.MacroConfig);
 
         Env.PluginLog.Verbose("Config Change Detected - Refreshing Macro Bindings");
-        Refresh(Env.ConditionManager.CurrentConditions());
+        Refresh(Env.ConditionManager.Conditions);
     }
 
     private void OnConditionChange(CurrentConditions conditions) {

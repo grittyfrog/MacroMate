@@ -44,7 +44,7 @@ public class ConditionExprEditor : IDisposable {
         foreach (var (andExpression, andIndex) in conditionExpr.options.WithIndex()) {
             ImGui.PushID(andIndex);
 
-            var andExpressionSatisfied = andExpression.SatisfiedBy(Env.ConditionManager.CurrentConditions());
+            var andExpressionSatisfied = andExpression.SatisfiedBy(Env.ConditionManager.Conditions);
             if (andExpressionSatisfied) {
                 ImGui.PushStyleColor(ImGuiCol.TableBorderStrong, Colors.ActiveGreen);
             } else {
@@ -102,7 +102,7 @@ public class ConditionExprEditor : IDisposable {
                         conditionExpr = conditionExpr.UpdateAnd(
                             andIndex,
                             (and) => and.AddConditions(
-                                Env.ConditionManager.CurrentConditions().Enumerate().Select(c => c.WrapInDefaultOp())
+                                Env.ConditionManager.Conditions.Enumerate().Select(c => c.WrapInDefaultOp())
                             )
                         );
                         edited = true;
@@ -151,7 +151,7 @@ public class ConditionExprEditor : IDisposable {
 
         var editValueConditionPopup = DrawEditValueConditionPopup(andIndex, opIndex, ref conditionExpr, ref edited);
 
-        var conditionActive = op.SatisfiedBy(Env.ConditionManager.CurrentConditions());
+        var conditionActive = op.SatisfiedBy(Env.ConditionManager.Conditions);
         if (conditionActive) {
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.ActiveGreen);
         } else {

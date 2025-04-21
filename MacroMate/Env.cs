@@ -21,6 +21,7 @@ using System.Net.Http;
 using Dalamud.Networking.Http;
 using System.Net;
 using MacroMate.Subscription;
+using MacroMate.Extensions.Dalamud;
 
 namespace MacroMate;
 
@@ -52,6 +53,7 @@ public class Env {
         ContextMenuManager = new ContextMenuManager();
         SynthesisManager = new SynthesisManager();
         ConditionManager = new ConditionManager();
+        ItemIndex = new ItemIndex();
         SubscriptionManager = new SubscriptionManager();
 
         MacroMate = new MacroMate();
@@ -158,6 +160,8 @@ public class Env {
     public static ContextMenuManager ContextMenuManager { get; private set; } = null!;
 
     public static SynthesisManager SynthesisManager { get; private set; } = null!;
+
+    public static ItemIndex ItemIndex { get; private set; } = null!;
 
     public static SubscriptionManager SubscriptionManager { get; private set; } = null!;
 }

@@ -156,7 +156,7 @@ unsafe class ValueConditionEditorColumn : IDisposable {
                     if (
                         ImGui.Selectable(
                             condition.NarrowName,
-                            condition.Equals(SelectedCondition),
+                            condition == SelectedCondition,
                             ImGuiSelectableFlags.DontClosePopups
                         )
                     ) {

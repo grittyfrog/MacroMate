@@ -26,14 +26,12 @@ public class ConditionManager : IDisposable {
         Env.ClientState.Logout -= this.OnLogout;
     }
 
-    public CurrentConditions CurrentConditions() {
-        return currentConditions ?? QueryCurrentConditions();
-    }
+    public CurrentConditions Conditions { get => currentConditions ?? CurrentConditions.Query(); }
 
     private void OnFrameworkUpdate(IFramework framework) {
         if (!loggedIn) { return; }
 
-        var newConditions = QueryCurrentConditions();
+        var newConditions = CurrentConditions.Query();
         if (currentConditions != newConditions) {
             currentConditions = newConditions;
 
@@ -41,21 +39,6 @@ public class ConditionManager : IDisposable {
                 ConditionChange(currentConditions);
             }
         }
-    }
-
-    private CurrentConditions QueryCurrentConditions() {
-        return new CurrentConditions(
-            content: ContentCondition.Current(),
-            location: LocationCondition.Current(),
-            targetNpc: TargetNameCondition.Current(),
-            job: JobCondition.Current(),
-            pvpState: PvpStateCondition.Current(),
-            playerCondition: PlayerConditionCondition.Current(),
-            hudLayoutCondition: HUDLayoutCondition.Current(),
-            craftMaxDurabilityCondition: CurrentCraftMaxDurabilityCondition.Current(),
-            craftMaxQualityCondition: CurrentCraftMaxQualityCondition.Current(),
-            craftDifficultyCondition: CurrentCraftDifficultyCondition.Current()
-        );
     }
 
     private void OnLogin() {

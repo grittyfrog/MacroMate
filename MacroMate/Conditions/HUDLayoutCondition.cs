@@ -30,7 +30,7 @@ public record class HUDLayoutCondition(
 
     class ConditionFactory : IValueCondition.IFactory {
         public string ConditionName => "HUD Layout";
-        public string ExpressionName => "HUD Layout";
+        public string ExpressionName => "HUDLayout";
 
         public IValueCondition? Current() => HUDLayoutCondition.Current();
         public IValueCondition Default() => new HUDLayoutCondition();
