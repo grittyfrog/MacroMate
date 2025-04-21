@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Game.ClientState.Conditions;
 using Generator.Equals;
+using MacroMate.Extensions.Dalamud.Game.ClientState.Conditions;
 using MacroMate.Extensions.Dotnet;
 
 namespace MacroMate.Conditions;
@@ -35,7 +36,7 @@ public partial record class PlayerConditionCondition(
 
     private static List<ConditionFlag> IgnoredFlags = new() {
         ConditionFlag.None,
-        ConditionFlag.Unknown57,
+        ConditionFlag.MountOrOrnamentTransition,
         ConditionFlag.Unknown96,
         ConditionFlag.Unknown99,
     };
@@ -56,7 +57,7 @@ public partial record class PlayerConditionCondition(
     public string ValueName {
         get {
             if (Conditions.Count == 0) { return "<no conditions>"; }
-            if (Conditions.Count == 1) { return Conditions.First().ToString(); }
+            if (Conditions.Count == 1) { return Conditions.First().Name(); }
             return string.Join("\n", Conditions);
         }
     }
@@ -98,7 +99,7 @@ public partial record class PlayerConditionCondition(
         public IEnumerable<IValueCondition> TopLevel() {
             return Enum.GetValues<ConditionFlag>()
                 .Let(flags => ApplyFlagEquivalence(flags))
-                .OrderBy(flag => Enum.GetName(flag))
+                .OrderBy(flag => flag.Name())
                 .Select(flag => new PlayerConditionCondition(new HashSet<ConditionFlag>() { flag }));
         }
     }
