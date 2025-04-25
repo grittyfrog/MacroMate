@@ -96,6 +96,12 @@ public unsafe class VanillaMacroManager : IDisposable {
                     continue;
                 }
 
+                if (encoded.Length > 0 && line.TextValue.StartsWith("/nextmacro"))
+                {
+                    macro.Lines[index].Clear();
+                    continue;
+                }
+                
                 fixed (byte* encodedPtr = encoded) {
                     macro.Lines[index].SetString(encodedPtr);
                 }
