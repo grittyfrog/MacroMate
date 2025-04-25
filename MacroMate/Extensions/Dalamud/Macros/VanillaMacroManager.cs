@@ -96,8 +96,7 @@ public unsafe class VanillaMacroManager : IDisposable {
                     continue;
                 }
 
-                if (encoded.Length > 0 && line.TextValue.StartsWith("/nextmacro"))
-                {
+                if (encoded.Length > 0 && line.TextValue.StartsWith("/nextmacro")) {
                     macro.Lines[index].Clear();
                     continue;
                 }
