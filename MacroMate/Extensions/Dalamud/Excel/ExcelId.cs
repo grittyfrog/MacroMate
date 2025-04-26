@@ -64,6 +64,7 @@ public record class ExcelId<T>(uint Id) : ExcelId where T : struct, IExcelRow<T>
             if (hf.Item.Value is {} hfItem) { return hfItem.Name.ExtractText(); }
         }
         if (gameData is Item item) { return item.Name.ExtractText(); }
+        if (gameData is World world) { return world.Name.ExtractText(); }
 
         return $"<unknown>";
     }

@@ -36,4 +36,13 @@ public unsafe class PlayerLocationManager {
             return null;
         }
     }
+
+    public ExcelId<World>? CurrentWorld {
+        get {
+            var player = Env.ClientState.LocalPlayer;
+            if (player == null) { return null; }
+
+            return new ExcelId<World>(player.CurrentWorld.RowId);
+        }
+    }
 }

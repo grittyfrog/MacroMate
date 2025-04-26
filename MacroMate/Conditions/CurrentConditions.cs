@@ -17,7 +17,8 @@ public record CurrentConditions(
     HUDLayoutCondition? hudLayoutCondition,
     CurrentCraftMaxDurabilityCondition? craftMaxDurabilityCondition,
     CurrentCraftMaxQualityCondition? craftMaxQualityCondition,
-    CurrentCraftDifficultyCondition? craftDifficultyCondition
+    CurrentCraftDifficultyCondition? craftDifficultyCondition,
+    WorldCondition? world
 ) {
     public static CurrentConditions Empty => new CurrentConditions(
         content: null,
@@ -30,7 +31,8 @@ public record CurrentConditions(
         hudLayoutCondition: null,
         craftMaxDurabilityCondition: null,
         craftMaxQualityCondition: null,
-        craftDifficultyCondition: null
+        craftDifficultyCondition: null,
+        world: null
     );
 
     public IEnumerable<ICondition> Enumerate() {
@@ -45,6 +47,7 @@ public record CurrentConditions(
         if (craftMaxDurabilityCondition != null) { yield return craftMaxDurabilityCondition; }
         if (craftMaxQualityCondition != null) { yield return craftMaxQualityCondition; }
         if (craftDifficultyCondition != null) { yield return craftDifficultyCondition; }
+        if (world != null) { yield return world; }
     }
 
     public static CurrentConditions Query() {
@@ -59,7 +62,8 @@ public record CurrentConditions(
             hudLayoutCondition: HUDLayoutCondition.Current(),
             craftMaxDurabilityCondition: CurrentCraftMaxDurabilityCondition.Current(),
             craftMaxQualityCondition: CurrentCraftMaxQualityCondition.Current(),
-            craftDifficultyCondition: CurrentCraftDifficultyCondition.Current()
+            craftDifficultyCondition: CurrentCraftDifficultyCondition.Current(),
+            world: WorldCondition.Current()
         );
     }
 }

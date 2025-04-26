@@ -43,7 +43,8 @@ public interface ICondition {
             HUDLayoutCondition.Factory,
             CurrentCraftMaxDurabilityCondition.Factory,
             CurrentCraftMaxQualityCondition.Factory,
-            CurrentCraftDifficultyCondition.Factory
+            CurrentCraftDifficultyCondition.Factory,
+            WorldCondition.Factory
         };
     }
 }

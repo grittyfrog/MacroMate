@@ -25,6 +25,7 @@ namespace MacroMate.Serialization.V1;
 [XmlInclude(typeof(CurrentCraftMaxDurabilityConditionXML))]
 [XmlInclude(typeof(CurrentCraftMaxQualityConditionXML))]
 [XmlInclude(typeof(CurrentCraftDifficultyConditionXML))]
+[XmlInclude(typeof(WorldConditionXML))]
 public abstract class ConditionXML {
     public abstract ICondition ToReal();
 
@@ -40,6 +41,7 @@ public abstract class ConditionXML {
         CurrentCraftMaxDurabilityCondition cond => CurrentCraftMaxDurabilityConditionXML.From(cond),
         CurrentCraftMaxQualityCondition cond => CurrentCraftMaxQualityConditionXML.From(cond),
         CurrentCraftDifficultyCondition cond => CurrentCraftDifficultyConditionXML.From(cond),
+        WorldCondition cond => WorldConditionXML.From(cond),
         _ => throw new Exception($"Unexpected condition {condition}")
     };
 }
@@ -266,5 +268,23 @@ public class CurrentCraftDifficultyConditionXML : ConditionXML {
 
     public static CurrentCraftDifficultyConditionXML From(CurrentCraftDifficultyCondition cond) => new() {
         Difficulty = cond.Difficulty
+    };
+}
+
+[XmlType("WorldCondition")]
+public class WorldConditionXML : ConditionXML {
+    [XmlAnyElement("WorldComment")]
+    public XmlComment? WorldComment { get => World?.Comment; set {} }
+    public required ExcelIdXML? World { get; set; }
+    public required bool? DataCenterOnly { get; set; }
+
+    public override ICondition ToReal() => new WorldCondition(
+        World: World?.ToReal<World>() ?? new ExcelId<World>(21),
+        DataCenterOnly: DataCenterOnly ?? false
+    );
+
+    public static WorldConditionXML From(WorldCondition condition) => new WorldConditionXML {
+        World = new ExcelIdXML(condition.World),
+        DataCenterOnly = condition.DataCenterOnly
     };
 }
