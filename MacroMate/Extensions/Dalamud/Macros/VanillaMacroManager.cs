@@ -141,24 +141,14 @@ public unsafe class VanillaMacroManager : IDisposable {
 
         try {
             var macro = raptureMacroModule->GetMacro((uint)macroSet, macroSlot);
+            macro->Clear();
             macro->Name.SetString(vanillaMacro.Title.Truncate(20));
 
             bool iconIdChanged = macro->IconId != vanillaMacro.IconId;
             macro->SetIcon(vanillaMacro.IconId);
 
-            foreach (ref var line in macro->Lines) {
-                line.Clear();
-            }
-
             foreach (var (line, index) in vanillaMacroLines.WithIndex()) {
-                var encoded = line.Encode();
-                if (line.Payloads.Count == 0 || encoded.Length == 0 || encoded.Any(c => c == 0))  {
-                    continue;
-                }
-
-                fixed (byte* encodedPtr = encoded) {
-                    macro->Lines[index].SetString(encodedPtr);
-                }
+                macro->Lines[index].SetString(line.EncodeWithNullTerminator());
             }
 
             // Update the MacroAddon if it's open (since it doesn't auto-refresh)
