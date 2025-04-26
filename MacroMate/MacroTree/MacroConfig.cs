@@ -36,6 +36,16 @@ public class MacroConfig {
         }
     }
 
+    /// If true, all newly created macros will have "Use Macro Chain" active.
+    private bool _useMacroChainByDefault = false;
+    public bool UseMacroChainByDefault {
+        get { return _useMacroChainByDefault; }
+        set {
+            _useMacroChainByDefault = value;
+            NotifyEdit();
+        }
+    }
+
     public bool _enableSubscriptionAutoCheckForUpdates;
     public bool EnableSubscriptionAutoCheckForUpdates {
         get { return _enableSubscriptionAutoCheckForUpdates; }

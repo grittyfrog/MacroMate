@@ -66,16 +66,38 @@ public class SettingsWindow : Window {
             bool showVanillaMacroContextMenusHovered = false;
             ImGui.TextUnformatted("Show Vanilla Macro Context Menus");
             showVanillaMacroContextMenusHovered |= ImGui.IsItemHovered();
-
             ImGui.TableNextColumn();
             var showVanillaMacroContextMenus = Env.MacroConfig.ShowVanillaMacroContextMenus;
             if (ImGui.Checkbox("###settingswindow/show_vanilla_macro_context_menus", ref showVanillaMacroContextMenus)) {
                 Env.MacroConfig.ShowVanillaMacroContextMenus = showVanillaMacroContextMenus;
             }
             showVanillaMacroContextMenusHovered |= ImGui.IsItemHovered();
-
             if (showVanillaMacroContextMenusHovered) {
                 ImGui.SetTooltip("When disabled no Macro Mate context menu actions will be shown in the vanilla macro UI");
+            }
+
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+            ImGui.AlignTextToFramePadding();
+            bool macroChainAvailable = Env.PluginInterface.MacroChainPluginIsLoaded();
+            bool useMacroChainByDefaultHovered = false;
+            if (!macroChainAvailable) { ImGui.BeginDisabled(); }
+            ImGui.TextUnformatted("Use Macro Chain by Default");
+            useMacroChainByDefaultHovered |= ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled);
+
+            ImGui.TableNextColumn();
+            var useMacroChainByDefault = Env.MacroConfig.UseMacroChainByDefault;
+            if (ImGui.Checkbox("###settingswindow/use_macro_chain_by_default", ref useMacroChainByDefault)) {
+                Env.MacroConfig.UseMacroChainByDefault = useMacroChainByDefault;
+            }
+            if (!macroChainAvailable) { ImGui.EndDisabled(); }
+            useMacroChainByDefaultHovered |= ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled);
+            if (useMacroChainByDefaultHovered) {
+                if (macroChainAvailable) {
+                    ImGui.SetTooltip("If enabled, all newly created macros will enable the 'Use Macro Chain' setting");
+                } else {
+                    ImGui.SetTooltip("This setting is only availalbe if Macro Chain is installed.");
+                }
             }
 
             ImGui.TableNextRow();

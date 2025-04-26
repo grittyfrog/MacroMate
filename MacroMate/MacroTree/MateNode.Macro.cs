@@ -16,7 +16,7 @@ public abstract partial class MateNode : TreeNode<MateNode> {
     public class Macro : MateNode {
         public uint IconId { get; set; } = 66001;
         public MacroLink Link = new();
-        public bool LinkWithMacroChain = false;
+        public bool LinkWithMacroChain = Env.MacroConfig.UseMacroChainByDefault;
         public string Notes { get; set; } = "";
 
         private SeString _lines = "";
