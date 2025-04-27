@@ -68,6 +68,12 @@ public class MainWindow : Window, IDisposable {
         RefreshSearch();
     }
 
+    public IEnumerable<MateNode.Macro> EditModeTargets() {
+        return Env.MacroConfig.Root.Values()
+            .OfType<MateNode.Macro>()
+            .Where(target => editModeMacroSelection.Contains(target.Id));
+    }
+
     public override void Draw() {
         DrawMenuBar();
         DrawEditModeActions();
@@ -162,32 +168,15 @@ public class MainWindow : Window, IDisposable {
     }
 
     private void DrawEditModeActions() {
-        var macroLinkPicker = Env.PluginWindowManager.MacroLinkPicker;
-        var macroLinkPickerScope = "main_window_edit_mode_macro_link_picker";
         var bulkDeletePopup = DrawBulkDeletePopupModel();
 
         // Edit Buttons (if in edit mode)
         if (editMode) {
-            if (ImGui.Button("Set Icon")) {
-                Env.PluginWindowManager.IconPicker.Open(selectedIconId => {
-                    foreach (var macro in Env.MacroConfig.Root.Values().OfType<MateNode.Macro>()) {
-                        if (editModeMacroSelection.Contains(macro.Id)) {
-                            macro.IconId = selectedIconId;
-                        }
-                    }
-                    Env.MacroConfig.NotifyEdit();
-                });
-            };
-            if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip("Set the icon of all selected macros");
-            }
-
-            ImGui.SameLine();
-            if (ImGui.Button("Set Link")) {
-                macroLinkPicker.ShowOrFocus(macroLinkPickerScope);
+            if (ImGui.Button("Bulk Edit")) {
+                Env.PluginWindowManager.MacroBulkEditWindow.ShowOrFocus();
             }
             if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip("Set the link of all selected macros");
+                ImGui.SetTooltip("Tool to apply bulk changes to all selected macros");
             }
 
             ImGui.SameLine();
@@ -197,15 +186,6 @@ public class MainWindow : Window, IDisposable {
             if (ImGui.IsItemHovered()) {
                 ImGui.SetTooltip("Bulk delete all selected macros");
             }
-        }
-
-        while (macroLinkPicker.TryDequeueEvent(macroLinkPickerScope, out MacroLink? link)) {
-            foreach (var macro in Env.MacroConfig.Root.Values().OfType<MateNode.Macro>()) {
-                if (editModeMacroSelection.Contains(macro.Id)) {
-                    macro.Link = link!;
-                }
-            }
-            Env.MacroConfig.NotifyEdit();
         }
     }
 

@@ -11,9 +11,10 @@ public class PluginWindowManager : IDisposable {
     public MainWindow MainWindow { get; private set; } = new();
     public SettingsWindow SettingsWindow { get; private set; } = new();
     public MacroWindow MacroWindow { get; private set; } = new();
+    public MacroLinkPicker MacroLinkPicker { get; private set; } = new();
+    public MacroBulkEditWindow MacroBulkEditWindow { get; private set; } = new();
     public IconPickerDialog IconPicker { get; private set; } = new();
     public CharPickerDialog CharPicker { get; private set; } = new();
-    public MacroLinkPicker MacroLinkPicker { get; private set; } = new();
     public BackupWindow BackupWindow { get; private set; } = new();
     public SubscriptionStatusWindow SubscriptionStatusWindow { get; private set; } = new();
     public HelpWindow HelpWindow { get; private set; } = new();
@@ -23,9 +24,10 @@ public class PluginWindowManager : IDisposable {
         Env.WindowSystem.AddWindow(MainWindow);
         Env.WindowSystem.AddWindow(SettingsWindow);
         Env.WindowSystem.AddWindow(MacroWindow);
+        Env.WindowSystem.AddWindow(MacroBulkEditWindow);
+        Env.WindowSystem.AddWindow(MacroLinkPicker);
         Env.WindowSystem.AddWindow(IconPicker);
         Env.WindowSystem.AddWindow(CharPicker);
-        Env.WindowSystem.AddWindow(MacroLinkPicker);
         Env.WindowSystem.AddWindow(BackupWindow);
         Env.WindowSystem.AddWindow(SubscriptionStatusWindow);
         Env.WindowSystem.AddWindow(HelpWindow);

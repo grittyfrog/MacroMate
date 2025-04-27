@@ -24,13 +24,6 @@ public class MacroLinkPicker : EventWindow<MacroLink> {
 
     public override void Draw() {
         if (MacroLinkEditor.DrawEditor(ref macroLink)) {
-        }
-
-        var buttonSize = new Vector2(
-            ImGui.GetContentRegionAvail().X,
-            ImGui.GetTextLineHeight() * 2
-        );
-        if (ImGui.Button($"Apply - {macroLink.Name()}", buttonSize)) {
             EnqueueEvent(macroLink);
         }
     }

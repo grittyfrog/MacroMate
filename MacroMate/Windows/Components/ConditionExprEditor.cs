@@ -182,25 +182,7 @@ public class ConditionExprEditor : IDisposable {
             edited |= DrawNumConditionInputText(andIndex, opIndex, op, numCondition, ref conditionExpr);
         }
         if (conditionActive) {
-            var yesIconAvailable = Env.TextureProvider.TryGetFromGameIcon(60081, out var yesIconTexture);
-            if (yesIconAvailable && yesIconTexture != null) {
-                ImGui.SameLine();
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
-                ImGui.Image(
-                    yesIconTexture.GetWrapOrEmpty().ImGuiHandle,
-                    new Vector2(ImGui.GetTextLineHeight()),
-                    new Vector2(0, 0),
-                    new Vector2(1, 1),
-                    Colors.ActiveGreen
-                );
-
-            } else {
-                ImGui.SameLine();
-                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
-                ImGui.AlignTextToFramePadding();
-                ImGui.Text("✓");
-            }
-
+            ImGuiExt.YesIcon();
             if (ImGui.IsItemHovered()) {
                 ImGui.SetTooltip("This condition is active");
             }

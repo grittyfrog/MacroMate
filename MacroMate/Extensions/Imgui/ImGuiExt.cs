@@ -184,4 +184,25 @@ public static class ImGuiExt {
         Spinner(label, radius, thickness, color);
         ImGui.SameLine(startPos - ImGui.GetStyle().FramePadding.X);
     }
+
+    public static void YesIcon() {
+        var yesIconAvailable = Env.TextureProvider.TryGetFromGameIcon(60081, out var yesIconTexture);
+        if (yesIconAvailable && yesIconTexture != null) {
+            ImGui.SameLine();
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
+            ImGui.Image(
+                yesIconTexture.GetWrapOrEmpty().ImGuiHandle,
+                new Vector2(ImGui.GetTextLineHeight()),
+                new Vector2(0, 0),
+                new Vector2(1, 1),
+                Colors.ActiveGreen
+            );
+
+        } else {
+            ImGui.SameLine();
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text("✓");
+        }
+    }
 }

@@ -125,7 +125,6 @@ public class MacroWindow : Window, IDisposable {
                     if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
                         ImGui.SetTooltip("Use Macro Chain when binding long macros. This setting is only availalbe if Macro Chain is installed.");
                     }
-
                 }
                 ImGui.EndMenu();
             }
