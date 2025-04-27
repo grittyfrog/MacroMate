@@ -29,6 +29,10 @@ public interface ConditionExpr {
             return this with { options = options.RemoveAt(andIndex) };
         }
 
+        public Conditions.ConditionExpr.Or DeleteWhere(Predicate<Conditions.ConditionExpr.And> predicate) {
+            return this with { options = options.RemoveAll(predicate).ToImmutableList() };
+        }
+
         public Conditions.ConditionExpr.Or UpdateAnd(
             int andIndex,
             Func<Conditions.ConditionExpr.And, Conditions.ConditionExpr.And> update

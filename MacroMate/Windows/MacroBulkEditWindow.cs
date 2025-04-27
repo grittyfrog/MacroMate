@@ -180,7 +180,8 @@ internal interface MacroBulkEdit : IDisposable {
             SetUseMacroChainBulkEditAction.Factory,
             SetAlwaysLinkedBulkEditAction.Factory,
             AddConditionBulkEditAction.Factory,
-            RemoveConditionBulkEditAction.Factory
+            RemoveConditionBulkEditAction.Factory,
+            RemoveAllConditionsBulkEditAction.Factory
         };
     }
 }
@@ -383,9 +384,9 @@ internal class RemoveConditionBulkEditAction : MacroBulkEdit {
     }
 
     public void ApplyTo(MateNode.Macro target) {
-        target.ConditionExpr = target.ConditionExpr.UpdateAnds(and => {
-            return and.DeleteWhere(op => op.Condition.ConditionName == ConditionName);
-        });
+        target.ConditionExpr = target.ConditionExpr
+            .UpdateAnds(and => and.DeleteWhere(op => op.Condition.ConditionName == ConditionName))
+            .DeleteWhere(and => and.opExprs.Count == 0);
     }
 
     public void Dispose() {}
@@ -395,5 +396,29 @@ internal class RemoveConditionBulkEditAction : MacroBulkEdit {
     internal class BulkEditFactory : MacroBulkEdit.Factory {
         public string Name => "Remove Condition";
         public MacroBulkEdit Create() => new RemoveConditionBulkEditAction();
+    }
+}
+
+
+internal class RemoveAllConditionsBulkEditAction : MacroBulkEdit {
+    public bool Applied { get; set; } = false;
+
+    public void DrawLabel(int id) {
+        ImGui.TextUnformatted("Remove All Conditions");
+    }
+
+    public void DrawValue(int id) {}
+
+    public void ApplyTo(MateNode.Macro target) {
+        target.ConditionExpr = ConditionExpr.Or.Empty;
+    }
+
+    public void Dispose() {}
+
+    public MacroBulkEdit.Factory FactoryRef => Factory;
+    public static MacroBulkEdit.Factory Factory => new BulkEditFactory();
+    internal class BulkEditFactory : MacroBulkEdit.Factory {
+        public string Name => "Remove All Conditions";
+        public MacroBulkEdit Create() => new RemoveAllConditionsBulkEditAction();
     }
 }
