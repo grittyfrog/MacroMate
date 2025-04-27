@@ -18,7 +18,11 @@ public interface ConditionExpr {
         }
 
         public Conditions.ConditionExpr.Or AddAnd() {
-            return this with { options = options.Add(Conditions.ConditionExpr.And.Empty) };
+            return AddAnd(Conditions.ConditionExpr.And.Empty);
+        }
+
+        public Conditions.ConditionExpr.Or AddAnd(ConditionExpr.And and) {
+            return this with { options = options.Add(and) };
         }
 
         public Conditions.ConditionExpr.Or DeleteAnd(int andIndex)  {

@@ -200,13 +200,26 @@ public class MacroWindow : Window, IDisposable {
             )
         );
 
+        var edited = false;
         var alwaysLinked = Macro!.AlwaysLinked;
+        if (ImGui.Checkbox("Always Linked", ref alwaysLinked)) {
+            edited |= true;
+        }
+        if (ImGui.IsItemHovered()) {
+            ImGui.SetTooltip("Ignore all conditions and always link this macro");
+        }
+
         var conditionExpr = Macro!.ConditionExpr;
-        if (conditionExprEditor.DrawEditor(ref alwaysLinked, ref conditionExpr)) {
+        if (!alwaysLinked) {
+            edited |= conditionExprEditor.DrawEditor(ref conditionExpr);
+        }
+
+        if (edited) {
             Macro.AlwaysLinked = alwaysLinked;
             Macro.ConditionExpr = conditionExpr;
             Save();
         };
+
         ImGui.PopID();
     }
 

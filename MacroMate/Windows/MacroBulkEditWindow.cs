@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -6,11 +7,13 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
+using MacroMate.Conditions;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Macros;
 using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.Imgui;
 using MacroMate.MacroTree;
+using MacroMate.Windows.Components;
 
 namespace MacroMate.Windows;
 
@@ -56,6 +59,7 @@ public class MacroBulkEditWindow : Window {
             ImGuiExt.HoverTooltip("Applies all bulk edit actions to all selected macros");
 
             if (ImGui.MenuItem("Clear All")) {
+                foreach (var edit in Edits) { edit.Dispose(); }
                 Edits.Clear();
             }
             ImGuiExt.HoverTooltip("Clear all bulk edit actions");
@@ -63,6 +67,7 @@ public class MacroBulkEditWindow : Window {
             if (Edits.Any(edit => edit.Applied)) {
                 if (ImGui.MenuItem("Clear Applied")) {
                     var toClearIndicies = Edits.WithIndex().Where(v => v.item.Applied).Select(v => v.index);
+                    foreach (var editIndex in toClearIndicies) { Edits[editIndex].Dispose(); }
                     Edits.RemoveAllAt(toClearIndicies);
                 }
                 ImGuiExt.HoverTooltip("Clear applied bulk edit actions");
@@ -79,7 +84,7 @@ public class MacroBulkEditWindow : Window {
         ImGuiExt.HoverTooltip("These actions will be applied to all selected macros after clicking 'Apply'");
         ImGui.Separator();
 
-        if (ImGui.BeginTable("macro_bulk_edit_window/actions_table", 3)) {
+        if (ImGui.BeginTable("macro_bulk_edit_window/actions_table", 3, ImGuiTableFlags.RowBg)) {
             ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch);
             ImGui.TableSetupColumn("Delete", ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn("Applied", ImGuiTableColumnFlags.WidthFixed);
@@ -109,6 +114,7 @@ public class MacroBulkEditWindow : Window {
                 ImGui.PopID();
             }
 
+            foreach (var editIndex in indiciesToRemove) { Edits[editIndex].Dispose(); }
             Edits.RemoveAllAt(indiciesToRemove);
 
             ImGui.EndTable();
@@ -148,7 +154,7 @@ public class MacroBulkEditWindow : Window {
 // <summary>
 // A single bulk-edit action that can be added in the bulk edit window.
 // </summary>
-internal interface MacroBulkEdit {
+internal interface MacroBulkEdit : IDisposable {
     public string Name { get => FactoryRef.Name; }
     public bool Applied { get; set; }
 
@@ -164,7 +170,9 @@ internal interface MacroBulkEdit {
         public static IEnumerable<MacroBulkEdit.Factory> All = new[] {
             SetIconMacroBulkEdit.Factory,
             SetLinkBulkEditAction.Factory,
-            SetUseMacroChainBulkEditAction.Factory
+            SetUseMacroChainBulkEditAction.Factory,
+            SetAlwaysLinkedBulkEditAction.Factory,
+            AddConditionBulkEditAction.Factory
         };
     }
 }
@@ -204,6 +212,8 @@ internal class SetIconMacroBulkEdit : MacroBulkEdit {
         target.IconId = IconId;
     }
 
+    public void Dispose() {}
+
     public MacroBulkEdit.Factory FactoryRef => Factory;
     public static MacroBulkEdit.Factory Factory => new BulkEditFactory();
     internal class BulkEditFactory : MacroBulkEdit.Factory {
@@ -237,6 +247,8 @@ internal class SetLinkBulkEditAction : MacroBulkEdit {
         target.Link = MacroLink.Clone();
     }
 
+    public void Dispose() {}
+
     public MacroBulkEdit.Factory FactoryRef => Factory;
     public static MacroBulkEdit.Factory Factory => new BulkEditFactory();
     internal class BulkEditFactory : MacroBulkEdit.Factory {
@@ -263,10 +275,77 @@ internal class SetUseMacroChainBulkEditAction : MacroBulkEdit {
         target.LinkWithMacroChain = UseMacroChain;
     }
 
+    public void Dispose() {}
+
     public MacroBulkEdit.Factory FactoryRef => Factory;
     public static MacroBulkEdit.Factory Factory => new BulkEditFactory();
     internal class BulkEditFactory : MacroBulkEdit.Factory {
         public string Name => "Set 'Use Macro Chain'";
         public MacroBulkEdit Create() => new SetUseMacroChainBulkEditAction();
+    }
+}
+
+
+internal class SetAlwaysLinkedBulkEditAction : MacroBulkEdit {
+    public bool Applied { get; set; } = false;
+    public bool AlwaysLinked { get; set; } = new();
+
+    public void Draw(int id) {
+        ImGui.TextUnformatted("Set 'Always Linked' to");
+        ImGui.SameLine();
+        var buttonText = AlwaysLinked ? "Enabled" : "Disabled";
+        if (ImGui.Button(buttonText)) {
+            AlwaysLinked = !AlwaysLinked;
+        }
+    }
+
+    public void ApplyTo(MateNode.Macro target) {
+        target.AlwaysLinked = AlwaysLinked;
+    }
+
+    public void Dispose() {}
+
+    public MacroBulkEdit.Factory FactoryRef => Factory;
+    public static MacroBulkEdit.Factory Factory => new BulkEditFactory();
+    internal class BulkEditFactory : MacroBulkEdit.Factory {
+        public string Name => "Set 'Always Linked'";
+        public MacroBulkEdit Create() => new SetAlwaysLinkedBulkEditAction();
+    }
+}
+
+
+internal class AddConditionBulkEditAction : MacroBulkEdit {
+    private ConditionExprEditor conditionExprEditor = new();
+
+    public bool Applied { get; set; } = false;
+    public ConditionExpr.Or ConditionExpr { get; set; } = Conditions.ConditionExpr.Or.Empty;
+
+    public void Draw(int id) {
+        ImGui.TextUnformatted("Add Condition");
+        ImGui.SameLine();
+
+        ImGui.BeginGroup();
+
+        var conditionExpr = ConditionExpr;
+        if (conditionExprEditor.DrawEditor(ref conditionExpr)) {
+            ConditionExpr = conditionExpr;
+        }
+
+        ImGui.EndGroup();
+    }
+
+    public void ApplyTo(MateNode.Macro target) {
+        foreach (var andExpr in ConditionExpr.options) {
+            target.AddAndExpression(andExpr);
+        }
+    }
+
+    public void Dispose() { conditionExprEditor.Dispose(); }
+
+    public MacroBulkEdit.Factory FactoryRef => Factory;
+    public static MacroBulkEdit.Factory Factory => new BulkEditFactory();
+    internal class BulkEditFactory : MacroBulkEdit.Factory {
+        public string Name => "Add Condition";
+        public MacroBulkEdit Create() => new AddConditionBulkEditAction();
     }
 }

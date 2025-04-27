@@ -19,21 +19,8 @@ public class ConditionExprEditor : IDisposable {
         conditionEditor.Dispose();
     }
 
-    public bool DrawEditor(ref bool alwaysLinked, ref ConditionExpr.Or conditionExpr) {
-        var edited = false;
-
-        if (ImGui.Checkbox("Always Linked", ref alwaysLinked)) {
-            edited = true;
-        }
-        if (ImGui.IsItemHovered()) {
-            ImGui.SetTooltip("Ignore all conditions and always link this macro");
-        }
-
-        if (!alwaysLinked) {
-            edited |= DrawOrCondition(ref conditionExpr);
-        }
-
-        return edited;
+    public bool DrawEditor(ref ConditionExpr.Or conditionExpr) {
+        return DrawOrCondition(ref conditionExpr);
     }
 
     private bool DrawOrCondition(ref ConditionExpr.Or conditionExpr) {

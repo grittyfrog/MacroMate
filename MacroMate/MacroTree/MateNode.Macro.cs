@@ -122,6 +122,11 @@ public abstract partial class MateNode : TreeNode<MateNode> {
             return this;
         }
 
+        public Macro AddAndExpression(ConditionExpr.And andExpr) {
+            ConditionExpr = this.ConditionExpr.AddAnd(andExpr);
+            return this;
+        }
+
         public Macro DeleteAndExpression(int andIndex) {
             ConditionExpr = ConditionExpr.DeleteAnd(andIndex);
             return this;
