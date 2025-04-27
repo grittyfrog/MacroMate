@@ -38,6 +38,16 @@ public interface ConditionExpr {
             return this with { options = options.SetItem(andIndex, updatedAndCondition) };
         }
 
+        /// <summary>
+        /// Update all `And` expressions
+        /// </summary>
+        public Conditions.ConditionExpr.Or UpdateAnds(
+            Func<Conditions.ConditionExpr.And, Conditions.ConditionExpr.And> update
+        ) {
+            var updated = options.Select(and => update(and)).ToImmutableList();
+            return this with { options = updated };
+        }
+
         public static Conditions.ConditionExpr.Or Single(IValueCondition condition) =>
             new ConditionExpr.Or(
                 ImmutableList.Create(new ConditionExpr.And(ImmutableList.Create(condition.WrapInDefaultOp())))
@@ -62,6 +72,9 @@ public interface ConditionExpr {
             condition.Aggregate(this, (and, condition) => and.AddCondition(condition));
         public Conditions.ConditionExpr.And DeleteCondition(int conditionIndex) =>
             this with { opExprs = opExprs.RemoveAt(conditionIndex) };
+        public Conditions.ConditionExpr.And DeleteWhere(Predicate<OpExpr> predicate) {
+            return this with { opExprs = opExprs.RemoveAll(predicate) };
+        }
 
         public Conditions.ConditionExpr.And SetCondition(int conditionIndex, ICondition condition) {
             var currentCondition = opExprs[conditionIndex];

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -42,6 +43,17 @@ public static class ImGuiExt {
             foreach (var enumValue in Enum.GetValues(typeof(T)).OfType<T>()) {
                 if (ImGui.Selectable(enumValue.ToString(), enumValue.Equals(currentValue))) {
                     currentValue = enumValue;
+                }
+            }
+            ImGui.EndCombo();
+        }
+    }
+
+    public static void StringCombo(string label, IEnumerable<string> values, ref string currentValue) {
+        if (ImGui.BeginCombo(label, currentValue.ToString())) {
+            foreach (var strValue in values) {
+                if (ImGui.Selectable(strValue, strValue.Equals(currentValue))) {
+                    currentValue = strValue;
                 }
             }
             ImGui.EndCombo();

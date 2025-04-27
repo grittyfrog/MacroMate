@@ -84,18 +84,24 @@ public class MacroBulkEditWindow : Window {
         ImGuiExt.HoverTooltip("These actions will be applied to all selected macros after clicking 'Apply'");
         ImGui.Separator();
 
-        if (ImGui.BeginTable("macro_bulk_edit_window/actions_table", 3, ImGuiTableFlags.RowBg)) {
-            ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch);
+        if (ImGui.BeginTable("macro_bulk_edit_window/actions_table", 4, ImGuiTableFlags.RowBg)) {
+            ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthFixed);
+            ImGui.TableSetupColumn("Value", ImGuiTableColumnFlags.WidthStretch);
             ImGui.TableSetupColumn("Delete", ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn("Applied", ImGuiTableColumnFlags.WidthFixed);
 
             var indiciesToRemove = new List<int>();
             foreach (var (edit, index) in Edits.WithIndex()) {
                 ImGui.PushID(index);
+
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 ImGui.AlignTextToFramePadding();
-                edit.Draw(index);
+                edit.DrawLabel(index);
+
+                ImGui.TableNextColumn();
+                ImGui.AlignTextToFramePadding();
+                edit.DrawValue(index);
 
                 ImGui.TableNextColumn();
                 ImGui.AlignTextToFramePadding();
@@ -158,7 +164,8 @@ internal interface MacroBulkEdit : IDisposable {
     public string Name { get => FactoryRef.Name; }
     public bool Applied { get; set; }
 
-    public void Draw(int id);
+    public void DrawLabel(int id);
+    public void DrawValue(int id);
     public void ApplyTo(MateNode.Macro target);
 
     public Factory FactoryRef { get; }
@@ -172,7 +179,8 @@ internal interface MacroBulkEdit : IDisposable {
             SetLinkBulkEditAction.Factory,
             SetUseMacroChainBulkEditAction.Factory,
             SetAlwaysLinkedBulkEditAction.Factory,
-            AddConditionBulkEditAction.Factory
+            AddConditionBulkEditAction.Factory,
+            RemoveConditionBulkEditAction.Factory
         };
     }
 }
@@ -181,29 +189,26 @@ internal class SetIconMacroBulkEdit : MacroBulkEdit {
     public bool Applied { get; set; } = false;
     public uint IconId { get; set; } = VanillaMacro.DefaultIconId;
 
-    public void Draw(int id) {
+    public void DrawLabel(int id) {
         ImGui.TextUnformatted("Set Icon to");
-        var setIconHovered = ImGui.IsItemHovered();
-        var setIconClicked = ImGui.IsItemClicked(ImGuiMouseButton.Left);
-        var setIconRightClicked = ImGui.IsItemClicked(ImGuiMouseButton.Right);
-        ImGui.SameLine();
+    }
+
+    public void DrawValue(int id) {
         var macroIcon = Env.TextureProvider.GetMacroIcon(IconId).GetWrapOrEmpty();
         if (macroIcon != null) {
             ImGui.Image(macroIcon.ImGuiHandle, new Vector2(ImGui.GetTextLineHeight()) * 1.3f);
         }
-        setIconHovered |= ImGui.IsItemHovered();
-        setIconClicked |= ImGui.IsItemClicked(ImGuiMouseButton.Left);
-        setIconRightClicked |= ImGui.IsItemClicked(ImGuiMouseButton.Right);
 
-        if (setIconHovered) {
+        if (ImGui.IsItemHovered()) {
             ImGui.SetTooltip("Click to change, right click to reset to default");
         }
-        if (setIconClicked) {
+
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Left)) {
             Env.PluginWindowManager.IconPicker.Open(IconId, selectedIconId => {
                 IconId = selectedIconId;
             });
         }
-        if (setIconRightClicked) {
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
             IconId = VanillaMacro.DefaultIconId;
         }
     }
@@ -227,11 +232,13 @@ internal class SetLinkBulkEditAction : MacroBulkEdit {
     public bool Applied { get; set; } = false;
     public MacroLink MacroLink { get; set; } = new();
 
-    public void Draw(int id) {
+    public void DrawLabel(int id) {
+        ImGui.TextUnformatted("Set Link to");
+    }
+
+    public void DrawValue(int id) {
         var macroLinkPickerScope = $"set_link_bulk_edit_action_{id}";
 
-        ImGui.TextUnformatted("Set Link to");
-        ImGui.SameLine();
         if (ImGui.Button(MacroLink.Name())) {
             Env.PluginWindowManager.MacroLinkPicker.ShowOrFocus(macroLinkPickerScope);
         }
@@ -262,9 +269,11 @@ internal class SetUseMacroChainBulkEditAction : MacroBulkEdit {
     public bool Applied { get; set; } = false;
     public bool UseMacroChain { get; set; } = new();
 
-    public void Draw(int id) {
+    public void DrawLabel(int id) {
         ImGui.TextUnformatted("Set 'Use Macro Chain' to");
-        ImGui.SameLine();
+    }
+
+    public void DrawValue(int id) {
         var buttonText = UseMacroChain ? "Enabled" : "Disabled";
         if (ImGui.Button(buttonText)) {
             UseMacroChain = !UseMacroChain;
@@ -290,9 +299,11 @@ internal class SetAlwaysLinkedBulkEditAction : MacroBulkEdit {
     public bool Applied { get; set; } = false;
     public bool AlwaysLinked { get; set; } = new();
 
-    public void Draw(int id) {
+    public void DrawLabel(int id) {
         ImGui.TextUnformatted("Set 'Always Linked' to");
-        ImGui.SameLine();
+    }
+
+    public void DrawValue(int id) {
         var buttonText = AlwaysLinked ? "Enabled" : "Disabled";
         if (ImGui.Button(buttonText)) {
             AlwaysLinked = !AlwaysLinked;
@@ -320,10 +331,11 @@ internal class AddConditionBulkEditAction : MacroBulkEdit {
     public bool Applied { get; set; } = false;
     public ConditionExpr.Or ConditionExpr { get; set; } = Conditions.ConditionExpr.Or.Empty;
 
-    public void Draw(int id) {
+    public void DrawLabel(int id) {
         ImGui.TextUnformatted("Add Condition");
-        ImGui.SameLine();
+    }
 
+    public void DrawValue(int id) {
         ImGui.BeginGroup();
 
         var conditionExpr = ConditionExpr;
@@ -347,5 +359,41 @@ internal class AddConditionBulkEditAction : MacroBulkEdit {
     internal class BulkEditFactory : MacroBulkEdit.Factory {
         public string Name => "Add Condition";
         public MacroBulkEdit Create() => new AddConditionBulkEditAction();
+    }
+}
+
+
+internal class RemoveConditionBulkEditAction : MacroBulkEdit {
+    private static List<string> Conditions = ICondition.IFactory.All.Select(c => c.ConditionName).ToList();
+
+    public bool Applied { get; set; } = false;
+    public string ConditionName = Conditions.First();
+
+    public void DrawLabel(int id) {
+        ImGui.TextUnformatted("Remove Condition");
+    }
+
+    public void DrawValue(int id) {
+        ImGuiExt.StringCombo("", Conditions, ref ConditionName);
+        var hovered = ImGui.IsItemHovered();
+
+        if (hovered) {
+            ImGui.SetTooltip("Removes all conditions of this type from selected macros");
+        }
+    }
+
+    public void ApplyTo(MateNode.Macro target) {
+        target.ConditionExpr = target.ConditionExpr.UpdateAnds(and => {
+            return and.DeleteWhere(op => op.Condition.ConditionName == ConditionName);
+        });
+    }
+
+    public void Dispose() {}
+
+    public MacroBulkEdit.Factory FactoryRef => Factory;
+    public static MacroBulkEdit.Factory Factory => new BulkEditFactory();
+    internal class BulkEditFactory : MacroBulkEdit.Factory {
+        public string Name => "Remove Condition";
+        public MacroBulkEdit Create() => new RemoveConditionBulkEditAction();
     }
 }
