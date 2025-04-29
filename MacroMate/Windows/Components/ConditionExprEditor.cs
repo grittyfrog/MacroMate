@@ -19,11 +19,14 @@ public class ConditionExprEditor : IDisposable {
         conditionEditor.Dispose();
     }
 
-    public bool DrawEditor(ref ConditionExpr.Or conditionExpr) {
-        return DrawOrCondition(ref conditionExpr);
+    public bool DrawEditor(ref ConditionExpr.Or conditionExpr, bool singleAndCondition = false) {
+        return DrawOrCondition(ref conditionExpr, singleAndCondition);
     }
 
-    private bool DrawOrCondition(ref ConditionExpr.Or conditionExpr) {
+    private bool DrawOrCondition(
+        ref ConditionExpr.Or conditionExpr,
+        bool singleAndCondition = false
+    ) {
         var edited = false;
         var tableFlags = ImGuiTableFlags.RowBg | ImGuiTableFlags.Borders | ImGuiTableFlags.SizingFixedFit;
 
@@ -98,9 +101,11 @@ public class ConditionExprEditor : IDisposable {
                         ImGui.SetTooltip("Adds all currently active conditions to this or condition");
                     }
 
-                    if (ImGui.Selectable("Delete##delete_condition_expr_and")) {
-                        conditionExpr = conditionExpr.DeleteAnd(andIndex);
-                        edited = true;
+                    if (!singleAndCondition) {
+                        if (ImGui.Selectable("Delete##delete_condition_expr_and")) {
+                            conditionExpr = conditionExpr.DeleteAnd(andIndex);
+                            edited = true;
+                        }
                     }
                     ImGui.EndPopup();
                 }
@@ -115,12 +120,14 @@ public class ConditionExprEditor : IDisposable {
         ImGui.PopStyleVar();
 
         // Add a "And" expression button
-        if (ImGuiComponents.IconButton(FontAwesomeIcon.Plus.ToIconString())) {
-            conditionExpr = conditionExpr.AddAnd();
-            edited = true;
-        }
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
-            ImGui.SetTooltip("Add 'Or' group");
+        if (!singleAndCondition) {
+            if (ImGuiComponents.IconButton(FontAwesomeIcon.Plus.ToIconString())) {
+                conditionExpr = conditionExpr.AddAnd();
+                edited = true;
+            }
+            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+                ImGui.SetTooltip("Add 'Or' group");
+            }
         }
 
         return edited;

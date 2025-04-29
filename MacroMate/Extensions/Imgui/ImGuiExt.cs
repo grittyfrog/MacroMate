@@ -60,6 +60,22 @@ public static class ImGuiExt {
         }
     }
 
+    public static void NullableStringCombo(
+        string label,
+        string nullValue,
+        IEnumerable<string?> values,
+        ref string? currentValue
+    ) {
+        if (ImGui.BeginCombo(label, currentValue?.ToString() ?? nullValue)) {
+            foreach (var strValue in values) {
+                if (ImGui.Selectable(strValue ?? nullValue, strValue == currentValue)) {
+                    currentValue = strValue;
+                }
+            }
+            ImGui.EndCombo();
+        }
+    }
+
     public static bool InputTextInt(string label, ref int value) {
         string buffer = value.ToString();
         bool inputTextEdited = ImGui.InputText(label, ref buffer, 255, ImGuiInputTextFlags.CharsDecimal);

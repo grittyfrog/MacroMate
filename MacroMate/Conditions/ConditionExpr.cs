@@ -56,6 +56,9 @@ public interface ConditionExpr {
             new ConditionExpr.Or(
                 ImmutableList.Create(new ConditionExpr.And(ImmutableList.Create(condition.WrapInDefaultOp())))
             );
+
+        public static Conditions.ConditionExpr.Or Single(ConditionExpr.And andCondition) =>
+            new ConditionExpr.Or(ImmutableList.Create(andCondition));
     }
 
     public record class And(ImmutableList<OpExpr> opExprs) : Conditions.ConditionExpr {
@@ -88,6 +91,10 @@ public interface ConditionExpr {
                 Env.PluginLog.Error($"Could not set condition {condition} on index {conditionIndex}");
                 return this;
             }
+        }
+
+        public Conditions.ConditionExpr.And Merge(Conditions.ConditionExpr.And other) {
+            return this with { opExprs = opExprs.AddRange(other.opExprs) };
         }
 
         public Conditions.ConditionExpr.And SetOperator(int conditionIndex, OpExpr op) {
