@@ -4,7 +4,7 @@ using MacroMate.Conditions;
 namespace MacroMate.Serialization.V1;
 
 public class OpExprXML {
-    public enum OpName { IS, LT, LTE, GT, GTE }
+    public enum OpName { IS, IS_NOT, LT, LTE, GT, GTE }
 
     public required ConditionXML Condition { get; set; }
     public required OpName Op { get; set; }
@@ -15,6 +15,7 @@ public class OpExprXML {
         // All-condition operators
         switch (Op) {
             case OpName.IS: return new OpExpr.Is(condition);
+            case OpName.IS_NOT: return new OpExpr.IsNot(condition);
         }
 
         // Numeric operators
@@ -33,6 +34,7 @@ public class OpExprXML {
     public static OpExprXML From(OpExpr op) {
         var opName = op switch {
             OpExpr.Is  => OpName.IS,
+            OpExpr.IsNot => OpName.IS_NOT,
             OpExpr.Lt  => OpName.LT,
             OpExpr.Lte => OpName.LTE,
             OpExpr.Gt  => OpName.GT,

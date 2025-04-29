@@ -13,6 +13,7 @@ public interface OpExpr {
         if (condition is IValueCondition valueCondition) {
             switch (this) {
                 case OpExpr.Is isOp: updated = isOp with { Condition = valueCondition }; break;
+                case OpExpr.IsNot isNotOp: updated = isNotOp with { Condition = valueCondition }; break;
             }
         } else if (condition is INumericCondition numCondition) {
             switch (this) {
@@ -30,6 +31,7 @@ public interface OpExpr {
     /// Wraps condition in all valid operators
     public static IEnumerable<OpExpr> WrapAll(ICondition condition) {
         yield return new OpExpr.Is(condition);
+        yield return new OpExpr.IsNot(condition);
 
         if (condition is INumericCondition numCondition) {
             yield return new OpExpr.Lt(numCondition);
@@ -52,6 +54,20 @@ public interface OpExpr {
             return false;
         }
     };
+
+    /// True if the current conditions are not the same as condition
+    public record class IsNot(ICondition Condition) : OpExpr {
+        public string Text => "is not";
+        public bool SatisfiedBy(CurrentConditions currentConditions) {
+            if (Condition is IValueCondition valueCondition) {
+                return !valueCondition.SatisfiedBy(currentConditions);
+            } else if (Condition is INumericCondition numCondition) {
+                return numCondition.SatisfiedBy(currentConditions, (cur, val) => cur != val);
+            }
+
+            return false;
+        }
+    }
 
     /// True if the current conditions are less than to num
     public record class Lt(INumericCondition Num) : OpExpr {
