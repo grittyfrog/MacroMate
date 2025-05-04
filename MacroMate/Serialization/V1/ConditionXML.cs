@@ -25,6 +25,7 @@ namespace MacroMate.Serialization.V1;
 [XmlInclude(typeof(CurrentCraftMaxDurabilityConditionXML))]
 [XmlInclude(typeof(CurrentCraftMaxQualityConditionXML))]
 [XmlInclude(typeof(CurrentCraftDifficultyConditionXML))]
+[XmlInclude(typeof(MapMarkerLocationConditionXML))]
 [XmlInclude(typeof(WorldConditionXML))]
 public abstract class ConditionXML {
     public abstract ICondition ToReal();
@@ -41,6 +42,7 @@ public abstract class ConditionXML {
         CurrentCraftMaxDurabilityCondition cond => CurrentCraftMaxDurabilityConditionXML.From(cond),
         CurrentCraftMaxQualityCondition cond => CurrentCraftMaxQualityConditionXML.From(cond),
         CurrentCraftDifficultyCondition cond => CurrentCraftDifficultyConditionXML.From(cond),
+        MapMarkerLocationCondition cond => MapMarkerLocationConditionXML.From(cond),
         WorldCondition cond => WorldConditionXML.From(cond),
         _ => throw new Exception($"Unexpected condition {condition}")
     };
@@ -268,6 +270,21 @@ public class CurrentCraftDifficultyConditionXML : ConditionXML {
 
     public static CurrentCraftDifficultyConditionXML From(CurrentCraftDifficultyCondition cond) => new() {
         Difficulty = cond.Difficulty
+    };
+}
+
+[XmlType("MapMarkerLocationCondition")]
+public class MapMarkerLocationConditionXML : ConditionXML {
+    [XmlAnyElement("TerritoryComment")]
+    public XmlComment? TerritoryComment { get => Territory?.Comment; set {} }
+    public required ExcelIdXML? Territory { get; set; }
+
+    public override ICondition ToReal() => new MapMarkerLocationCondition(
+        Territory?.ToReal<TerritoryType>() ?? new ExcelId<TerritoryType>(128)
+    );
+
+    public static MapMarkerLocationConditionXML From(MapMarkerLocationCondition condition) => new MapMarkerLocationConditionXML {
+        Territory = new ExcelIdXML(condition.Territory)
     };
 }
 

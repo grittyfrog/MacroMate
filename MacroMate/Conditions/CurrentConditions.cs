@@ -18,6 +18,7 @@ public record CurrentConditions(
     CurrentCraftMaxDurabilityCondition? craftMaxDurabilityCondition,
     CurrentCraftMaxQualityCondition? craftMaxQualityCondition,
     CurrentCraftDifficultyCondition? craftDifficultyCondition,
+    MapMarkerLocationCondition? mapMarkerLocationCondition,
     WorldCondition? world
 ) {
     public static CurrentConditions Empty => new CurrentConditions(
@@ -32,6 +33,7 @@ public record CurrentConditions(
         craftMaxDurabilityCondition: null,
         craftMaxQualityCondition: null,
         craftDifficultyCondition: null,
+        mapMarkerLocationCondition: null,
         world: null
     );
 
@@ -47,6 +49,7 @@ public record CurrentConditions(
         if (craftMaxDurabilityCondition != null) { yield return craftMaxDurabilityCondition; }
         if (craftMaxQualityCondition != null) { yield return craftMaxQualityCondition; }
         if (craftDifficultyCondition != null) { yield return craftDifficultyCondition; }
+        if (mapMarkerLocationCondition != null) { yield return mapMarkerLocationCondition; }
         if (world != null) { yield return world; }
     }
 
@@ -63,6 +66,7 @@ public record CurrentConditions(
             craftMaxDurabilityCondition: CurrentCraftMaxDurabilityCondition.Current(),
             craftMaxQualityCondition: CurrentCraftMaxQualityCondition.Current(),
             craftDifficultyCondition: CurrentCraftDifficultyCondition.Current(),
+            mapMarkerLocationCondition: MapMarkerLocationCondition.Current(),
             world: WorldCondition.Current()
         );
     }
