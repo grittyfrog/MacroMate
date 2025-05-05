@@ -49,7 +49,9 @@ public class SubscriptionStatusWindow : Window {
         var message = isRoot ? taskDetails.Summary : taskDetails.Message;
         var treeNodeFlags = taskDetails.Children.IsEmpty ? ImGuiTreeNodeFlags.Leaf : ImGuiTreeNodeFlags.None;
 
+        if (taskDetails.HasError) { ImGui.PushStyleColor(ImGuiCol.Text, Colors.ErrorRed); }
         var treeNodeOpen = ImGui.TreeNodeEx(message, treeNodeFlags);
+        if (taskDetails.HasError) { ImGui.PopStyleColor(); }
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {
             ImGui.OpenPopup(taskPopup);
         }

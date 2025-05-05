@@ -366,10 +366,21 @@ public class MainWindow : Window, IDisposable {
             ImGuiExt.HoverTooltip($"Updates are available, use 'Subscription > Sync' to update");
         }
 
-        if (Env.SubscriptionManager.IsLoading(sGroup)) {
+        var sGroupTaskDetails = Env.SubscriptionManager.GetSubscriptionTaskDetails(sGroup);
+        if (sGroupTaskDetails.IsLoading) {
             var spinnerRadius = ImGui.GetTextLineHeight() / 2;
             var spinnerColor = ImGui.ColorConvertFloat4ToU32(Colors.SkyBlue);
             ImGuiExt.SpinnerRTL($"main_window/sgroup_icons/spinner/{sGroup.Id}", spinnerRadius, 5, spinnerColor);
+        }
+
+        var errorCount = sGroupTaskDetails.ErrorCount;
+        if (errorCount > 0) {
+            ImGui.PushFont(UiBuilder.IconFont);
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.ErrorRed);
+            ImGuiExt.TextUnformattedHorizontalRTL(FontAwesomeIcon.ExclamationTriangle.ToIconString());
+            ImGui.PopStyleColor();
+            ImGui.PopFont();
+            ImGuiExt.HoverTooltip($"{errorCount} errors occurred when checking this subscription. Check 'Subscription > Status' for details.");
         }
     }
 

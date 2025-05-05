@@ -10,6 +10,7 @@ public class SubscriptionTaskDetails {
     public Guid Id = Guid.NewGuid();
     public DateTimeOffset CreatedAt = DateTimeOffset.UtcNow;
     public string? Message { get; set; } = null;
+    public bool IsError { get; set; } = false;
 
     public string Summary {
         get {
@@ -25,6 +26,8 @@ public class SubscriptionTaskDetails {
     public int LoadingCount { get => _loadingCount; }
 
     public bool IsLoading => LoadingCount > 0 || Children.Any(child => child.IsLoading);
+    public bool HasError => IsError || Children.Any(child => child.IsError);
+    public int ErrorCount => (IsError ? 1 : 0) + Children.Sum(child => child.ErrorCount);
 
     public async Task<T> Loading<T>(Func<Task<T>> block) {
         return await Catching(async () => {

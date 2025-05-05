@@ -83,14 +83,6 @@ public class SubscriptionManager {
         return SubscriptionGroupTaskDetails.GetOrAdd(sGroup.Id, new SubscriptionTaskDetails());
     }
 
-    /// <summary>
-    /// Returns true if we are running any Sync / Check for Updates on this group.
-    /// </summary>
-    public bool IsLoading(MateNode.SubscriptionGroup sGroup) {
-        var taskDetails = GetSubscriptionTaskDetails(sGroup);
-        return taskDetails.IsLoading;
-    }
-
     private void OnLogin() {
         if (firstLogin) {
             nextAutoCheckForUpdatesTime = DateTimeOffset.Now + CheckForUpdatesTimeAfterLogin;
@@ -179,6 +171,7 @@ public class SubscriptionManager {
         bool sync
     ) {
         var updatedFields = new List<string>();
+        string? error = null;
 
         var newIconId = (uint?)macroYaml.IconId ?? VanillaMacro.DefaultIconId;
         if (macro.IconId != newIconId) { updatedFields.Add("icon id"); }
@@ -188,8 +181,9 @@ public class SubscriptionManager {
 
         SeString newLines;
         if (macroYaml.MarkdownUrl != null) {
-            var (mdLines, mdLinesModified) = await FetchMacroMarkdownLinesIfModified(sGroup, macroYaml, macro, urlToEtags, taskDetails);
+            var (mdLines, mdLinesModified, mdError) = await FetchMacroMarkdownLinesIfModified(sGroup, macroYaml, macro, urlToEtags, taskDetails);
             if (mdLinesModified) { updatedFields.Add("lines"); }
+            error = mdError;
             newLines = mdLines ?? "";
         } else {
             newLines = SeStringEx.ParseFromText(macroYaml.Lines ?? "");
@@ -209,6 +203,9 @@ public class SubscriptionManager {
                 await Env.Framework.RunOnTick(() => { sGroup.HasUpdate = true; });
             }
             return;
+        } else if (error != null) {
+            var child = taskDetails.Child(error);
+            child.IsError = true;
         } else {
             taskDetails.Child($"No changes");
         }
@@ -304,7 +301,8 @@ public class SubscriptionManager {
     /// <summary>
     /// Fetches the markdown lines for a given macro (if available and updated)
     /// </summary>
-    private async Task<(string?, bool)> FetchMacroMarkdownLinesIfModified(
+    /// <returns>(Lines, IsModified, Error)</returns>
+    private async Task<(string?, bool, string?)> FetchMacroMarkdownLinesIfModified(
         MateNode.SubscriptionGroup sGroup,
         MacroYAML macroYaml,
         MateNode.Macro existingMacro,
@@ -313,7 +311,7 @@ public class SubscriptionManager {
     ) {
         // If we don't have a MarkdownUrl there aren't any additional checks to make
         if (macroYaml.MarkdownUrl == null) {
-            return (null, false);
+            return (null, false, null);
         }
 
         // If we have a markdown URL we want to use it to check if there are any additional updates
@@ -333,9 +331,11 @@ public class SubscriptionManager {
         // If we got a 304 we know the ETag matches and no changes have taken place since we last synced
         if (response.StatusCode == HttpStatusCode.NotModified) {
             taskDetails.Child("No changes - ETag match");
-            return (null, false);
+            return (null, false, null);
+        } else if (!response.IsSuccessStatusCode) {
+            var errorMsg = $"Error - {response.StatusCode}";
+            return (null, false, errorMsg);
         } else {
-            response.EnsureSuccessStatusCode();
             taskDetails.Child($"May have changes - ETag mismatch {response.Headers.ETag?.Tag}");
         }
 
@@ -350,14 +350,14 @@ public class SubscriptionManager {
             var mdSeString = SeStringEx.ParseFromText(mdLines);
             if (mdSeString.IsSame(existingMacro.Lines)) {
                 taskDetails.Child("No changes - markdown lines unmodified");
-                return (mdLines, false);
+                return (mdLines, false, null);
             } else {
                 taskDetails.Child("Has changes - markdown lines modified");
-                return (mdLines, true);
+                return (mdLines, true, null);
             }
         } else {
             // Otherwise we couldn't find any Macro code lines, so this is a bust
-            return (null, false);
+            return (null, false, null);
         }
     }
 
