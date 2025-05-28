@@ -22,7 +22,7 @@ public class SubscriptionTaskDetails {
         }
     }
 
-    private int _loadingCount  = 0;
+    private int _loadingCount = 0;
     public int LoadingCount { get => _loadingCount; }
 
     public bool IsLoading => LoadingCount > 0 || Children.Any(child => child.IsLoading);

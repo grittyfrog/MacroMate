@@ -180,8 +180,8 @@ public class SubscriptionManager {
         if (macro.Notes != newNotes) { updatedFields.Add("notes"); }
 
         SeString newLines;
-        if (macroYaml.MarkdownUrl != null) {
-            var (mdLines, mdLinesModified, mdError) = await FetchMacroMarkdownLinesIfModified(sGroup, macroYaml, macro, urlToEtags, taskDetails);
+        if (macroYaml.MarkdownUrl != null || macroYaml.RawUrl != null) {
+            var (mdLines, mdLinesModified, mdError) = await FetchMacroLinesIfModified(sGroup, macroYaml, macro, urlToEtags, taskDetails);
             if (mdLinesModified) { updatedFields.Add("lines"); }
             error = mdError;
             newLines = mdLines ?? "";
@@ -297,26 +297,30 @@ public class SubscriptionManager {
         }
     }
 
-
     /// <summary>
     /// Fetches the markdown lines for a given macro (if available and updated)
     /// </summary>
     /// <returns>(Lines, IsModified, Error)</returns>
-    private async Task<(string?, bool, string?)> FetchMacroMarkdownLinesIfModified(
+    private async Task<(string?, bool, string?)> FetchMacroLinesIfModified(
         MateNode.SubscriptionGroup sGroup,
         MacroYAML macroYaml,
         MateNode.Macro existingMacro,
         ConcurrentDictionary<string, string> urlToEtags,
         SubscriptionTaskDetails taskDetails
     ) {
-        // If we don't have a MarkdownUrl there aren't any additional checks to make
-        if (macroYaml.MarkdownUrl == null) {
+        // If we don't have any Url there aren't any additional checks to make
+        string yamlUrl;
+        if (macroYaml.RawUrl != null) {
+            yamlUrl = macroYaml.RawUrl;
+        } else if (macroYaml.MarkdownUrl != null) {
+            yamlUrl = macroYaml.MarkdownUrl;
+        } else {
             return (null, false, null);
         }
 
-        // If we have a markdown URL we want to use it to check if there are any additional updates
-        var url = sGroup.RelativeUrl(macroYaml.MarkdownUrl);
-        var response = await taskDetails.Child("Checking Markdown Headers").Loading(async () => {
+        // If we have a url we want to use it to check if there are any additional updates
+        var url = sGroup.RelativeUrl(yamlUrl);
+        var response = await taskDetails.Child("Checking File Headers").Loading(async () => {
             var request = new HttpRequestMessage(HttpMethod.Get, url);
             if (Env.MacroConfig.SubscriptionUrlCache.TryGetEtagForUrl(url, out var knownEtag)) {
                 request.Headers.IfNoneMatch.ParseAdd(knownEtag);
@@ -341,19 +345,19 @@ public class SubscriptionManager {
 
         // If we didn't get an etag match we need to check the markdown content against our own to see
         // if there is a change.
-        var mdString = await taskDetails.Child("Downloading Markdown").Loading(async () => {
+        var urlBody = await taskDetails.Child("Downloading File").Loading(async () => {
             return await response.Content.ReadAsStringAsync();
         });
 
-        var mdLines = ExtractMacroLinesFromMarkdown(mdString, macroYaml);
-        if (mdLines != null) {
-            var mdSeString = SeStringEx.ParseFromText(mdLines);
+        var urlLines = ExtractMacroLinesFromUrlBody(urlBody, macroYaml);
+        if (urlLines != null) {
+            var mdSeString = SeStringEx.ParseFromText(urlLines);
             if (mdSeString.IsSame(existingMacro.Lines)) {
-                taskDetails.Child("No changes - markdown lines unmodified");
-                return (mdLines, false, null);
+                taskDetails.Child("No changes - file lines unmodified");
+                return (urlLines, false, null);
             } else {
-                taskDetails.Child("Has changes - markdown lines modified");
-                return (mdLines, true, null);
+                taskDetails.Child("Has changes - file lines modified");
+                return (urlLines, true, null);
             }
         } else {
             // Otherwise we couldn't find any Macro code lines, so this is a bust
@@ -361,13 +365,19 @@ public class SubscriptionManager {
         }
     }
 
-    private string? ExtractMacroLinesFromMarkdown(string markdownString, MacroYAML macroYaml) {
-        var mdDoc = Markdown.Parse(markdownString);
+    private string? ExtractMacroLinesFromUrlBody(string body, MacroYAML macroYaml) {
+        if (macroYaml.RawUrl != null) { return body; }
 
-        var macroCodeBlock = mdDoc.Descendants<CodeBlock>()
-            .Take((macroYaml.MarkdownMacroCodeBlockIndex ?? 0) + 1)
-            .LastOrDefault();
-        var lines = macroCodeBlock?.ToRawLines();
-        return lines;
+        if (macroYaml.MarkdownUrl != null) {
+            var mdDoc = Markdown.Parse(body);
+
+            var macroCodeBlock = mdDoc.Descendants<CodeBlock>()
+                .Take((macroYaml.MarkdownMacroCodeBlockIndex ?? 0) + 1)
+                .LastOrDefault();
+            var lines = macroCodeBlock?.ToRawLines();
+            return lines;
+        }
+
+        return macroYaml.Lines;
     }
 }

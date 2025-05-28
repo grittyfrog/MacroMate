@@ -17,6 +17,7 @@ public class SubscriptionManifestYAML {
     public static SubscriptionManifestYAML From(string input) {
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .IgnoreUnmatchedProperties()
             .Build();
 
         return deserializer.Deserialize<SubscriptionManifestYAML>(input);
@@ -34,5 +35,10 @@ public class MacroYAML {
     /// as overrides for the Markdown-parsed content
     public string? MarkdownUrl { get; set; } = null!;
 
+    /// If present, Lines should not be set and instead
     public int? MarkdownMacroCodeBlockIndex { get; set; }
+
+    /// If present, Lines is optional and the raw text returned from
+    /// this URL will be used as the macro body
+    public string? RawUrl { get; set; } = null!;
 }
