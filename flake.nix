@@ -42,7 +42,7 @@
           ];
 
           DOTNET_ROOT=dotnet;
-          DALAMUD_HOME="${dalamud-distrib}";
+          #DALAMUD_HOME="${dalamud-distrib}";
         };
       }
     );

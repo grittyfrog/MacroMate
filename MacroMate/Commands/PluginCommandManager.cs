@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using Dalamud.Game.Command;
 using Dalamud.Game.Text.SeStringHandling;
-using MacroMate.Extensions.Dotnet;
 using MacroMate.MacroTree;
 
 namespace MacroMate.Commands;

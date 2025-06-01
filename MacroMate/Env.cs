@@ -22,6 +22,9 @@ using Dalamud.Networking.Http;
 using System.Net;
 using MacroMate.Subscription;
 using MacroMate.Extensions.Dalamud;
+using MacroMate.Extensions.Dalamud.AutoComplete;
+
+#pragma warning disable SeStringEvaluator
 
 namespace MacroMate;
 
@@ -54,6 +57,7 @@ public class Env {
         SynthesisManager = new SynthesisManager();
         ConditionManager = new ConditionManager();
         ItemIndex = new ItemIndex();
+        CompletionIndex = new CompletionIndex();
         SubscriptionManager = new SubscriptionManager();
 
         MacroMate = new MacroMate();
@@ -126,6 +130,9 @@ public class Env {
     [PluginService]
     public static Dalamud.Plugin.Services.ICondition PlayerCondition { get; private set; } = null!;
 
+    [PluginService]
+    public static ISeStringEvaluator SeStringEvaluator { get; private set; } = null!;
+
     public static WindowSystem WindowSystem { get; private set; } = null!;
 
     public static Random Random { get; private set; } = null!;
@@ -162,6 +169,8 @@ public class Env {
     public static SynthesisManager SynthesisManager { get; private set; } = null!;
 
     public static ItemIndex ItemIndex { get; private set; } = null!;
+
+    public static CompletionIndex CompletionIndex { get; private set; } = null!;
 
     public static SubscriptionManager SubscriptionManager { get; private set; } = null!;
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Dalamud.Interface.Utility;
@@ -50,6 +51,36 @@ public unsafe struct ImGuiInputTextState
         var selectedChars = TextW.DataSpan.Slice(lower, selectionLength);
         return selectedChars.ToString(); // ToString on Span<char> constructs the string
     }
+
+    /// <summary>
+    /// Returns the current "word" the user is writing, based on the characters from the previous
+    /// word boundary up to the cursor.
+    /// </summary>
+    public string? CurrentEditWord() {
+        var (wordStart, wordEnd) = CurrentEditWordBounds();
+        var length = wordEnd - wordStart;
+
+        if (wordStart == wordEnd) { return null; }
+        return TextW.DataSpan.Slice(wordStart, length).ToString();
+    }
+
+    public (int, int) CurrentEditWordBounds() {
+        var wordStart = CurrentEditWordStart();
+        var wordEnd = Stb.Cursor;
+        return (wordStart, wordEnd);
+    }
+
+    public int CurrentEditWordStart() {
+        var wordStart = Stb.Cursor;
+        while (wordStart > 0 && !IsWordBoundary(TextW.DataSpan[wordStart-1])) {
+            wordStart -= 1;
+        }
+        return wordStart;
+    }
+
+    private bool IsWordBoundary(char c) {
+        return char.IsSeparator(c) || char.IsWhiteSpace(c) || c == '\uE040' || c == '\uE041'; 
+    }
 }
 
 /// <summary>
@@ -90,4 +121,7 @@ public struct StbTextEditState
     public int RowCountPerPage;
 
     // Remainder is stb-private data.
+    public byte CursorAtEndOfLine; // not implemented yet
+    public byte Initialized;
+    public byte HasPreferredX;
 }

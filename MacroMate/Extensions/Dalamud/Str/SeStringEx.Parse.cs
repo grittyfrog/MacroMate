@@ -32,7 +32,7 @@ public static partial class SeStringEx {
         return chunks.Select(chunk => chunk.Unparse()).Let(chunkTexts => string.Join("", chunkTexts));
     }
 
-    internal interface SeStringChunk {
+    public interface SeStringChunk {
         private static readonly char AutoTranslateStart = '\uE040';
         private static readonly char AutoTranslateEnd = '\uE041';
 

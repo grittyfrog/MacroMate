@@ -1,0 +1,81 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Gma.DataStructures.StringSearch;
+using Lumina.Excel.Sheets;
+
+namespace MacroMate.Extensions.Dalamud.AutoComplete;
+
+/// <summary>
+/// Index to help look up completion information (i.e. Auto Translate)
+/// </summary>
+/// <remarks>
+/// Heavily inspired by Chat2: https://github.com/Infiziert90/ChatTwo/blob/main/ChatTwo/Util/AutoTranslate.cs#L70
+/// </remarks>
+public class CompletionIndex {
+    /// <summary>
+    /// The `GroupTitle` field of most completion entries is empty, if we want to know the group title
+    /// we need to look at the "special" group header completion, there should be 1 per GroupId.
+    /// </summary>
+    private Dictionary<uint, Completion> CompletionGroupsById = new();
+    private Trie<List<CompletionInfo>> Completions = new();
+
+    public enum IndexState { UNINDEXED, INDEXING, INDEXED }
+    public IndexState State { get; private set; } = IndexState.UNINDEXED;
+
+    public IEnumerable<CompletionInfo> Search(string prefix) {
+        if (State != IndexState.INDEXED) { return new List<CompletionInfo>(); }
+        if (prefix == "") { return new List<CompletionInfo>(); }
+
+        return Completions.Retrieve(prefix.ToLower()).SelectMany(c => c);
+    }
+
+    public CompletionIndex() {
+        StartIndexing();
+    }
+
+    public void StartIndexing() {
+        if (State != IndexState.UNINDEXED) { return; }
+
+        Task.Run(() => {
+            try {
+                State = IndexState.INDEXING;
+                RefreshCompletionGroupIndex();
+                RefreshCompletionIndex();
+                State = IndexState.INDEXED;
+            } catch (Exception ex) {
+                Env.PluginLog.Error($"Failed to index completions\n{ex}");
+            }
+        });
+    }
+
+    private void RefreshCompletionGroupIndex() {
+        var completionGroups = Env.DataManager.GetExcelSheet<Completion>()
+            .Where(c => {
+                var lookupTable = c.LookupTable.ExtractText();
+                return lookupTable != "";
+            });
+
+        foreach (var cg in completionGroups) {
+            CompletionGroupsById[cg.Group] = cg;
+        }
+    }
+
+    private void RefreshCompletionIndex() {
+        var completions = Env.DataManager.GetExcelSheet<Completion>()
+            .Select(raw => ParsedCompletion.From(raw))
+            .SelectMany<ParsedCompletion, CompletionInfo>(parsed => CompletionInfo.From(parsed))
+            .Select(info => {
+                if (CompletionGroupsById.TryGetValue(info.Group, out var completionGroup)) {
+                    return info with { GroupTitle = completionGroup.GroupTitle };
+                }
+                return info;
+            });
+
+        var grouped = completions.GroupBy(c => c.SeString.ExtractText().ToLower());
+        foreach (var g in grouped) {
+            Completions.Add(g.Key, g.ToList());
+        }
+    }
+}

@@ -53,7 +53,7 @@ public class InputTextDecorator {
 
         foreach (var decoration in decorations) {
             // Figure out the position of this decoration
-            var posInText = InputTextCalcText2dPos(text, decoration.StartIndex);
+            var posInText = ImGuiExt.InputTextCalcText2dPos(text, decoration.StartIndex);
             var startIndex = Math.Clamp(decoration.StartIndex, 0, text.Length);
             var endIndex = Math.Clamp(decoration.EndIndex, 0, text.Length);
             DrawDecoration(drawList, posInText, text[startIndex..endIndex], decoration);
@@ -72,46 +72,6 @@ public class InputTextDecorator {
             var pos = min + posInText - scroll;
             drawList.AddText(ImGui.GetFont(), fontSize, pos, textColor.Col, textSlice);
         }
-    }
-
-    private Vector2 InputTextCalcText2dPos(
-        string text,
-        int textPos
-    ) {
-        var font = ImGui.GetFont();
-        var fontScale = ImGui.GetIO().FontGlobalScale;
-        float lineHeight = ImGui.GetFontSize();
-
-        Vector2 textSize = new Vector2(0, 0);
-        float lineWidth = 0.0f;
-
-        int sIndex = 0;
-        while (sIndex < textPos && sIndex < text.Length)
-        {
-            char c = text[sIndex];
-            sIndex += 1;
-            if (c == '\n')
-            {
-                textSize.X = 0;
-                textSize.Y += lineHeight;
-                lineWidth = 0.0f;
-                continue;
-            }
-            if (c == '\r')
-                continue;
-
-            // ImGui.NET doesn't allow us to pass 32-bit wchar like the native implementation does, so instead
-            // we need to account for surrogate pairs ourselves or the width gets misaligned
-            // 0xE0F0 0x00BB   0xE0F00BB
-            float charWidth = font.GetCharAdvance((ushort)c) * fontScale;
-            lineWidth += charWidth;
-        }
-
-
-        if (textSize.X < lineWidth)
-            textSize.X = lineWidth;
-
-        return textSize;
     }
 }
 

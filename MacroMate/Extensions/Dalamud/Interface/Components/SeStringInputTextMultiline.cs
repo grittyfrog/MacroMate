@@ -10,6 +10,7 @@ using ImGuiNET;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Str;
 using MacroMate.Extensions.Imgui;
+using static MacroMate.Extensions.Dalamud.Str.SeStringEx;
 
 namespace MacroMate.Extensions.Dalamaud.Interface.Components;
 
@@ -18,6 +19,9 @@ public class SeStringInputTextMultiline {
     private Dictionary<string, AutoTranslatePayload> knownTranslationPayloads = new();
     private InputTextDecorator textDecorator = new();
     private StbTextEditState? previousCursorState = null;
+    private (int, int)? previousEditWord = null; // The word range we want to edit if we get an auto-complete event
+
+    private SeStringAutoCompletePopup AutoCompletePopup = new();
 
     private unsafe ImGuiInputTextState* TextState =>
         (ImGuiInputTextState*)(ImGui.GetCurrentContext() + ImGuiInputTextState.TextStateOffset);
@@ -30,11 +34,15 @@ public class SeStringInputTextMultiline {
         ImGuiInputTextFlags flags,
         ImGuiInputTextCallback callback
     ) {
+        AutoCompletePopup.Draw();
+
         IndexPayloads(input);
 
         bool edited = false;
 
         flags |= ImGuiInputTextFlags.CallbackAlways;
+        flags |= ImGuiInputTextFlags.CallbackEdit;
+        flags |= ImGuiInputTextFlags.CallbackCompletion;
 
         var ctrlVPressed = (ImGui.GetIO().KeyMods == ImGuiModFlags.Ctrl) && ImGui.IsKeyPressed(ImGuiKey.V, false);
         var shiftInsPressed = (ImGui.GetIO().KeyMods == ImGuiModFlags.Shift) && ImGui.IsKeyPressed(ImGuiKey.Insert, false);
@@ -47,6 +55,8 @@ public class SeStringInputTextMultiline {
         var ctrlCPressed = (ImGui.GetIO().KeyMods == ImGuiModFlags.Ctrl) && ImGui.IsKeyPressed(ImGuiKey.C, false);
         var ctrlInsertPressed = (ImGui.GetIO().KeyMods == ImGuiModFlags.Ctrl) && ImGui.IsKeyPressed(ImGuiKey.Insert, false);
         var isCopy = ctrlCPressed || ctrlInsertPressed;
+
+        var text = input.TextValue.ReplaceLineEndings("\n");
 
         ImGuiInputTextCallback decoratedCallback;
         unsafe {
@@ -98,11 +108,25 @@ public class SeStringInputTextMultiline {
                     ClipboardEx.SetClipboardSeString(selectedSeString);
                 }
 
+                if (data->EventFlag == ImGuiInputTextFlags.CallbackCompletion) {
+                    var currentWord = TextState->CurrentEditWord();
+                    if (currentWord != null) { 
+                        previousEditWord = TextState->CurrentEditWordBounds();
+                        AutoCompletePopup.AutoCompleteFilter = currentWord;
+                        AutoCompletePopup.PopupPos =
+                            ImGui.GetItemRectMin() +
+                            ImGuiExt.InputTextCalcText2dPos(text, TextState->CurrentEditWordStart()) +
+                            new Vector2(0, ImGui.GetFontSize() + ImGui.GetStyle().ItemSpacing.Y * 2);
+
+                        AutoCompletePopup.Open();
+                    } 
+                }
+
                 return result;
             };
         };
 
-        var text = input.TextValue.ReplaceLineEndings("\n");
+
         var result = ImGui.InputTextMultiline(
             label,
             ref text,
@@ -117,11 +141,31 @@ public class SeStringInputTextMultiline {
             edited = true;
         }
 
+        var focused = ImGui.IsItemFocused();
+
+        while (AutoCompletePopup.CompletionEvents.TryDequeue(out var completion)) {
+            if (!previousEditWord.HasValue) { break; }
+            var (editStart, editEnd) = previousEditWord.Value;
+            text = text.Remove(editStart, editEnd - editStart); // Remove current word
+
+            var atChunk = new SeStringChunk.AutoTranslateText(
+                "",
+                new SeStringChunk.AutoTranslateIds(completion.Group, completion.Key)
+            );
+            text = text.Insert(editStart, atChunk.Unparse());
+
+            input = SeStringEx.ParseFromText(text, knownTranslationPayloads);
+            IndexPayloads(input);
+            edited = true;
+        }
+
         var decorations = GetDecorations(input);
         textDecorator.DecorateInputText(label, ref text, size, decorations);
 
         // We apply cursor/selection adjustment after parsing `input` in case it has changed.
-        ApplyAutoTranslateCursorAndSelectionBehaviour(input);
+        if (focused) {
+            ApplyAutoTranslateCursorAndSelectionBehaviour(input);
+        }
 
         return edited;
     }
@@ -129,6 +173,11 @@ public class SeStringInputTextMultiline {
     public int? GetCursorPos() {
         // Internal cursor is UTF-16 so it matches C# representation
         unsafe { return TextState->Stb.Cursor; }
+    }
+
+    public (int, int) GetCurrentEditWordBounds() {
+        // Internal cursor is UTF-16 so it matches C# representation
+        unsafe { return TextState->CurrentEditWordBounds(); }
     }
 
     /// Gets the SeString represented by the selection, or null if no selection
@@ -171,12 +220,6 @@ public class SeStringInputTextMultiline {
                 textOffset += textInfo.LengthInTextElements;
             }
         }
-    }
-
-    private void UpdateScrollX() {
-        var size = ImGui.GetItemRectSize();
-        var scrollIncrementX = size.X * 0.25f;
-        var visibleWidth = size.X - ImGui.GetStyle().FramePadding.X;
     }
 
     /// Mimic the vanilla behaviour of the selection/cursor.

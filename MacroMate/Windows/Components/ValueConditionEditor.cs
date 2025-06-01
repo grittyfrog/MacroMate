@@ -168,8 +168,9 @@ unsafe class ValueConditionEditorColumn : IDisposable {
             }
 
             if (scrollToIndexOnNextDraw != null) {
-                var scrollHeight = clipper.ItemsHeight * scrollToIndexOnNextDraw.GetValueOrDefault();
-                ImGui.SetScrollY(scrollHeight);
+                // We only want to scroll if our current selection is out of the visible rectangle.
+                var scrollPos = clipper.ItemsHeight * scrollToIndexOnNextDraw.GetValueOrDefault();
+                ImGui.SetScrollFromPosY(scrollPos - ImGui.GetWindowPos().Y);
                 scrollToIndexOnNextDraw = null;
             }
 
