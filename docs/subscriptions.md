@@ -31,6 +31,11 @@ macros:
     iconId: 4507
     markdownUrl: a/relative/markdown/file.md
     markdownMacroCodeBlockIndex: 0 
+
+  - name: A Macro that uses a raw url
+    group: Group/Another Group
+    iconId: 4507
+    rawUrl: a/relative/file/content.macro
 ```
 
 Each macro accepts the following fields:
@@ -38,10 +43,13 @@ Each macro accepts the following fields:
 - **name** (required): The name of the macro
 - **group** (optional): The [path](./paths.md) to the group this macro should be stored in. 
 - **iconId** (optional): The icon id to use for the macro
-- **lines** (optional if using markdownUrl, required otherwise): Macro lines, also support [auto translation format](./auto-translation.md)
+- **lines** (see note): Macro lines, also support [auto translation format](./auto-translation.md)
 - **notes** (optional): Notes about the macro that will be shown in a tooltip
-- **markdownUrl** (optional if using lines, required otherwise): A relative path to the markdown file to parse
+- **rawUrl** (see note): A relative path to a raw file. The whole file will be used as the macro body
+- **markdownUrl** (see note): A relative path to the markdown file to parse
 - **markdownMacroCodeBlockIndex** (optional): The index of the code block in the markdown file to read the macro from (default: 0)
+
+Note: One of `lines`, `markdownUrl` or `rawUrl` must be provided. If more then one are provided Macro Mate will priorities `lines` then `rawUrl` and then `markdownUrl`
 
 ### Markdown Parsing
 
