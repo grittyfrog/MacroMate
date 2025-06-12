@@ -25,8 +25,6 @@ public unsafe class SynthesisManager {
     }
 
     private void OnSynthesisSetup(AddonEvent type, AddonArgs args) {
-        Env.PluginLog.Info("Synthesis Setup");
-
         var synth = (AddonSynthesis*)args.Addon;
         var atkValues = new ReadOnlySpan<AtkValue>(synth->AtkUnitBase.AtkValues, synth->AtkUnitBase.AtkValuesCount);
         CurrentCraftDifficulty = atkValues[6].UInt;
@@ -37,7 +35,6 @@ public unsafe class SynthesisManager {
     }
 
     private void OnSynthesisFinalize(AddonEvent type, AddonArgs args) {
-        Env.PluginLog.Info("Synthesis Finalize");
         CurrentCraftDifficulty = null;
         CurrentCraftMaxDurability = null;
         CurrentCraftMaxQuality = null;

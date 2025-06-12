@@ -128,7 +128,6 @@ public class SeStringInputTextMultiline {
             };
         };
 
-
         var result = ImGui.InputTextMultiline(
             label,
             ref text,
