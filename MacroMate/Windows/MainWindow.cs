@@ -463,8 +463,10 @@ public class MainWindow : Window, IDisposable {
         });
         NodeDragDropTarget(macro, DragDropType.MACRO_OR_GROUP_NODE, allowBeside: true, allowInto: false);
 
+        ImGui.SameLine(ImGui.GetContentRegionMax().X);
         DrawMacroLinkIcon(macro);
         DrawErrorIcon(macro);
+        ImGui.NewLine();
 
         ImGui.PopStyleVar();
         ImGui.PopStyleVar();
@@ -492,9 +494,7 @@ public class MainWindow : Window, IDisposable {
         if (!Env.MacroConfig.ActiveMacros.Contains(macro)) { return; }
 
         ImGui.PushFont(UiBuilder.IconFont);
-        var linkIconSize = ImGui.CalcTextSize(FontAwesomeIcon.Link.ToIconString());
-        ImGui.SameLine(ImGui.GetContentRegionMax().X - linkIconSize.X);
-        ImGui.Text(FontAwesomeIcon.Link.ToIconString());
+        ImGuiExt.TextUnformattedHorizontalRTL(FontAwesomeIcon.Link.ToIconString());
         ImGui.PopFont();
 
         if (ImGui.IsItemHovered()) {

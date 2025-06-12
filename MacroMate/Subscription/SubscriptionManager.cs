@@ -207,6 +207,10 @@ public class SubscriptionManager {
         } else if (error != null) {
             var child = taskDetails.Child(error);
             child.IsError = true;
+            await Env.Framework.RunOnTick(() => {
+                macro.Errors.Clear();
+                macro.Errors.Add(error);
+            });
         } else {
             taskDetails.Child($"No changes");
         }
