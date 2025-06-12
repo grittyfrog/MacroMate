@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using MacroMate.Extensions.Dotnet.Tree;
@@ -8,6 +9,11 @@ namespace MacroMate.MacroTree;
 public abstract partial class MateNode : TreeNode<MateNode> {
     public required string Name { get; set; }
     public override string NodeName => Name;
+
+    /// <summary>
+    /// User-facing error messages about this node
+    /// </summary>
+    public List<string> Errors { get; init; } = new();
 
     /// <summary>Attempts to find the node indicated by [path] using [this] as Root</summary>
     public MateNode? Walk(MacroPath path) {

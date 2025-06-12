@@ -152,6 +152,7 @@ public class SubscriptionManager {
                 await Env.Framework.RunOnTick(() => {
                     sGroup.LastSyncTime = DateTimeOffset.Now;
                     sGroup.HasUpdate = false;
+                    CommitErrorsToTree(sGroup);
                     Env.MacroConfig.SubscriptionUrlCache.ClearForSubscription(sGroup.Id);
                     Env.MacroConfig.SubscriptionUrlCache.AddEntries(sGroup, urlToEtags);
                     Env.MacroConfig.NotifyEdit();
@@ -232,6 +233,8 @@ public class SubscriptionManager {
                 await Parallel.ForEachAsync(manifest.Macros, parallelOptions, async (macroYaml, token) => {
                     await CheckMacroForUpdates(sGroup, macroYaml, urlToEtags, taskDetails);
                 });
+
+                await Env.Framework.RunOnTick(() => { CommitErrorsToTree(sGroup); });
             });
         } finally {
             JobSemaphore.Release();
@@ -379,5 +382,16 @@ public class SubscriptionManager {
         }
 
         return macroYaml.Lines;
+    }
+
+    /// <summary>
+    /// Write the errors we've found into the MateNode tree
+    /// </summary>
+    private void CommitErrorsToTree(MateNode.SubscriptionGroup sGroup) {
+        sGroup.Errors.Clear();
+        var errorCount = GetSubscriptionTaskDetails(sGroup).ErrorCount;
+        if (errorCount > 0) {
+            sGroup.Errors.Add($"{errorCount} errors occurred when checking this subscription. Check 'Subscription > Status' for details.");
+        }
     }
 }

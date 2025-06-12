@@ -334,6 +334,7 @@ public class MainWindow : Window, IDisposable {
             DrawSubscriptionGroupIcons(sGroup);
         }
         DrawGroupLinkIcon(group);
+        DrawErrorIcon(group);
 
         // Action Button
         ImGui.TableNextColumn();
@@ -372,16 +373,6 @@ public class MainWindow : Window, IDisposable {
             var spinnerColor = ImGui.ColorConvertFloat4ToU32(Colors.SkyBlue);
             ImGuiExt.SpinnerRTL($"main_window/sgroup_icons/spinner/{sGroup.Id}", spinnerRadius, 5, spinnerColor);
         }
-
-        var errorCount = sGroupTaskDetails.ErrorCount;
-        if (errorCount > 0) {
-            ImGui.PushFont(UiBuilder.IconFont);
-            ImGui.PushStyleColor(ImGuiCol.Text, Colors.ErrorRed);
-            ImGuiExt.TextUnformattedHorizontalRTL(FontAwesomeIcon.ExclamationTriangle.ToIconString());
-            ImGui.PopStyleColor();
-            ImGui.PopFont();
-            ImGuiExt.HoverTooltip($"{errorCount} errors occurred when checking this subscription. Check 'Subscription > Status' for details.");
-        }
     }
 
     private void DrawGroupLinkIcon(MateNode group) {
@@ -409,6 +400,23 @@ public class MainWindow : Window, IDisposable {
         }
     }
 
+    private void DrawErrorIcon(MateNode node) {
+        if (node.Errors.Count > 0) {
+            ImGui.PushFont(UiBuilder.IconFont);
+            ImGui.PushStyleColor(ImGuiCol.Text, Colors.ErrorRed);
+            ImGuiExt.TextUnformattedHorizontalRTL(FontAwesomeIcon.ExclamationTriangle.ToIconString());
+            ImGui.PopStyleColor();
+            ImGui.PopFont();
+
+            if (ImGui.IsItemHovered()) {
+                ImGui.BeginTooltip();
+                foreach (var err in node.Errors) {
+                    ImGui.TextUnformatted(err);
+                }
+                ImGui.EndTooltip();
+            }
+        }
+    }
 
     private void DrawMacroNode(MateNode.Macro macro) {
         ImGui.PushStyleVar(ImGuiStyleVar.CellPadding, new Vector2(2f, 0f) * ImGuiHelpers.GlobalScale);
@@ -455,6 +463,7 @@ public class MainWindow : Window, IDisposable {
         NodeDragDropTarget(macro, DragDropType.MACRO_OR_GROUP_NODE, allowBeside: true, allowInto: false);
 
         DrawMacroLinkIcon(macro);
+        DrawErrorIcon(macro);
 
         ImGui.PopStyleVar();
         ImGui.PopStyleVar();
