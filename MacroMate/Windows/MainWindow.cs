@@ -372,6 +372,7 @@ public class MainWindow : Window, IDisposable {
             var spinnerRadius = ImGui.GetTextLineHeight() / 2;
             var spinnerColor = ImGui.ColorConvertFloat4ToU32(Colors.SkyBlue);
             ImGuiExt.SpinnerRTL($"main_window/sgroup_icons/spinner/{sGroup.Id}", spinnerRadius, 5, spinnerColor);
+            ImGuiExt.HoverTooltip(sGroupTaskDetails.LastLoadingMessage);
         }
     }
 

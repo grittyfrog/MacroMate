@@ -26,6 +26,7 @@ public class SubscriptionTaskDetails {
     public int LoadingCount { get => _loadingCount; }
 
     public bool IsLoading => LoadingCount > 0 || Children.Any(child => child.IsLoading);
+    public string? LastLoadingMessage => Children.LastOrDefault(c => c.IsLoading)?.Message;
     public bool HasError => IsError || Children.Any(child => child.IsError);
     public int ErrorCount => (IsError ? 1 : 0) + Children.Sum(child => child.ErrorCount);
 
