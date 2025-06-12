@@ -307,7 +307,7 @@ public class MainWindow : Window, IDisposable {
         var expandedState = GroupNodeExpanded.GetOrAdd(group.Id, () => new());
         var expandedStateFlag = IsTextSearching ? expandedState.expandedForTextSearch : expandedState.expanded;
         ImGui.SetNextItemOpen(expandedStateFlag);
-        bool groupOpen = ImGui.CollapsingHeader($"{group.Name}###{group.Id}");
+        bool groupOpen = ImGui.CollapsingHeader($"{group.Name}###{group.Id}", ImGuiTreeNodeFlags.SpanAvailWidth);
         if (ImGui.IsItemToggledOpen()) {
             if (IsTextSearching) {
                 expandedState.expandedForTextSearch = !expandedState.expandedForTextSearch;
