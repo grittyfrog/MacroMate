@@ -19,7 +19,8 @@ public class CompletionIndex {
     /// we need to look at the "special" group header completion, there should be 1 per GroupId.
     /// </summary>
     private Dictionary<uint, Completion> CompletionGroupsById = new();
-    private Trie<List<CompletionInfo>> Completions = new();
+    private Trie<List<CompletionInfo>> CompletionsByText = new();
+    private Dictionary<(uint, uint), CompletionInfo> CompletionInfoByGroupKey = new();
 
     public enum IndexState { UNINDEXED, INDEXING, INDEXED }
     public IndexState State { get; private set; } = IndexState.UNINDEXED;
@@ -28,7 +29,13 @@ public class CompletionIndex {
         if (State != IndexState.INDEXED) { return new List<CompletionInfo>(); }
         if (prefix == "") { return new List<CompletionInfo>(); }
 
-        return Completions.Retrieve(prefix.ToLower()).SelectMany(c => c);
+        return CompletionsByText.Retrieve(prefix.ToLower()).SelectMany(c => c);
+    }
+
+    public CompletionInfo? ById(uint group, uint key) {
+        if (State != IndexState.INDEXED) { return null; }
+
+        return CompletionInfoByGroupKey.GetValueOrDefault((group, key));
     }
 
     public CompletionIndex() {
@@ -42,7 +49,10 @@ public class CompletionIndex {
             try {
                 State = IndexState.INDEXING;
                 RefreshCompletionGroupIndex();
-                RefreshCompletionIndex();
+
+                var completions = AllCompletionInfo();
+                RefreshCompletionIndex(completions);
+                RefreshCompletionInfoByGroupKey(completions);
                 State = IndexState.INDEXED;
             } catch (Exception ex) {
                 Env.PluginLog.Error($"Failed to index completions\n{ex}");
@@ -62,20 +72,29 @@ public class CompletionIndex {
         }
     }
 
-    private void RefreshCompletionIndex() {
-        var completions = Env.DataManager.GetExcelSheet<Completion>()
-            .Select(raw => ParsedCompletion.From(raw))
-            .SelectMany<ParsedCompletion, CompletionInfo>(parsed => CompletionInfo.From(parsed))
-            .Select(info => {
-                if (CompletionGroupsById.TryGetValue(info.Group, out var completionGroup)) {
-                    return info with { GroupTitle = completionGroup.GroupTitle };
-                }
-                return info;
-            });
+    private List<CompletionInfo> AllCompletionInfo() {
+        return Env.DataManager.GetExcelSheet<Completion>()
+             .Select(raw => ParsedCompletion.From(raw))
+             .SelectMany<ParsedCompletion, CompletionInfo>(parsed => CompletionInfo.From(parsed))
+             .Select(info => {
+                 if (CompletionGroupsById.TryGetValue(info.Group, out var completionGroup)) {
+                     return info with { GroupTitle = completionGroup.GroupTitle };
+                 }
+                 return info;
+             })
+            .ToList();
+    }
 
+    private void RefreshCompletionIndex(IEnumerable<CompletionInfo> completions) {
         var grouped = completions.GroupBy(c => c.SeString.ExtractText().ToLower());
         foreach (var g in grouped) {
-            Completions.Add(g.Key, g.ToList());
+            CompletionsByText.Add(g.Key, g.ToList());
+        }
+    }
+
+    private void RefreshCompletionInfoByGroupKey(IEnumerable<CompletionInfo> completions) {
+        foreach (var completion in completions) {
+            CompletionInfoByGroupKey[(completion.Group, completion.Key)] = completion;
         }
     }
 }

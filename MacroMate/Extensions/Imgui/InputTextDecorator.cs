@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Dalamud.Interface.ImGuiSeStringRenderer;
+using Dalamud.Interface.Utility;
 using ImGuiNET;
+using Lumina.Text.ReadOnly;
 
 namespace MacroMate.Extensions.Imgui;
 
@@ -71,6 +74,22 @@ public class InputTextDecorator {
         if (decoration is InputTextDecoration.TextColor textColor) {
             var pos = min + posInText - scroll;
             drawList.AddText(ImGui.GetFont(), fontSize, pos, textColor.Col, textSlice);
+        } else if (decoration is InputTextDecoration.HoverTooltip hoverTooltip) {
+            var textSize = ImGui.CalcTextSize(textSlice);
+            var topLeft = min + posInText - scroll;
+            var bottomRight = min + posInText + textSize;
+
+            // If the mouse is in our region, and we are focused then we want to draw our tooltip
+            if (ImGui.IsItemHovered() && ImGui.IsMouseHoveringRect(topLeft, bottomRight)) {
+                var text = hoverTooltip.Text.Value;
+                if (text.HasValue) {
+                    ImGui.BeginTooltip();
+                    ImGuiHelpers.SeStringWrapped(text.Value, new SeStringDrawParams() {
+                        WrapWidth = 640 * ImGuiHelpers.GlobalScale
+                    });
+                    ImGui.EndTooltip();
+                }
+            }
         }
     }
 }
@@ -80,4 +99,5 @@ public interface InputTextDecoration {
     int EndIndex { get; }
 
     public record class TextColor(int StartIndex, int EndIndex, uint Col) : InputTextDecoration {}
+    public record class HoverTooltip(int StartIndex, int EndIndex, Lazy<ReadOnlySeString?> Text) : InputTextDecoration {}
 }

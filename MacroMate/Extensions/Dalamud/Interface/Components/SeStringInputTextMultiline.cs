@@ -6,6 +6,8 @@ using System.Numerics;
 using System.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Interface.ImGuiSeStringRenderer;
+using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Str;
@@ -213,6 +215,10 @@ public class SeStringInputTextMultiline {
                 var endOffset = textOffset + new StringInfo(atPayload.Text).LengthInTextElements;
                 yield return new InputTextDecoration.TextColor(startOffset, startOffset + 1, ImGui.ColorConvertFloat4ToU32(Colors.AutoTranslateStartGreen));
                 yield return new InputTextDecoration.TextColor(endOffset - 1, endOffset, ImGui.ColorConvertFloat4ToU32(Colors.AutoTranslateEndRed));
+                yield return new InputTextDecoration.HoverTooltip(startOffset, endOffset, new(() => {
+                    var completion = Env.CompletionIndex.ById(atPayload.Group, atPayload.Key);
+                    return completion?.HelpText;
+                }));
 
                 textOffset = endOffset;
             } else if (payload is ITextProvider textPayload) {

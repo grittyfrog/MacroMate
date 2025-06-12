@@ -48,6 +48,8 @@ public class SeStringAutoCompletePopup {
         }
     }
 
+    private Vector2? LastCompletionTooltipSize = null;
+
     public CompletionInfo? SelectedCompletion =>
         SelectedCompletionIndex.HasValue ? Completions.ElementAtOrDefault(SelectedCompletionIndex.Value) : null;
 
@@ -151,6 +153,10 @@ public class SeStringAutoCompletePopup {
                 ImGui.TableSetupColumn("Completion", ImGuiTableColumnFlags.WidthFixed, longestCompletionWidth);
                 ImGui.TableSetupColumn("Group", ImGuiTableColumnFlags.WidthFixed, longestGroupWidth);
 
+                // info, min, max
+                (CompletionInfo, Vector2, Vector2)? hoveredCompletionData = null;
+                (CompletionInfo, Vector2, Vector2)? visibleSelectedCompletionData = null;
+
                 clipper.Begin(Completions.Count());
                 while (clipper.Step()) {
                     var completionRange = Completions
@@ -175,12 +181,14 @@ public class SeStringAutoCompletePopup {
                             Complete();
                             ImGui.CloseCurrentPopup();
                         }
-                        if (ImGui.IsItemHovered() && completion.HelpText != null) {
-                            ImGui.BeginTooltip();
-                            ImGuiHelpers.SeStringWrapped(completion.HelpText.Value, new SeStringDrawParams() {
-                                WrapWidth = 640 * ImGuiHelpers.GlobalScale
-                            });
-                            ImGui.EndTooltip();
+
+                        // Hovering something takes precedence tooltip-wise, but otherwise
+                        // we want to show a tooltip for the currently selected item.
+                        if (ImGui.IsItemHovered()) {
+                            hoveredCompletionData = (completion, ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
+                        }
+                        if (selected) {
+                            visibleSelectedCompletionData = (completion, ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
                         }
 
                         ImGui.TableNextColumn();
@@ -195,13 +203,44 @@ public class SeStringAutoCompletePopup {
                     }
                 }
 
+                var scrollPos = clipper.StartPosY + clipper.ItemsHeight * SelectedCompletionIndex.GetValueOrDefault();
                 if (ShouldScrollOnNextDraw) {
-                    var scrollPos = clipper.StartPosY + clipper.ItemsHeight * SelectedCompletionIndex.GetValueOrDefault();
                     ImGui.SetScrollFromPosY(scrollPos - ImGui.GetWindowPos().Y);
                     ShouldScrollOnNextDraw = false;
                 }
                 clipper.End();
                 ImGui.EndTable();
+
+                if (hoveredCompletionData != null || visibleSelectedCompletionData != null) {
+                    var completionTooltipData = hoveredCompletionData ?? visibleSelectedCompletionData;
+                    if (completionTooltipData != null) {
+                        var scrollbarPad = 20 * ImGuiHelpers.GlobalScale;
+
+                        var (completionTooltip, min, max) = completionTooltipData.Value;
+                        if (completionTooltip.HelpText.HasValue) {
+                            var selectionSize = max - min;
+                            var selectionMidpoint = min + (selectionSize / 2.0f);
+
+                            if (selectionMidpoint.X <= ImGui.GetWindowViewport().Size.X / 2.0f) {
+                                var tooltipX = max.X + scrollbarPad;
+                                ImGui.SetNextWindowPos(new Vector2(tooltipX, min.Y));
+                            } else if (LastCompletionTooltipSize.HasValue) { // Otherwise...
+                                var tooltipX = min.X - LastCompletionTooltipSize.Value.X - scrollbarPad;
+                                ImGui.SetNextWindowPos(new Vector2(tooltipX, min.Y));
+                            }
+
+                            ImGui.BeginTooltip();
+                            var drawResult = ImGuiHelpers.SeStringWrapped(
+                                completionTooltip.HelpText.Value,
+                                new SeStringDrawParams() {
+                                    WrapWidth = 640 * ImGuiHelpers.GlobalScale
+                                }
+                            );
+                            LastCompletionTooltipSize = drawResult.Size;
+                            ImGui.EndTooltip();
+                        }
+                    }
+                }
             }
             ImGui.EndPopup();
         }
