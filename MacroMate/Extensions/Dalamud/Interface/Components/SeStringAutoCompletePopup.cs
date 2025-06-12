@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Dalamud.Interface.ImGuiSeStringRenderer;
 using Dalamud.Interface.Utility;
 using ImGuiNET;
 using MacroMate.Extensions.Dalamud.AutoComplete;
@@ -173,6 +174,13 @@ public class SeStringAutoCompletePopup {
                             SelectedCompletionIndex = index;
                             Complete();
                             ImGui.CloseCurrentPopup();
+                        }
+                        if (ImGui.IsItemHovered() && completion.HelpText != null) {
+                            ImGui.BeginTooltip();
+                            ImGuiHelpers.SeStringWrapped(completion.HelpText.Value, new SeStringDrawParams() {
+                                WrapWidth = 640 * ImGuiHelpers.GlobalScale
+                            });
+                            ImGui.EndTooltip();
                         }
 
                         ImGui.TableNextColumn();
