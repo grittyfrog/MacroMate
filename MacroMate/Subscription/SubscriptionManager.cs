@@ -218,6 +218,8 @@ public class SubscriptionManager {
         });
         try {
             await taskDetails.Catching(async () => {
+                await Env.Framework.RunOnTick(() => { sGroup.HasUpdate = false; });
+
                 var urlToEtags = new ConcurrentDictionary<string, string>();
                 var (manifest, manifestUpdated) = await FetchManifest(sGroup, urlToEtags, taskDetails);
 
@@ -230,8 +232,6 @@ public class SubscriptionManager {
                 await Parallel.ForEachAsync(manifest.Macros, parallelOptions, async (macroYaml, token) => {
                     await CheckMacroForUpdates(sGroup, macroYaml, urlToEtags, taskDetails);
                 });
-
-                await Env.Framework.RunOnTick(() => { sGroup.HasUpdate = false; });
             });
         } finally {
             JobSemaphore.Release();
