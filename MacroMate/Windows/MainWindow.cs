@@ -426,6 +426,13 @@ public class MainWindow : Window, IDisposable {
         if (ImGui.Selectable($"{macro.Name}###{macro.Id}")) {
             Env.PluginWindowManager.MacroWindow.ShowOrFocus(macro);
         }
+        if (Env.PluginWindowManager.MacroWindow.IsEditing(macro)) {
+            ImGuiExt.ItemBorder(
+                ImGui.ColorConvertFloat4ToU32(Colors.HighlightGold),
+                rounding: ImGui.GetStyle().FrameRounding,
+                thickness: 2.0f
+            );
+        }
 
         var nodeActionsPopupId = DrawNodeActionsPopup(macro);
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right)) {

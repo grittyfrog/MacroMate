@@ -17,9 +17,9 @@ using Dalamud.Game.Text;
 namespace MacroMate.Windows;
 
 public class MacroWindow : Window, IDisposable {
-    public static readonly string NAME = "Macro";
+    public static readonly string NAME = "MacroMateMacroWindow";
 
-    public MateNode.Macro? Macro { get; set; }
+    public MateNode.Macro? Macro { get; private set; }
 
     private ConditionExprEditor conditionExprEditor = new();
     private SeStringInputTextMultiline seStringInputTextMultiline = new();
@@ -40,7 +40,12 @@ public class MacroWindow : Window, IDisposable {
 
     public void ShowOrFocus(MateNode.Macro macro) {
         Macro = macro;
+        WindowName = $"{Macro.PathTo()}###{NAME}";
         Env.PluginWindowManager.ShowOrFocus(this);
+    }
+
+    public bool IsEditing(MateNode.Macro macro) {
+        return this.IsOpen && Macro != null && Macro.Id == macro.Id;
     }
 
     public override void Draw() {
@@ -184,6 +189,7 @@ public class MacroWindow : Window, IDisposable {
         }
 
         if (edited) {
+            WindowName = $"{Macro.PathTo()}###{NAME}";
             Save();
         }
     }

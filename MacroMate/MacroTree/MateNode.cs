@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using MacroMate.Extensions.Dotnet.Tree;
 
@@ -28,5 +29,14 @@ public abstract partial class MateNode : TreeNode<MateNode> {
                 return (MateNode?)this.Children.ElementAtOrDefault(byIndex.index);
             default: throw new Exception($"unrecognised macro path segment: {segment}");
         }
+    }
+
+    /// <summary>
+    /// Compute the MacroPath to this node
+    /// </summary>
+    public MacroPath PathTo() {
+        return new MacroPath(
+            Path().Skip(1).Select(node => new MacroPathSegment.ByName(node.Name)).ToImmutableList<MacroPathSegment>()
+        );
     }
 }
