@@ -44,9 +44,9 @@ public class HelpWindow : Window {
 
         if (ImGui.CollapsingHeader("Auto Translation")) {
             DrawPseudoMarkdown(@"
-            Auto translate text can be copied/pasted from the base game into Macro Mate, and from Macro Mate into the base game.
+            Macro Mate fully supports tab completion. 
 
-            At this time tab completion is not supported, it may be supported in a future update.
+            Auto translate text can also be copied/pasted from the base game into Macro Mate, and from Macro Mate into the base game.
             ");
         }
 
