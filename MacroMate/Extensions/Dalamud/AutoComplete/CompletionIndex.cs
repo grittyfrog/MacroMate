@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Gma.DataStructures.StringSearch;
+using KTrie;
 using Lumina.Excel.Sheets;
 
 namespace MacroMate.Extensions.Dalamud.AutoComplete;
@@ -19,7 +19,7 @@ public class CompletionIndex {
     /// we need to look at the "special" group header completion, there should be 1 per GroupId.
     /// </summary>
     private Dictionary<uint, Completion> CompletionGroupsById = new();
-    private Trie<List<CompletionInfo>> CompletionsByText = new();
+    private TrieDictionary<List<CompletionInfo>> CompletionsByText = new();
     private Dictionary<(uint, uint), CompletionInfo> CompletionInfoByGroupKey = new();
 
     public enum IndexState { UNINDEXED, INDEXING, INDEXED }
@@ -29,7 +29,7 @@ public class CompletionIndex {
         if (State != IndexState.INDEXED) { return new List<CompletionInfo>(); }
         if (prefix == "") { return new List<CompletionInfo>(); }
 
-        return CompletionsByText.Retrieve(prefix.ToLower()).SelectMany(c => c);
+        return CompletionsByText.StartsWith(prefix.ToLower()).SelectMany(c => c.Value);
     }
 
     public CompletionInfo? ById(uint group, uint key) {
