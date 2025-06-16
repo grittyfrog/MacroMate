@@ -10,15 +10,15 @@ public abstract partial class MateNode : TreeNode<MateNode> {
     public override string NodeName => Name;
 
     /// <summary>
-    /// User-facing error messages about this node
+    /// User-facing alert messages about this node
     /// </summary>
-    public MateNodeErrors Errors { get; init; } = new();
+    public MateNodeAlerts Alerts { get; init; } = new();
 
     private MateNodeAlertSummary? _errorSummary = null;
     public MateNodeAlertSummary ErrorSummary {
         get {
             if (_errorSummary == null) {
-                _errorSummary = ComputeAlertSummary(MateNodeError.ErrorSeverity.ERROR, (n) => n.ErrorSummary);
+                _errorSummary = ComputeAlertSummary(MateNodeAlert.AlertSeverity.ERROR, (n) => n.ErrorSummary);
             }
             return _errorSummary;
         }
@@ -29,23 +29,23 @@ public abstract partial class MateNode : TreeNode<MateNode> {
     public MateNodeAlertSummary WarningSummary {
         get {
             if (_warningSummary == null) {
-                _warningSummary = ComputeAlertSummary(MateNodeError.ErrorSeverity.WARN, (n) => n.WarningSummary);
+                _warningSummary = ComputeAlertSummary(MateNodeAlert.AlertSeverity.WARN, (n) => n.WarningSummary);
             }
             return _warningSummary;
         }
         private set { _warningSummary = value; }
     }
 
-    public MateNodeAlertSummary AlertSummaryFor(MateNodeError.ErrorSeverity severity) {
+    public MateNodeAlertSummary AlertSummaryFor(MateNodeAlert.AlertSeverity severity) {
         return severity switch {
-            MateNodeError.ErrorSeverity.ERROR => ErrorSummary,
-            MateNodeError.ErrorSeverity.WARN => WarningSummary,
-            _ => throw new Exception("Unexpected ErrorSeverity")
+            MateNodeAlert.AlertSeverity.ERROR => ErrorSummary,
+            MateNodeAlert.AlertSeverity.WARN => WarningSummary,
+            _ => throw new Exception($"Unexpected {typeof(MateNodeAlert.AlertSeverity)}")
         };
     }
 
     public MateNode() {
-        Errors.Changed += OnErrorChanged;
+        Alerts.Changed += OnErrorChanged;
     }
 
     /// <summary>Attempts to find the node indicated by [path] using [this] as Root</summary>
@@ -88,11 +88,11 @@ public abstract partial class MateNode : TreeNode<MateNode> {
     }
 
     private MateNodeAlertSummary ComputeAlertSummary(
-        MateNodeError.ErrorSeverity severity,
+        MateNodeAlert.AlertSeverity severity,
         Func<MateNode, MateNodeAlertSummary> summarySelector
     ) {
         return new MateNodeAlertSummary {
-            SelfCount = Errors.Where(e => e.Severity == severity).Count(),
+            SelfCount = Alerts.Where(e => e.Severity == severity).Count(),
             DescendentCount = Children.Sum(c => summarySelector(c).Total)
         };
     }

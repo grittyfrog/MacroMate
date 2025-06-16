@@ -402,15 +402,15 @@ public class MainWindow : Window, IDisposable {
     }
 
     private void DrawAlertIcons(MateNode node) {
-        DrawAlertIcon(node, Colors.ErrorRed, "errors", MateNodeError.ErrorSeverity.ERROR);
-        DrawAlertIcon(node, Colors.WarningYellow, "warnings", MateNodeError.ErrorSeverity.WARN);
+        DrawAlertIcon(node, Colors.ErrorRed, "errors", MateNodeAlert.AlertSeverity.ERROR);
+        DrawAlertIcon(node, Colors.WarningYellow, "warnings", MateNodeAlert.AlertSeverity.WARN);
     }
 
     private void DrawAlertIcon(
         MateNode node,
         Vector4 iconCol,
         string alertPlural,
-        MateNodeError.ErrorSeverity severity
+        MateNodeAlert.AlertSeverity severity
     ) {
         var summary = node.AlertSummaryFor(severity);
         if (summary.Total > 0) {
@@ -422,7 +422,7 @@ public class MainWindow : Window, IDisposable {
 
             if (ImGui.IsItemHovered()) {
                 ImGui.BeginTooltip();
-                foreach (var err in node.Errors.Where(e => e.Severity == severity)) {
+                foreach (var err in node.Alerts.Where(e => e.Severity == severity)) {
                     ImGui.TextUnformatted(err.ToString());
                 }
                 if (summary.DescendentCount > 0) {

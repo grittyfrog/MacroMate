@@ -165,7 +165,7 @@ public class SubscriptionManager {
         SubscriptionTaskDetails taskDetails,
         bool sync
     ) {
-        macro.Errors.SubscriptionSyncError = null;
+        macro.Alerts.SubscriptionSyncError = null;
 
         var updatedFields = new List<string>();
         string? error = null;
@@ -204,7 +204,7 @@ public class SubscriptionManager {
             var child = taskDetails.Child(error);
             child.IsError = true;
             await Env.Framework.RunOnTick(() => {
-                macro.Errors.SubscriptionSyncError = new MateNodeError.SubscriptionSyncError(error);
+                macro.Alerts.SubscriptionSyncError = new MateNodeAlert.SubscriptionSyncError(error);
             });
         } else {
             taskDetails.Child($"No changes");
@@ -404,9 +404,9 @@ public class SubscriptionManager {
         Env.Framework.RunOnFrameworkThread(() => {
             foreach (var macro in sGroup.Descendants().OfType<MateNode.Macro>()) {
                 if (macroIdsWithManifest.Contains(macro.Id)) {
-                    macro.Errors.SubscriptionDoesNotContainThis = null;
+                    macro.Alerts.SubscriptionDoesNotContainThis = null;
                 } else {
-                    macro.Errors.SubscriptionDoesNotContainThis = new MateNodeError.SubscriptionDoesNotContainThis();
+                    macro.Alerts.SubscriptionDoesNotContainThis = new MateNodeAlert.SubscriptionDoesNotContainThis();
                 }
             }
         });
