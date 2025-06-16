@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using MacroMate.Extensions.Dotnet.Tree;
@@ -13,7 +12,41 @@ public abstract partial class MateNode : TreeNode<MateNode> {
     /// <summary>
     /// User-facing error messages about this node
     /// </summary>
-    public List<string> Errors { get; init; } = new();
+    public MateNodeErrors Errors { get; init; } = new();
+
+    private MateNodeAlertSummary? _errorSummary = null;
+    public MateNodeAlertSummary ErrorSummary {
+        get {
+            if (_errorSummary == null) {
+                _errorSummary = ComputeAlertSummary(MateNodeError.ErrorSeverity.ERROR, (n) => n.ErrorSummary);
+            }
+            return _errorSummary;
+        }
+        private set { _errorSummary = value; }
+    }
+
+    private MateNodeAlertSummary? _warningSummary = null;
+    public MateNodeAlertSummary WarningSummary {
+        get {
+            if (_warningSummary == null) {
+                _warningSummary = ComputeAlertSummary(MateNodeError.ErrorSeverity.WARN, (n) => n.WarningSummary);
+            }
+            return _warningSummary;
+        }
+        private set { _warningSummary = value; }
+    }
+
+    public MateNodeAlertSummary AlertSummaryFor(MateNodeError.ErrorSeverity severity) {
+        return severity switch {
+            MateNodeError.ErrorSeverity.ERROR => ErrorSummary,
+            MateNodeError.ErrorSeverity.WARN => WarningSummary,
+            _ => throw new Exception("Unexpected ErrorSeverity")
+        };
+    }
+
+    public MateNode() {
+        Errors.Changed += OnErrorChanged;
+    }
 
     /// <summary>Attempts to find the node indicated by [path] using [this] as Root</summary>
     public MateNode? Walk(MacroPath path) {
@@ -44,5 +77,23 @@ public abstract partial class MateNode : TreeNode<MateNode> {
         return new MacroPath(
             Path().Skip(1).Select(node => new MacroPathSegment.ByName(node.Name)).ToImmutableList<MacroPathSegment>()
         );
+    }
+
+    /// Propagate the `ChildrenHaveWarnings` and `ChildrenHaveErrors` upwards
+    private void OnErrorChanged(Type errorType) {
+        foreach (var ancestor in SelfAndAncestors()) {
+            ancestor._errorSummary = null;
+            ancestor._warningSummary = null;
+        }
+    }
+
+    private MateNodeAlertSummary ComputeAlertSummary(
+        MateNodeError.ErrorSeverity severity,
+        Func<MateNode, MateNodeAlertSummary> summarySelector
+    ) {
+        return new MateNodeAlertSummary {
+            SelfCount = Errors.Where(e => e.Severity == severity).Count(),
+            DescendentCount = Children.Sum(c => summarySelector(c).Total)
+        };
     }
 }

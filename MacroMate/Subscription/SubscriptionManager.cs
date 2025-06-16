@@ -134,15 +134,10 @@ public class SubscriptionManager {
 
                 // We create the groups / macros first non-async to avoid race conditions where
                 // groups are created multiple times.
-                var macroYamlAndMacro = manifest.Macros.Select(macroYaml => {
-                    var parsedParentPath = MacroPath.ParseText(macroYaml.Group ?? "/");
-                    var parent = Env.MacroConfig.CreateOrFindGroupByPath(sGroup, parsedParentPath);
-                    var macro = Env.MacroConfig.CreateOrFindMacroByName(macroYaml.Name!, parent);
-                    return (macroYaml, macro);
-                });
+                var macroYamlsAndMacros = MatchManifestToMacros(sGroup, manifest);
 
                 var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 4 };
-                await Parallel.ForEachAsync(macroYamlAndMacro, parallelOptions, async (macroYamlAndMacro, token) => {
+                await Parallel.ForEachAsync(macroYamlsAndMacros, parallelOptions, async (macroYamlAndMacro, token) => {
                     var (macroYaml, macro) = macroYamlAndMacro;
 
                     var childDetails = taskDetails.Child($"Sync '{macro.PathString}'");
@@ -152,7 +147,6 @@ public class SubscriptionManager {
                 await Env.Framework.RunOnTick(() => {
                     sGroup.LastSyncTime = DateTimeOffset.Now;
                     sGroup.HasUpdate = false;
-                    CommitErrorsToTree(sGroup);
                     Env.MacroConfig.SubscriptionUrlCache.ClearForSubscription(sGroup.Id);
                     Env.MacroConfig.SubscriptionUrlCache.AddEntries(sGroup, urlToEtags);
                     Env.MacroConfig.NotifyEdit();
@@ -171,6 +165,8 @@ public class SubscriptionManager {
         SubscriptionTaskDetails taskDetails,
         bool sync
     ) {
+        macro.Errors.SubscriptionSyncError = null;
+
         var updatedFields = new List<string>();
         string? error = null;
 
@@ -208,8 +204,7 @@ public class SubscriptionManager {
             var child = taskDetails.Child(error);
             child.IsError = true;
             await Env.Framework.RunOnTick(() => {
-                macro.Errors.Clear();
-                macro.Errors.Add(error);
+                macro.Errors.SubscriptionSyncError = new MateNodeError.SubscriptionSyncError(error);
             });
         } else {
             taskDetails.Child($"No changes");
@@ -227,6 +222,7 @@ public class SubscriptionManager {
 
                 var urlToEtags = new ConcurrentDictionary<string, string>();
                 var (manifest, manifestUpdated) = await FetchManifest(sGroup, urlToEtags, taskDetails);
+                MatchManifestToMacros(sGroup, manifest); // Only called to trigger unowned macro errors
 
                 if (manifestUpdated == true) {
                     await Env.Framework.RunOnTick(() => { sGroup.HasUpdate = true; });
@@ -237,8 +233,6 @@ public class SubscriptionManager {
                 await Parallel.ForEachAsync(manifest.Macros, parallelOptions, async (macroYaml, token) => {
                     await CheckMacroForUpdates(sGroup, macroYaml, urlToEtags, taskDetails);
                 });
-
-                await Env.Framework.RunOnTick(() => { CommitErrorsToTree(sGroup); });
             });
         } finally {
             JobSemaphore.Release();
@@ -389,13 +383,34 @@ public class SubscriptionManager {
     }
 
     /// <summary>
-    /// Write the errors we've found into the MateNode tree
+    /// Matches or creates entries in `sGroup` for entries in `manifest`.
+    ///
+    /// Also marks non-matching entries in `sGroup` with an error.
     /// </summary>
-    private void CommitErrorsToTree(MateNode.SubscriptionGroup sGroup) {
-        sGroup.Errors.Clear();
-        var errorCount = GetSubscriptionTaskDetails(sGroup).ErrorCount;
-        if (errorCount > 0) {
-            sGroup.Errors.Add($"{errorCount} errors occurred when checking this subscription. Check 'Subscription > Status' for details.");
-        }
+    private IEnumerable<(MacroYAML, MateNode.Macro)> MatchManifestToMacros(
+        MateNode.SubscriptionGroup sGroup,
+        SubscriptionManifestYAML manifest
+    ) {
+        var manifestAndMacroMatches = manifest.Macros.Select(macroYaml => {
+            var parsedParentPath = MacroPath.ParseText(macroYaml.Group ?? "/");
+            var parent = Env.MacroConfig.CreateOrFindGroupByPath(sGroup, parsedParentPath);
+            var macro = Env.MacroConfig.CreateOrFindMacroByName(macroYaml.Name!, parent);
+
+            return (macroYaml, macro);
+        });
+        var macroIdsWithManifest = manifestAndMacroMatches.Select(mam => mam.macro.Id).ToHashSet();
+
+        // Mark macros that don't come from our manifest as having an error
+        Env.Framework.RunOnFrameworkThread(() => {
+            foreach (var macro in sGroup.Descendants().OfType<MateNode.Macro>()) {
+                if (macroIdsWithManifest.Contains(macro.Id)) {
+                    macro.Errors.SubscriptionDoesNotContainThis = null;
+                } else {
+                    macro.Errors.SubscriptionDoesNotContainThis = new MateNodeError.SubscriptionDoesNotContainThis();
+                }
+            }
+        });
+
+        return manifestAndMacroMatches;
     }
 }

@@ -35,6 +35,13 @@ public static class Colors {
         1.0f
     );
 
+    public static Vector4 WarningYellow = new(
+        255.0f / 255.0f,
+        255.0f / 255.0f,
+        0.0f / 255.0f,
+        1.0f
+    );
+
     public static Vector4 AutoTranslateStartGreen = new(
         96.0f / 255.0f,
         223.0f / 255.0f,

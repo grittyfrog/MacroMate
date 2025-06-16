@@ -334,7 +334,7 @@ public class MainWindow : Window, IDisposable {
             DrawSubscriptionGroupIcons(sGroup);
         }
         DrawGroupLinkIcon(group);
-        DrawErrorIcon(group);
+        DrawAlertIcons(group);
 
         // Action Button
         ImGui.TableNextColumn();
@@ -401,18 +401,33 @@ public class MainWindow : Window, IDisposable {
         }
     }
 
-    private void DrawErrorIcon(MateNode node) {
-        if (node.Errors.Count > 0) {
+    private void DrawAlertIcons(MateNode node) {
+        DrawAlertIcon(node, Colors.ErrorRed, "errors", MateNodeError.ErrorSeverity.ERROR);
+        DrawAlertIcon(node, Colors.WarningYellow, "warnings", MateNodeError.ErrorSeverity.WARN);
+    }
+
+    private void DrawAlertIcon(
+        MateNode node,
+        Vector4 iconCol,
+        string alertPlural,
+        MateNodeError.ErrorSeverity severity
+    ) {
+        var summary = node.AlertSummaryFor(severity);
+        if (summary.Total > 0) {
             ImGui.PushFont(UiBuilder.IconFont);
-            ImGui.PushStyleColor(ImGuiCol.Text, Colors.ErrorRed);
+            ImGui.PushStyleColor(ImGuiCol.Text, iconCol);
             ImGuiExt.TextUnformattedHorizontalRTL(FontAwesomeIcon.ExclamationTriangle.ToIconString());
             ImGui.PopStyleColor();
             ImGui.PopFont();
 
             if (ImGui.IsItemHovered()) {
                 ImGui.BeginTooltip();
-                foreach (var err in node.Errors) {
-                    ImGui.TextUnformatted(err);
+                foreach (var err in node.Errors.Where(e => e.Severity == severity)) {
+                    ImGui.TextUnformatted(err.ToString());
+                }
+                if (summary.DescendentCount > 0) {
+                    var sGroupExtra = node is MateNode.SubscriptionGroup ? " Check 'Subscription > Status' for details." : "";
+                    ImGui.TextUnformatted($"{summary.DescendentCount} {alertPlural} found in this group.{sGroupExtra}");
                 }
                 ImGui.EndTooltip();
             }
@@ -465,7 +480,7 @@ public class MainWindow : Window, IDisposable {
 
         ImGui.SameLine(ImGui.GetContentRegionMax().X);
         DrawMacroLinkIcon(macro);
-        DrawErrorIcon(macro);
+        DrawAlertIcons(macro);
         ImGui.NewLine();
 
         ImGui.PopStyleVar();
