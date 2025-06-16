@@ -17,8 +17,6 @@ public partial record class PlayerConditionCondition(
         { ConditionFlag.BoundByDuty56,                 ConditionFlag.BoundByDuty },
         { ConditionFlag.BoundByDuty95,                 ConditionFlag.BoundByDuty },
         { ConditionFlag.Casting87,                     ConditionFlag.Casting },
-        { ConditionFlag.Crafting40,                    ConditionFlag.Crafting },
-        { ConditionFlag.Gathering42,                   ConditionFlag.Gathering },
         { ConditionFlag.InThisState89,                 ConditionFlag.InThisState88 },
         { ConditionFlag.Jumping61,                     ConditionFlag.Jumping },
         { ConditionFlag.Mounting71,                    ConditionFlag.Mounting },
