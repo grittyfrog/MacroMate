@@ -384,6 +384,12 @@ public class MacroConfig {
         if (!notifyEditScheduled && ConfigChange != null) {
             notifyEditScheduled = true;
             Env.Framework.RunOnTick(() => {
+                // If an edit occurs we want to bust the error summary cache since it may be wrong now, but we don't want
+                // this to trigger NotifyEdit again so we do it before we reset `notifyEditScheduled`
+                foreach (var node in Root.SelfAndDescendants()) {
+                    node.ClearErrorSummaryCache();
+                }
+
                 notifyEditScheduled = false;
                 ConfigChange();
             });

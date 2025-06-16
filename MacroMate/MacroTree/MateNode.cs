@@ -36,6 +36,8 @@ public abstract partial class MateNode : TreeNode<MateNode> {
         private set { _warningSummary = value; }
     }
 
+    public MateNodeAlertSummary AlertSummary => ErrorSummary.CombineWith(WarningSummary);
+
     public MateNodeAlertSummary AlertSummaryFor(MateNodeAlert.AlertSeverity severity) {
         return severity switch {
             MateNodeAlert.AlertSeverity.ERROR => ErrorSummary,
@@ -79,11 +81,15 @@ public abstract partial class MateNode : TreeNode<MateNode> {
         );
     }
 
+    public void ClearErrorSummaryCache() {
+        this._errorSummary = null;
+        this._warningSummary = null;
+    }
+
     /// Propagate the `ChildrenHaveWarnings` and `ChildrenHaveErrors` upwards
     private void OnErrorChanged(Type errorType) {
         foreach (var ancestor in SelfAndAncestors()) {
-            ancestor._errorSummary = null;
-            ancestor._warningSummary = null;
+            ancestor.ClearErrorSummaryCache();
         }
     }
 
@@ -91,9 +97,11 @@ public abstract partial class MateNode : TreeNode<MateNode> {
         MateNodeAlert.AlertSeverity severity,
         Func<MateNode, MateNodeAlertSummary> summarySelector
     ) {
-        return new MateNodeAlertSummary {
-            SelfCount = Alerts.Where(e => e.Severity == severity).Count(),
-            DescendentCount = Children.Sum(c => summarySelector(c).Total)
+        var alerts = Alerts.Where(e => e.Severity == severity).ToList();
+        var selfSummary = new MateNodeAlertSummary {
+            AlertTypes = alerts.Select(a => a.GetType()).ToImmutableHashSet(),
+            SelfCount = alerts.Count()
         };
+        return selfSummary.CombineWithChildren(Children.Select(a => summarySelector(a)));
     }
 }

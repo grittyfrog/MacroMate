@@ -404,9 +404,9 @@ public class SubscriptionManager {
         Env.Framework.RunOnFrameworkThread(() => {
             foreach (var macro in sGroup.Descendants().OfType<MateNode.Macro>()) {
                 if (macroIdsWithManifest.Contains(macro.Id)) {
-                    macro.Alerts.SubscriptionDoesNotContainThis = null;
+                    macro.Alerts.UnownedSubscriptionMacro = null;
                 } else {
-                    macro.Alerts.SubscriptionDoesNotContainThis = new MateNodeAlert.SubscriptionDoesNotContainThis();
+                    macro.Alerts.UnownedSubscriptionMacro = new MateNodeAlert.UnownedSubscriptionMacro();
                 }
             }
         });

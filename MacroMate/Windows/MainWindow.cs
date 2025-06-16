@@ -599,8 +599,19 @@ public class MainWindow : Window, IDisposable {
         var importFromGamePopupId = DrawImportFromGamePopup(node);
         var deletePopupId = DrawDeletePopupModal(node);
         var sortPopupId = DrawSortGroupPopup(node);
+        var deleteUnownedPopupId = DrawDeleteUnownedPopupModal(node);
 
         if (ImGui.BeginPopup(nodeActionsPopupName)) {
+            // This menu only appears if we have some sort of "Fix" action we can apply to errors
+            if (node.AlertSummary.AlertTypes.Contains(typeof(MateNodeAlert.UnownedSubscriptionMacro))) {
+                if (ImGui.BeginMenu("Fix Issues")) {
+                    if (ImGui.Selectable("Delete Unowned Macros")) {
+                        ImGui.OpenPopup(deleteUnownedPopupId);
+                    }
+                    ImGui.EndMenu();
+                }
+            }
+
             if (node is MateNode.SubscriptionGroup sGroup) {
                 if (ImGui.BeginMenu("Subscription")) {
                     if (ImGui.Selectable("Sync")) {
@@ -788,6 +799,47 @@ public class MainWindow : Window, IDisposable {
         return deletePopupId;
     }
 
+    private uint DrawDeleteUnownedPopupModal(MateNode node) {
+        var nodesToDelete = node.SelfAndDescendants()
+            .OfType<MateNode.Macro>()
+            .Where(node => node.AlertSummary.AlertTypes.Contains(typeof(MateNodeAlert.UnownedSubscriptionMacro)))
+            .ToList();
+        return DrawConfirmationPopupModal(
+            node,
+            "Delete Unowned Macros",
+            $"Are you sure you want to delete all unowned macros in '{node.Name}'?",
+            $"Delete {nodesToDelete.Count} macros!",
+            "No",
+            () => {
+                foreach (var node in nodesToDelete) {
+                    Env.MacroConfig.Delete(node);
+                }
+            }
+        );
+    }
+
+    private uint DrawConfirmationPopupModal(
+        MateNode node,
+        string title,
+        string question,
+        string yes,
+        string no,
+        Action onYes
+    ) {
+        var confimPopupName = $"{title}###mainwindow/confirm_popup/{node.Id}";
+        var confirmPopupId = ImGui.GetID(confimPopupName);
+
+        if (ImGui.BeginPopupModal(confimPopupName)) {
+            ImGui.Text(question);
+            if (ImGui.Button(yes)) { onYes(); ImGui.CloseCurrentPopup(); }
+            ImGui.SameLine();
+            if (ImGui.Button(no)) { ImGui.CloseCurrentPopup(); }
+            ImGui.EndPopup();
+        }
+
+        return confirmPopupId;
+    }
+
     private uint DrawBulkDeletePopupModel() {
         var bulkDeletePopupName = $"Bulk Delete###mainwindow/bulk_delete_popup";
         var bulkDeletePopupId = ImGui.GetID(bulkDeletePopupName);
@@ -797,7 +849,7 @@ public class MainWindow : Window, IDisposable {
             if (ImGui.Button("Delete!")) {
                 foreach (var macro in Env.MacroConfig.Root.Values().OfType<MateNode.Macro>()) {
                     if (editModeMacroSelection.Contains(macro.Id)) {
-                        Env.MacroConfig.Root.Delete(macro.Id);
+                        Env.MacroConfig.Delete(macro);
                     }
                 }
                 Env.MacroConfig.NotifyEdit();
