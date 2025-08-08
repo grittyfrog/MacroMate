@@ -1,6 +1,6 @@
 
 using System.Linq;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using MacroMate.MacroTree;
 
 namespace MacroMate.Windows.Components;

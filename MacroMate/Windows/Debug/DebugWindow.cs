@@ -2,7 +2,7 @@ using System;
 using System.Numerics;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Ipc;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using MacroMate.Extensions.Dalamud;
 
 namespace MacroMate.Windows.Debug;

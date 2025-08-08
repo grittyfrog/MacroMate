@@ -4,7 +4,7 @@ using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using MacroMate.Conditions;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dotnet;

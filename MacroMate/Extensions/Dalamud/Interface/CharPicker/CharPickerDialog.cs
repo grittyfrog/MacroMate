@@ -4,7 +4,7 @@ using System.Linq;
 using System.Numerics;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using MacroMate.Extensions.Imgui;
 
 namespace MacroMate.Extensions.Dalamud.Interface.CharPicker;

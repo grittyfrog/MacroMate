@@ -2,7 +2,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using Dalamud.Interface.Utility;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Macros;
 using MacroMate.Extensions.Dalamud.Str;

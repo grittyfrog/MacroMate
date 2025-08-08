@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Interface.ImGuiSeStringRenderer;
 using Dalamud.Interface.Utility;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Lumina.Text.ReadOnly;
 
 namespace MacroMate.Extensions.Imgui;

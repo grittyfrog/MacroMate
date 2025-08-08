@@ -8,7 +8,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.ImGuiSeStringRenderer;
 using Dalamud.Interface.Utility;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Str;
 using MacroMate.Extensions.Imgui;
@@ -20,13 +20,12 @@ public class SeStringInputTextMultiline {
     private bool processingPasteEvent = false;
     private Dictionary<string, AutoTranslatePayload> knownTranslationPayloads = new();
     private InputTextDecorator textDecorator = new();
-    private StbTextEditState? previousCursorState = null;
+    private STBTexteditState? previousCursorState = null;
     private (int, int)? previousEditWord = null; // The word range we want to edit if we get an auto-complete event
 
     private SeStringAutoCompletePopup AutoCompletePopup = new();
 
-    private unsafe ImGuiInputTextState* TextState =>
-        (ImGuiInputTextState*)(ImGui.GetCurrentContext() + ImGuiInputTextState.TextStateOffset);
+    private unsafe ImGuiInputTextStatePtr TextState => ImGuiP.ImGuiInputTextState();
 
     public bool Draw(
         string label,

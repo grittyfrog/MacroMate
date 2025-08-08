@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MacroMate.Conditions;
 using MacroMate.Extensions.Dotnet;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 
 namespace MacroMate.Windows.Components;
 

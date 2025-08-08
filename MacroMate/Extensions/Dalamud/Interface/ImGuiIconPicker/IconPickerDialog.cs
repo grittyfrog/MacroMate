@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 
 namespace MacroMate.Extensions.Dalamud.Interface.ImGuiIconPicker;
 
