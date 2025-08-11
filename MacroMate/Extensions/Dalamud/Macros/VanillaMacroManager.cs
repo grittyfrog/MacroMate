@@ -217,7 +217,7 @@ public unsafe class VanillaMacroManager : IDisposable {
     private AtkUnitBase* GetAddonMacro() {
         var macroAddonRaw = Env.GameGui.GetAddonByName("Macro");
         if (macroAddonRaw == nint.Zero) { return null; }
-        var macroAddon = (AtkUnitBase*)macroAddonRaw;
+        var macroAddon = (AtkUnitBase*)macroAddonRaw.Address;
 
         // We need to make sure the addon is fully initialised (i.e. Setup has finished) before
         // calling OnRefresh, otherwise things crash.

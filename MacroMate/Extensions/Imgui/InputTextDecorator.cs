@@ -13,8 +13,7 @@ namespace MacroMate.Extensions.Imgui;
 public class InputTextDecorator {
     private Vector2 scroll = new Vector2(0, 0);
 
-    private unsafe ImGuiInputTextState* TextState =>
-        (ImGuiInputTextState*)(ImGui.GetCurrentContext() + ImGuiInputTextState.TextStateOffset);
+    private unsafe ImGuiInputTextStatePtr TextState => ImGuiP.ImGuiInputTextState();
 
     /// Decorates an InputText
     ///
@@ -26,12 +25,10 @@ public class InputTextDecorator {
         Vector2 size,
         IEnumerable<InputTextDecoration> decorations
     ) {
-        unsafe {
-            scroll.X = TextState->ScrollX;
-            ImGui.BeginChild(label);
-            scroll.Y = ImGui.GetScrollY();
-            ImGui.EndChild();
-        }
+        scroll.X = TextState.ScrollX;
+        ImGui.BeginChild(label);
+        scroll.Y = ImGui.GetScrollY();
+        ImGui.EndChild();
 
         // Prevent showing misplaced decorations when:
         //

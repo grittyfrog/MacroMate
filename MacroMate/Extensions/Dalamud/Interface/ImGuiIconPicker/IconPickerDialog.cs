@@ -162,7 +162,7 @@ public class IconPickerDialog : Window {
         ImGuiClip.ClippedDraw(searchedIconInfo, (namedIcon) => {
             var icon = Env.TextureProvider.GetFromGameIcon(namedIcon.IconId)!.GetWrapOrEmpty();
             ImGui.Image(
-                icon.ImGuiHandle,
+                icon.Handle,
                 new Vector2(iconSize),
                 new Vector2(0.0f, 0.0f),
                 new Vector2(1.0f, 1.0f)
@@ -172,7 +172,7 @@ public class IconPickerDialog : Window {
 
                 if (ImGui.IsMouseDown(ImGuiMouseButton.Right)) {
                     // Icon Preview
-                    ImGui.Image(icon.ImGuiHandle, new Vector2(700 * ImGuiHelpers.GlobalScale));
+                    ImGui.Image(icon.Handle, new Vector2(700 * ImGuiHelpers.GlobalScale));
                 } else {
                     // Icon Details
                     ImGui.TextUnformatted($"{namedIcon.IconId}");

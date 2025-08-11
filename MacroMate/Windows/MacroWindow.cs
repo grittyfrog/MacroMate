@@ -6,7 +6,6 @@ using MacroMate.Extensions.Imgui;
 using MacroMate.Windows.Components;
 using MacroMate.MacroTree;
 using MacroMate.Extensions.Dalamud.Macros;
-using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.Str;
 using MacroMate.Extensions.Dalamaud.Interface.Components;
@@ -95,7 +94,7 @@ public class MacroWindow : Window, IDisposable {
             );
 
             // Link Item
-            if (ImGui.MenuItem($"Link ({Macro!.Link.Name()})", null, showLinkMacros)) {
+            if (ImGui.MenuItem($"Link ({Macro!.Link.Name()})", selected: showLinkMacros)) {
                 showLinkMacros = !showLinkMacros;
             }
             if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
@@ -103,7 +102,7 @@ public class MacroWindow : Window, IDisposable {
             }
 
             // Conditions Item
-            if (ImGui.MenuItem("Link Conditions", null, showLinkConditions)) {
+            if (ImGui.MenuItem("Link Conditions", selected: showLinkConditions)) {
                 showLinkConditions = !showLinkConditions;
             }
             if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
@@ -170,7 +169,7 @@ public class MacroWindow : Window, IDisposable {
 
         var lines = Macro!.Lines;
         if (seStringInputTextMultiline.Draw(
-            $"###macro-lines",
+            "###macro-lines",
             ref lines,
             ushort.MaxValue, // Allow for many lines, since we chunk them by blocks of 15 for execution/binding.
             new Vector2(

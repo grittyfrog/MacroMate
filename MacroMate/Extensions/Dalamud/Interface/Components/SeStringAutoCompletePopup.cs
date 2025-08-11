@@ -66,16 +66,10 @@ public class SeStringAutoCompletePopup {
     private bool FixCursor { get; set; } = false;
 
     // We can't use the ImGuiClipper extensions because they don't return a Ptr reference
-    private ImGuiListClipperPtr clipper;
+    private ImGuiListClipperPtr clipper = ImGui.ImGuiListClipper();
 
     private ImGuiWindowFlags popupFlags =
         ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings;
-
-    public SeStringAutoCompletePopup() {
-        unsafe {
-            clipper = new ImGuiListClipperPtr(ImGuiNative.ImGuiListClipper_ImGuiListClipper());
-        }
-    }
 
     public void Draw() {
         id ??= ImGui.GetID(name);
@@ -259,11 +253,11 @@ public class SeStringAutoCompletePopup {
         }
     }
 
-    private unsafe int AutoCompleteFilterCallback(ImGuiInputTextCallbackData* data) {
+    private int AutoCompleteFilterCallback(ImGuiInputTextCallbackDataPtr data) {
         if (FixCursor) {
             FixCursor = false;
-            data->CursorPos = _autoCompleteFilter.Length;
-            data->SelectionStart = data->SelectionEnd = data->CursorPos;
+            data.CursorPos = _autoCompleteFilter.Length;
+            data.SelectionStart = data.SelectionEnd = data.CursorPos;
         }
 
         return 1;

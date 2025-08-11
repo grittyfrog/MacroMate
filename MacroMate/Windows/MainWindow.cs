@@ -133,7 +133,7 @@ public class MainWindow : Window, IDisposable {
                 ImGui.EndMenu();
             }
 
-            if (ImGui.MenuItem("Edit Mode", null, editMode)) {
+            if (ImGui.MenuItem("Edit Mode", selected: editMode)) {
                 EditModeSetEnabled(!editMode);
             }
             if (ImGui.IsItemHovered()) {
@@ -443,7 +443,7 @@ public class MainWindow : Window, IDisposable {
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
         var macroIcon = Env.TextureProvider.GetMacroIcon(macro.IconId).GetWrapOrEmpty();
         if (macroIcon != null) {
-            ImGui.Image(macroIcon.ImGuiHandle, new Vector2(ImGui.GetTextLineHeight()));
+            ImGui.Image(macroIcon.Handle, new Vector2(ImGui.GetTextLineHeight()));
             ImGui.SameLine();
         }
 
@@ -470,7 +470,7 @@ public class MainWindow : Window, IDisposable {
 
         NodeDragDropSource(macro, DragDropType.MACRO_OR_GROUP_NODE, drawPreview: () => {
             if (macroIcon != null) {
-                ImGui.Image(macroIcon.ImGuiHandle, new Vector2(ImGui.GetTextLineHeight()));
+                ImGui.Image(macroIcon.Handle, new Vector2(ImGui.GetTextLineHeight()));
                 ImGui.SameLine();
             }
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() - ImGui.GetStyle().FramePadding.Y);
@@ -519,7 +519,7 @@ public class MainWindow : Window, IDisposable {
 
     private void NodeDragDropSource(MateNode node, DragDropType dragDropType, Action drawPreview) {
         if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.SourceNoHoldToOpenOthers)) {
-            ImGui.SetDragDropPayload(Enum.GetName(dragDropType), IntPtr.Zero, 0);
+            ImGui.SetDragDropPayload(Enum.GetName(dragDropType), Span<byte>.Empty);
             drawPreview();
             Dragging = node;
             ImGui.EndDragDropSource();
@@ -885,7 +885,7 @@ public class MainWindow : Window, IDisposable {
             bool finished = false;
 
             // These can get reasonably big, so we just allocate a 16mb buffer and be done with it.
-            var maxSize = 16u * 1024u * 1024u;
+            var maxSize = 16 * 1024 * 1024;
             if (
                 ImGui.InputTextWithHint(
                     "###import_code",

@@ -41,7 +41,7 @@ public class SettingsWindow : Window {
             ImGui.TableNextColumn();
             var macroIcon = Env.TextureProvider.GetMacroIcon(Env.MacroConfig.LinkPlaceholderIconId).GetWrapOrEmpty();
             if (macroIcon != null) {
-                ImGui.Image(macroIcon.ImGuiHandle, new Vector2(ImGui.GetTextLineHeight()) * 1.3f);
+                ImGui.Image(macroIcon.Handle, new Vector2(ImGui.GetTextLineHeight()) * 1.3f);
                 ImGui.SameLine();
             }
             linkPlaceHolderIconHovered |= ImGui.IsItemHovered();

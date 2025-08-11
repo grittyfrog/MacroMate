@@ -28,8 +28,7 @@ public static unsafe class ClipboardEx {
     /// Sets the clipboard text, from a <see cref="SeString"/>, payloads intact.
     /// </summary>
     /// <param name="seString">The string.</param>
-    public static void SetClipboardSeString(SeString seString)
-    {
+    public static void SetClipboardSeString(SeString seString) {
         using var ms = new MemoryStream();
         ms.Write(seString.Encode());
         ms.WriteByte(0);
@@ -42,8 +41,7 @@ public static unsafe class ClipboardEx {
     /// </summary>
     /// <param name="text">The string.</param>
     /// <exception cref="ArgumentException">If text includes a null character.</exception>
-    public static void SetClipboardString(ReadOnlySpan<char> text)
-    {
+    public static void SetClipboardString(ReadOnlySpan<char> text) {
         if (text.IndexOf((char)0) != -1)
             throw new ArgumentException("Cannot contain a null character (\\0).", nameof(text));
 

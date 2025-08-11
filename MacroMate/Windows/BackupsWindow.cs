@@ -108,7 +108,7 @@ public class BackupWindow : Window {
         var loadPopupName = $"Load###backups_window/load_popup/{backup.FullName}";
         var loadPopupId = ImGui.GetID(loadPopupName);
 
-        if (ImGuiExt.BeginPopupModal(loadPopupName, ImGuiWindowFlags.AlwaysAutoResize)) {
+        if (ImGui.BeginPopupModal(loadPopupName, ImGuiWindowFlags.AlwaysAutoResize)) {
             ImGui.Text($"Are you sure you want to load {backup.Name}?");
             ImGui.Text("This will overwrite the current configuration");
             if (ImGui.Button("Yes")) {

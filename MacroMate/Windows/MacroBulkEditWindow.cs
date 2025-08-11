@@ -198,7 +198,7 @@ internal class SetIconMacroBulkEdit : MacroBulkEdit {
     public void DrawValue(int id) {
         var macroIcon = Env.TextureProvider.GetMacroIcon(IconId).GetWrapOrEmpty();
         if (macroIcon != null) {
-            ImGui.Image(macroIcon.ImGuiHandle, new Vector2(ImGui.GetTextLineHeight()) * 1.3f);
+            ImGui.Image(macroIcon.Handle, new Vector2(ImGui.GetTextLineHeight()) * 1.3f);
         }
 
         if (ImGui.IsItemHovered()) {

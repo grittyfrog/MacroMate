@@ -24,8 +24,8 @@ public record class MapMarkerLocationCondition(ExcelId<TerritoryType> Territory)
         uint mapMarkerTerritoryId;
         unsafe {
             var agentMap = XIVCS.GetAgent<AgentMap>();
-            if (!agentMap->IsFlagMarkerSet) { return null; }
-            mapMarkerTerritoryId = agentMap->FlagMapMarker.TerritoryId;
+            if (agentMap->FlagMarkerCount == 0) { return null; }
+            mapMarkerTerritoryId = agentMap->FlagMapMarkers[0].TerritoryId;
         }
         return new MapMarkerLocationCondition(mapMarkerTerritoryId);
     }

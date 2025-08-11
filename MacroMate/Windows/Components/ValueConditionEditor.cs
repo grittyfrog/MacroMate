@@ -133,9 +133,8 @@ unsafe class ValueConditionEditorColumn : IDisposable {
     private IEnumerable<IValueCondition> filteredConditions = new List<IValueCondition>();
 
     public ValueConditionEditorColumn() {
-        var filterPtr = ImGuiNative.ImGuiTextFilter_ImGuiTextFilter(null);
-        filter = new ImGuiTextFilterPtr(filterPtr);
-        clipper = new ImGuiListClipperPtr(ImGuiNative.ImGuiListClipper_ImGuiListClipper());
+        filter = ImGui.ImGuiTextFilter();
+        clipper = ImGui.ImGuiListClipper();
     }
 
     /// Draws the Condition Window and returns true if something was selected
@@ -189,6 +188,6 @@ unsafe class ValueConditionEditorColumn : IDisposable {
     }
 
     public void Dispose() {
-        ImGuiNative.ImGuiTextFilter_destroy(filter.NativePtr);
+        filter.Destroy();
     }
 }

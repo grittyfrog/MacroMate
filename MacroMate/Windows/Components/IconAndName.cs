@@ -23,7 +23,7 @@ public static class IconAndName {
 
         var iconPicker = Env.PluginWindowManager.IconPicker;
         if (icon != null) {
-            ImGui.Image(icon.ImGuiHandle, iconSize);
+            ImGui.Image(icon.Handle, iconSize);
             if (ImGui.IsItemClicked()) {
                 Env.PluginWindowManager.IconPicker.Open(macro.IconId, selectedIconId => {
                     macro.IconId = selectedIconId;

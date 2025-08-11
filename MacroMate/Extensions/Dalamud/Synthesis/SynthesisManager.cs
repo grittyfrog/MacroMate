@@ -25,7 +25,7 @@ public unsafe class SynthesisManager {
     }
 
     private void OnSynthesisSetup(AddonEvent type, AddonArgs args) {
-        var synth = (AddonSynthesis*)args.Addon;
+        var synth = (AddonSynthesis*)args.Addon.Address;
         var atkValues = new ReadOnlySpan<AtkValue>(synth->AtkUnitBase.AtkValues, synth->AtkUnitBase.AtkValuesCount);
         CurrentCraftDifficulty = atkValues[6].UInt;
         CurrentCraftMaxDurability = atkValues[8].UInt;

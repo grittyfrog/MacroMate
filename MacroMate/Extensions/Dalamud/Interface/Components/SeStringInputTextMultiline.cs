@@ -25,15 +25,15 @@ public class SeStringInputTextMultiline {
 
     private SeStringAutoCompletePopup AutoCompletePopup = new();
 
-    private unsafe ImGuiInputTextStatePtr TextState => ImGuiP.ImGuiInputTextState();
+    private unsafe ImGuiInputTextStatePtr TextState => new(&ImGui.GetCurrentContext().Handle->InputTextState);
 
     public bool Draw(
         string label,
         ref SeString input,
-        uint maxLength,
+        int maxLength,
         Vector2 size,
         ImGuiInputTextFlags flags,
-        ImGuiInputTextCallback callback
+        ImGui.ImGuiInputTextCallbackDelegate callback
     ) {
         AutoCompletePopup.Draw();
 
@@ -59,72 +59,68 @@ public class SeStringInputTextMultiline {
 
         var text = input.TextValue.ReplaceLineEndings("\n");
 
-        ImGuiInputTextCallback decoratedCallback;
-        unsafe {
-            decoratedCallback = (data) => {
-                var result = callback(data);
+        ImGui.ImGuiInputTextCallbackDelegate decoratedCallback = (scoped ref ImGuiInputTextCallbackData data) => {
+            var result = callback(ref data);
+            
+            // We supress all ImGui pasting so we can manually do it ourself later in this function.
+            // This will be called once for every charcter that is pasted, and will supress them all.
+            if (isPasting) {
+                data.EventChar = 0;
+                processingPasteEvent = true;
+            }
 
-                // We supress all ImGui pasting so we can manually do it ourself later in this function.
-                // This will be called once for every charcter that is pasted, and will supress them all.
-                if (isPasting) {
-                    data->EventChar = 0;
-                    processingPasteEvent = true;
-                }
+            // ImGui "Start" and "End" can be in either direction depending on the direction of selection,
+            // so we normalize it to make the cut/copy/paste code easier
+            var lower = data.SelectionStart <= data.SelectionEnd ? data.SelectionStart : data.SelectionEnd;
+            var higher = data.SelectionStart <= data.SelectionEnd ? data.SelectionEnd : data.SelectionStart;
+            var selectionLength = higher - lower;
 
-                // ImGui "Start" and "End" can be in either direction depending on the direction of selection,
-                // so we normalize it to make the cut/copy/paste code easier
-                var lower = data->SelectionStart <= data->SelectionEnd ? data->SelectionStart : data->SelectionEnd;
-                var higher = data->SelectionStart <= data->SelectionEnd ? data->SelectionEnd : data->SelectionStart;
-                var selectionLength = higher - lower;
+            // We've finished supressing the paste events
+            if (processingPasteEvent && !isPasting) {
+                var clipboardUtf8 = ClipboardEx.GetPayloadEnabledClipboardString();
+                if (clipboardUtf8 != null) {
+                    var payloadEnabledClipboardText = SeString.Parse(clipboardUtf8.Value);
 
-                // We've finished supressing the paste events
-                if (processingPasteEvent && !isPasting) {
-                    var clipboardUtf8 = ClipboardEx.GetPayloadEnabledClipboardString();
-                    if (clipboardUtf8 != null) {
-                        var payloadEnabledClipboardText = SeString.Parse(clipboardUtf8.Value);
+                    IndexPayloads(payloadEnabledClipboardText);
 
-                        IndexPayloads(payloadEnabledClipboardText);
-
-                        var ptr = new ImGuiInputTextCallbackDataPtr(data);
-
-                        if (selectionLength > 0) {
-                            ptr.DeleteChars(lower, selectionLength);
-                        }
-                        ptr.InsertChars(data->CursorPos, payloadEnabledClipboardText.TextValue.ReplaceLineEndings("\n"));
-                        processingPasteEvent = false;
+                    if (selectionLength > 0) {
+                        data.DeleteChars(lower, selectionLength);
                     }
+                    data.InsertChars(data.CursorPos, payloadEnabledClipboardText.TextValue.ReplaceLineEndings("\n"));
+                    processingPasteEvent = false;
                 }
+            }
 
-                // If we are cutting or copying we should let ImGui handle the text manipulation, but we should
-                // also copy the relevant SeString parts to the in-game clipboard so they can be pasted to
-                // SeStringInputTextMultiline or in-game windows.
-                if (isCut || isCopy) {
-                    var bytes = new Span<byte>(data->Buf, data->BufTextLen);
-                    var selectedBytes = bytes.Slice(lower, selectionLength);
-                    var selectedText = Encoding.UTF8.GetString(selectedBytes);
-                    var selectedSeString = SeStringEx
-                        .ParseFromText(selectedText, knownTranslationPayloads)
-                        .NormalizeNewlines()
-                        .ReplaceNewlinesWithCR();
-                    ClipboardEx.SetClipboardSeString(selectedSeString);
-                }
+            // If we are cutting or copying we should let ImGui handle the text manipulation, but we should
+            // also copy the relevant SeString parts to the in-game clipboard so they can be pasted to
+            // SeStringInputTextMultiline or in-game windows.
+            if (isCut || isCopy)
+            {
+                var bytes = data.BufSpan;
+                var selectedBytes = bytes.Slice(lower, selectionLength);
+                var selectedText = Encoding.UTF8.GetString(selectedBytes);
+                var selectedSeString = SeStringEx
+                                       .ParseFromText(selectedText, knownTranslationPayloads)
+                                       .NormalizeNewlines()
+                                       .ReplaceNewlinesWithCR();
+                ClipboardEx.SetClipboardSeString(selectedSeString);
+            }
 
-                if (data->EventFlag == ImGuiInputTextFlags.CallbackCompletion) {
-                    var currentWord = TextState->CurrentEditWord();
-                    if (currentWord != null) { 
-                        previousEditWord = TextState->CurrentEditWordBounds();
-                        AutoCompletePopup.AutoCompleteFilter = currentWord;
-                        AutoCompletePopup.PopupPos =
-                            ImGui.GetItemRectMin() +
-                            ImGuiExt.InputTextCalcText2dPos(text, TextState->CurrentEditWordStart()) +
-                            new Vector2(0, ImGui.GetFontSize() + ImGui.GetStyle().ItemSpacing.Y * 2);
+            if (data.EventFlag == ImGuiInputTextFlags.CallbackCompletion) {
+                var currentWord = TextState.CurrentEditWord();
+                if (currentWord != null) { 
+                    previousEditWord = TextState.CurrentEditWordBounds();
+                    AutoCompletePopup.AutoCompleteFilter = currentWord;
+                    AutoCompletePopup.PopupPos =
+                        ImGui.GetItemRectMin() +
+                        ImGuiExt.InputTextCalcText2dPos(text, TextState.CurrentEditWordStart()) +
+                        new Vector2(0, ImGui.GetFontSize() + ImGui.GetStyle().ItemSpacing.Y * 2);
 
-                        AutoCompletePopup.Open();
-                    } 
-                }
+                    AutoCompletePopup.Open();
+                } 
+            }
 
-                return result;
-            };
+            return result;
         };
 
         var result = ImGui.InputTextMultiline(
@@ -172,20 +168,17 @@ public class SeStringInputTextMultiline {
 
     public int? GetCursorPos() {
         // Internal cursor is UTF-16 so it matches C# representation
-        unsafe { return TextState->Stb.Cursor; }
+        return TextState.Stb.Cursor; 
     }
 
     public (int, int) GetCurrentEditWordBounds() {
         // Internal cursor is UTF-16 so it matches C# representation
-        unsafe { return TextState->CurrentEditWordBounds(); }
+        return TextState.CurrentEditWordBounds(); 
     }
 
     /// Gets the SeString represented by the selection, or null if no selection
     public SeString? SelectedSeString() {
-        string selectedText;
-        unsafe {
-            selectedText = TextState->SelectedText();
-        }
+        var selectedText = TextState.SelectedText();
 
         if (selectedText != "") {
             var selectedSeString = SeStringEx
@@ -232,7 +225,9 @@ public class SeStringInputTextMultiline {
         var textState = TextState;
 
         // These are counted in wchar-positions, rather then UTF8 positions
-        var (startPos, endPos, cursor) = textState->SelectionTuple;
+        var startPos = textState.Stb.SelectStart;
+        var endPos = textState.Stb.SelectEnd;
+        var cursor = textState.Stb.Cursor;
 
         // If our previous selection hasn't changed then we don't need to re-run this logic.
         //
@@ -278,16 +273,16 @@ public class SeStringInputTextMultiline {
             }
         }
 
-        previousCursorState = textState->Stb;
+        previousCursorState = textState.Stb;
 
         if (startPos <= endPos) {
-            textState->Stb.SelectStart = lower;
-            textState->Stb.SelectEnd = higher;
-            textState->Stb.Cursor = higher;
+            textState.Stb.SelectStart = lower;
+            textState.Stb.SelectEnd = higher;
+            textState.Stb.Cursor = higher;
         } else {
-            textState->Stb.SelectStart = higher;
-            textState->Stb.SelectEnd = lower;
-            textState->Stb.Cursor = lower;
+            textState.Stb.SelectStart = higher;
+            textState.Stb.SelectEnd = lower;
+            textState.Stb.Cursor = lower;
         }
     }
 }
