@@ -13,7 +13,7 @@ namespace MacroMate.Extensions.Imgui;
 public class InputTextDecorator {
     private Vector2 scroll = new Vector2(0, 0);
 
-    private unsafe ImGuiInputTextStatePtr TextState => ImGuiP.ImGuiInputTextState();
+    private unsafe ImGuiInputTextStatePtr TextState => new(&ImGui.GetCurrentContext().Handle->InputTextState);
 
     /// Decorates an InputText
     ///
