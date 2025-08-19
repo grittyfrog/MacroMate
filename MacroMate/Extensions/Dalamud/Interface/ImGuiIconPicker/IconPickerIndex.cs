@@ -17,7 +17,7 @@ namespace MacroMate.Extensions.Dalamud.Interface.ImGuiIconPicker;
 /// but it covers most of the game icons.
 public class IconPickerIndex {
     /// The full range of icons that we will try and explore.
-    private List<int> iconRange = Enumerable.Range(0, 200000).ToList();
+    private List<int> iconRange = Enumerable.Range(0, 250000).ToList();
 
     /// The range of icons within iconRange that should be ignored (because they cause exceptions).
     private readonly HashSet<int> iconRangeNullValues = Enumerable.Range(170000, 9999).ToHashSet();
@@ -144,7 +144,6 @@ public class IconPickerIndex {
         ApplyIconCategory(5_100..8_000, "Actions", "Traits");
         ApplyIconCategory(8_000..9_000, "Actions", "Fashion");
         ApplyIconCategory(9_000..10_000, "Actions", "PvP");
-        ApplyIconCategory(10_000..20_000, "Statuses");
         ApplyIconCategory(20_000..30_000, "Items", "General");
         ApplyIconCategory(30_000..50_000, "Items", "Equipment");
         ApplyIconCategory(50_000..54_000, "Items", "Housing");
@@ -244,6 +243,7 @@ public class IconPickerIndex {
         ApplyIconCategory(180_100..181_000, "Textures", "Tutorials");
         ApplyIconCategory(181_000..181_500, "Spoilers", "Boss Titles");
         ApplyIconCategory(181_500..200_000, "Spoilers", "Adventurer Plate");
+        ApplyIconCategory(210_100..229_962, "Statuses");
     }
 
     private void ApplyIconCategory(Range range, string category, string? subcategory = null) {
