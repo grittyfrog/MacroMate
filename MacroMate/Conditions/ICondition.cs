@@ -37,6 +37,7 @@ public interface ICondition {
             JobCondition.Factory,
             LocationCondition.Factory,
             PlayerConditionCondition.Factory,
+            PlayerLevelCondition.Factory,
             PlayerStatusCondition.Factory,
             PvpStateCondition.Factory,
             TargetNameCondition.Factory,

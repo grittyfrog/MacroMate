@@ -20,6 +20,7 @@ namespace MacroMate.Serialization.V1;
 [XmlInclude(typeof(JobConditionXML))]
 [XmlInclude(typeof(PvpStateConditionXML))]
 [XmlInclude(typeof(PlayerConditionConditionXML))]
+[XmlInclude(typeof(PlayerLevelConditionXML))]
 [XmlInclude(typeof(PlayerStatusConditionXML))]
 [XmlInclude(typeof(HUDLayoutConditionXML))]
 [XmlInclude(typeof(CurrentCraftMaxDurabilityConditionXML))]
@@ -37,6 +38,7 @@ public abstract class ConditionXML {
         JobCondition cond => JobConditionXML.From(cond),
         PvpStateCondition cond => PvpStateConditionXML.From(cond),
         PlayerConditionCondition cond => PlayerConditionConditionXML.From(cond),
+        PlayerLevelCondition cond => PlayerLevelConditionXML.From(cond),
         PlayerStatusCondition cond => PlayerStatusConditionXML.From(cond),
         HUDLayoutCondition cond => HUDLayoutConditionXML.From(cond),
         CurrentCraftMaxDurabilityCondition cond => CurrentCraftMaxDurabilityConditionXML.From(cond),
@@ -189,6 +191,17 @@ public class PlayerConditionConditionXML : ConditionXML {
 
     public static PlayerConditionConditionXML From(PlayerConditionCondition cond) => new() {
         Conditions = cond.Conditions.ToList()
+    };
+}
+
+[XmlType("PlayerLevelCondition")]
+public class PlayerLevelConditionXML : ConditionXML {
+    public required int Level { get; set; }
+
+    public override ICondition ToReal() => new PlayerLevelCondition(Level);
+
+    public static PlayerLevelConditionXML From(PlayerLevelCondition cond) => new() {
+        Level = cond.Level
     };
 }
 

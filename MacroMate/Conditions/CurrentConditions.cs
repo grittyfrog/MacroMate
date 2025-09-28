@@ -13,6 +13,7 @@ public record CurrentConditions(
     JobCondition? job,
     PvpStateCondition? pvpState,
     PlayerConditionCondition? playerCondition,
+    PlayerLevelCondition? playerLevelCondition,
     PlayerStatusCondition? playerStatusCondition,
     HUDLayoutCondition? hudLayoutCondition,
     CurrentCraftMaxDurabilityCondition? craftMaxDurabilityCondition,
@@ -28,6 +29,7 @@ public record CurrentConditions(
         job: null,
         pvpState: null,
         playerCondition: null,
+        playerLevelCondition: null,
         playerStatusCondition: null,
         hudLayoutCondition: null,
         craftMaxDurabilityCondition: null,
@@ -44,6 +46,7 @@ public record CurrentConditions(
         if (job != null) { yield return job; }
         if (pvpState != null) { yield return pvpState; }
         if (playerCondition != null) { yield return playerCondition; }
+        if (playerLevelCondition != null) { yield return playerLevelCondition; }
         if (playerStatusCondition != null) { yield return playerStatusCondition; }
         if (hudLayoutCondition != null) { yield return hudLayoutCondition; }
         if (craftMaxDurabilityCondition != null) { yield return craftMaxDurabilityCondition; }
@@ -61,6 +64,7 @@ public record CurrentConditions(
             job: JobCondition.Current(),
             pvpState: PvpStateCondition.Current(),
             playerCondition: PlayerConditionCondition.Current(),
+            playerLevelCondition: PlayerLevelCondition.Current(),
             playerStatusCondition: PlayerStatusCondition.Current(),
             hudLayoutCondition: HUDLayoutCondition.Current(),
             craftMaxDurabilityCondition: CurrentCraftMaxDurabilityCondition.Current(),
