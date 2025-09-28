@@ -23,7 +23,7 @@ public record class HUDLayoutCondition(
         int hudLayout;
         unsafe {
             var addonConfig = Framework.Instance()->GetUIModule()->GetAddonConfig();
-            hudLayout = addonConfig->ModuleData->CurrentHudLayout;
+            hudLayout = addonConfig->ActiveDataSet->CurrentHudLayout;
         }
         return new HUDLayoutCondition(hudLayout);
     }
