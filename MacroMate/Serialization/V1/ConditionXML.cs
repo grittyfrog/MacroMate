@@ -28,6 +28,7 @@ namespace MacroMate.Serialization.V1;
 [XmlInclude(typeof(CurrentCraftDifficultyConditionXML))]
 [XmlInclude(typeof(MapMarkerLocationConditionXML))]
 [XmlInclude(typeof(WorldConditionXML))]
+[XmlInclude(typeof(WeatherConditionXML))]
 public abstract class ConditionXML {
     public abstract ICondition ToReal();
 
@@ -46,6 +47,7 @@ public abstract class ConditionXML {
         CurrentCraftDifficultyCondition cond => CurrentCraftDifficultyConditionXML.From(cond),
         MapMarkerLocationCondition cond => MapMarkerLocationConditionXML.From(cond),
         WorldCondition cond => WorldConditionXML.From(cond),
+        WeatherCondition cond => WeatherConditionXML.From(cond),
         _ => throw new Exception($"Unexpected condition {condition}")
     };
 }
@@ -316,5 +318,18 @@ public class WorldConditionXML : ConditionXML {
     public static WorldConditionXML From(WorldCondition condition) => new WorldConditionXML {
         World = new ExcelIdXML(condition.World),
         DataCenterOnly = condition.DataCenterOnly
+    };
+}
+
+[XmlType("WeatherCondition")]
+public class WeatherConditionXML : ConditionXML {
+    [XmlAnyElement("WeatherComment")]
+    public XmlComment? WeatherComment { get => Weather.Comment; set {} }
+    public required ExcelIdXML Weather { get; set; }
+
+    public override ICondition ToReal() => new WeatherCondition(Weather.Id);
+
+    public static WeatherConditionXML From(WeatherCondition cond) => new() {
+        Weather = new ExcelIdXML(cond.Weather)
     };
 }

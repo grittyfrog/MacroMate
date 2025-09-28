@@ -147,3 +147,145 @@ Use for conditions with discrete values that only support equality:
 - **Target State**: Access via `Env.TargetManager.Target`
 
 Always check for null values when accessing game objects, as they may not be available in all contexts.
+
+## Advanced Topics
+
+### Handling Excel Sheets with Duplicate Entries
+
+Some Excel sheets (like Weather) contain multiple entries with the same logical value but different IDs. When implementing conditions for such data:
+
+**Problem**: The UI will show duplicate entries like "Clear Skies (1)", "Clear Skies (2)", etc.
+
+**Solution**: Group by name in the `TopLevel()` method and use name-based comparison:
+
+```csharp
+public IEnumerable<IValueCondition> TopLevel() {
+    return Env.DataManager.GetExcelSheet<Weather>()!
+        .Where(weather => weather.RowId != 0 && !string.IsNullOrEmpty(weather.Name.ExtractText()))
+        .GroupBy(weather => weather.Name.ExtractText())
+        .Select(group => new WeatherCondition(group.First().RowId) as IValueCondition);
+}
+
+public bool SatisfiedBy(ICondition other) {
+    if (other is WeatherCondition otherWeather) {
+        // Compare by name instead of exact ID to handle duplicates
+        return Weather.Name() == otherWeather.Weather.Name();
+    }
+    return false;
+}
+```
+
+**Required imports**: Add `using MacroMate.Extensions.Lumina;` for `ExtractText()`.
+
+### Adding Display Name Support
+
+If your condition shows "<unknown>" in the UI, you need to add support for your Excel sheet type in `ExcelId<T>.Name()`:
+
+**File**: `MacroMate/Extensions/Dalamud/Excel/ExcelId.cs`
+
+```csharp
+public string Name() {
+    var gameData = GameData;
+    // ... existing cases ...
+    if (gameData is Weather weather) { return weather.Name.ExtractText(); }
+    // ... rest of method ...
+}
+```
+
+**Common Excel sheet name properties**:
+- `Weather`: `weather.Name.ExtractText()`
+- `Item`: `item.Name.ExtractText()`
+- `ClassJob`: `job.Abbreviation.ExtractText()`
+- `World`: `world.Name.ExtractText()`
+
+### Using FFXIVClientStructs for Game State
+
+For accessing game state not available through Dalamud services, use FFXIVClientStructs:
+
+```csharp
+using FFXIVClientStructs.FFXIV.Client.Game;
+
+public static WeatherCondition? Current() {
+    unsafe {
+        var weatherManager = WeatherManager.Instance();
+        if (weatherManager == null) { return null; }
+
+        var currentWeatherId = weatherManager->WeatherId;
+        if (currentWeatherId == 0) { return null; }
+
+        return new WeatherCondition(currentWeatherId);
+    }
+}
+```
+
+**Note**: FFXIVClientStructs usage requires `unsafe` context and null checking.
+
+## Complete Example: WeatherCondition
+
+Here's a complete implementation showing all the advanced concepts:
+
+```csharp
+using System.Collections.Generic;
+using System.Linq;
+using Lumina.Excel.Sheets;
+using MacroMate.Extensions.Dalamaud.Excel;
+using MacroMate.Extensions.Lumina;
+using FFXIVClientStructs.FFXIV.Client.Game;
+
+namespace MacroMate.Conditions;
+
+public record class WeatherCondition(
+    ExcelId<Weather> Weather
+) : IValueCondition {
+    public string ValueName => Weather.DisplayName();
+    public string NarrowName => Weather.DisplayName();
+
+    public bool SatisfiedBy(ICondition other) {
+        if (other is WeatherCondition otherWeather) {
+            // Compare by weather name instead of exact ID to handle duplicates
+            return Weather.Name() == otherWeather.Weather.Name();
+        }
+        return false;
+    }
+
+    public WeatherCondition() : this(1) {}
+    public WeatherCondition(uint weatherId) : this(new ExcelId<Weather>(weatherId)) {}
+
+    public static IValueCondition.IFactory Factory => new ConditionFactory();
+    public IValueCondition.IFactory FactoryRef => Factory;
+
+    public static WeatherCondition? Current() {
+        unsafe {
+            var weatherManager = WeatherManager.Instance();
+            if (weatherManager == null) { return null; }
+
+            var currentWeatherId = weatherManager->WeatherId;
+            if (currentWeatherId == 0) { return null; }
+
+            return new WeatherCondition(currentWeatherId);
+        }
+    }
+
+    class ConditionFactory : IValueCondition.IFactory {
+        public string ConditionName => "Weather";
+        public string ExpressionName => "Weather";
+
+        public IValueCondition? Current() => WeatherCondition.Current();
+        public IValueCondition Default() => new WeatherCondition();
+        public IValueCondition? FromConditions(CurrentConditions conditions) => conditions.weather;
+
+        public IEnumerable<IValueCondition> TopLevel() {
+            return Env.DataManager.GetExcelSheet<Weather>()!
+                .Where(weather => weather.RowId != 0 && !string.IsNullOrEmpty(weather.Name.ExtractText()))
+                .GroupBy(weather => weather.Name.ExtractText())
+                .Select(group => new WeatherCondition(group.First().RowId) as IValueCondition);
+        }
+    }
+}
+```
+
+This example demonstrates:
+- Name-based comparison for handling duplicates
+- FFXIVClientStructs usage for game state access
+- Grouping in TopLevel() to eliminate duplicate entries
+- All required imports and patterns

@@ -20,7 +20,8 @@ public record CurrentConditions(
     CurrentCraftMaxQualityCondition? craftMaxQualityCondition,
     CurrentCraftDifficultyCondition? craftDifficultyCondition,
     MapMarkerLocationCondition? mapMarkerLocationCondition,
-    WorldCondition? world
+    WorldCondition? world,
+    WeatherCondition? weather
 ) {
     public static CurrentConditions Empty => new CurrentConditions(
         content: null,
@@ -36,7 +37,8 @@ public record CurrentConditions(
         craftMaxQualityCondition: null,
         craftDifficultyCondition: null,
         mapMarkerLocationCondition: null,
-        world: null
+        world: null,
+        weather: null
     );
 
     public IEnumerable<ICondition> Enumerate() {
@@ -54,6 +56,7 @@ public record CurrentConditions(
         if (craftDifficultyCondition != null) { yield return craftDifficultyCondition; }
         if (mapMarkerLocationCondition != null) { yield return mapMarkerLocationCondition; }
         if (world != null) { yield return world; }
+        if (weather != null) { yield return weather; }
     }
 
     public static CurrentConditions Query() {
@@ -71,7 +74,8 @@ public record CurrentConditions(
             craftMaxQualityCondition: CurrentCraftMaxQualityCondition.Current(),
             craftDifficultyCondition: CurrentCraftDifficultyCondition.Current(),
             mapMarkerLocationCondition: MapMarkerLocationCondition.Current(),
-            world: WorldCondition.Current()
+            world: WorldCondition.Current(),
+            weather: WeatherCondition.Current()
         );
     }
 }

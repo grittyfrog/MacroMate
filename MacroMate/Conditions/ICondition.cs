@@ -46,7 +46,8 @@ public interface ICondition {
             CurrentCraftMaxQualityCondition.Factory,
             CurrentCraftDifficultyCondition.Factory,
             MapMarkerLocationCondition.Factory,
-            WorldCondition.Factory
+            WorldCondition.Factory,
+            WeatherCondition.Factory
         };
     }
 }
