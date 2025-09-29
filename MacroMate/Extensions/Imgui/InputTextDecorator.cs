@@ -5,6 +5,7 @@ using Dalamud.Interface.ImGuiSeStringRenderer;
 using Dalamud.Interface.Utility;
 using Dalamud.Bindings.ImGui;
 using Lumina.Text.ReadOnly;
+using Dalamud.Interface.Utility.Raii;
 
 namespace MacroMate.Extensions.Imgui;
 
@@ -26,9 +27,9 @@ public class InputTextDecorator {
         IEnumerable<InputTextDecoration> decorations
     ) {
         scroll.X = TextState.ScrollX;
-        ImGui.BeginChild(label);
-        scroll.Y = ImGui.GetScrollY();
-        ImGui.EndChild();
+        using (ImRaii.Child(label)) {
+            scroll.Y = ImGui.GetScrollY();
+        }
 
         // Prevent showing misplaced decorations when:
         //
@@ -43,9 +44,10 @@ public class InputTextDecorator {
             scroll.X = 0;
         }
 
-        ImGui.BeginChild(label);
-        var drawList = ImGui.GetWindowDrawList();
-        ImGui.EndChild();
+        ImDrawListPtr drawList;
+        using (ImRaii.Child(label)) {
+            drawList = ImGui.GetWindowDrawList();
+        }
 
         var clipMin = ImGui.GetItemRectMin();
         var clipMax = ImGui.GetItemRectMax();

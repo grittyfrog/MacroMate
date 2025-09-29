@@ -4,6 +4,7 @@ using System.Numerics;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 
 namespace MacroMate.Extensions.Dalamud.Interface.ImGuiIconPicker;
 
@@ -93,31 +94,30 @@ public class IconPickerDialog : Window {
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
 
-            ImGui.BeginChild("Search##CategoryTree");
-            var flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick
-                | ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
-            if (selectedCategory == null) { flags |= ImGuiTreeNodeFlags.Selected; }
-            ImGui.TreeNodeEx("All", flags);
-            if (ImGui.IsItemClicked()) {
-                selectedCategory = null;
-                ImGui.CloseCurrentPopup();
+            using (ImRaii.Child("Search##CategoryTree")) {
+                var flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick
+                    | ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
+                if (selectedCategory == null) { flags |= ImGuiTreeNodeFlags.Selected; }
+                ImGui.TreeNodeEx("All", flags);
+                if (ImGui.IsItemClicked()) {
+                    selectedCategory = null;
+                    ImGui.CloseCurrentPopup();
+                }
+                foreach (var categoryTree in iconInfoIndex.CategoryRoots()) {
+                    DrawCategoryGroupTree(categoryTree);
+                }
             }
-            foreach (var categoryTree in iconInfoIndex.CategoryRoots()) {
-                DrawCategoryGroupTree(categoryTree);
-            }
-            ImGui.EndChild();
 
             ImGui.TableNextColumn();
-            ImGui.BeginChild("Search##IconList");
-            var columns = (int)((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().WindowPadding.X) / (iconSize + ImGui.GetStyle().ItemSpacing.X));
-            if (iconInfoIndex.State == IconPickerIndex.IndexState.INDEXED) {
-                DrawSearchResults(iconSize, columns);
-            } else {
-                var spinner = "|/-\\"[(int)(ImGui.GetTime() / 0.05f) % 3];
-                ImGui.Text($"Indexing... {spinner}");
+            using (ImRaii.Child("Search##IconList")) {
+                var columns = (int)((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().WindowPadding.X) / (iconSize + ImGui.GetStyle().ItemSpacing.X));
+                if (iconInfoIndex.State == IconPickerIndex.IndexState.INDEXED) {
+                    DrawSearchResults(iconSize, columns);
+                } else {
+                    var spinner = "|/-\\"[(int)(ImGui.GetTime() / 0.05f) % 3];
+                    ImGui.Text($"Indexing... {spinner}");
+                }
             }
-
-            ImGui.EndChild();
 
             ImGui.EndTable();
         }

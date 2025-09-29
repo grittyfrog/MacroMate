@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 
 namespace MacroMate.Extensions.Imgui;
 
@@ -37,9 +38,10 @@ public class InputTextMultilineLineNumbers {
     public required Vector2 ItemRectMax { get; init; }
 
     public void Draw(string inputTextLabel) {
-        ImGui.BeginChild(inputTextLabel);
-        var lastTextScrollY = ImGui.GetScrollY();
-        ImGui.EndChild();
+        float lastTextScrollY;
+        using (ImRaii.Child(inputTextLabel)) {
+            lastTextScrollY = ImGui.GetScrollY();
+        }
 
         // Get TextState to access cursor position
         ImGuiInputTextStatePtr textState;
