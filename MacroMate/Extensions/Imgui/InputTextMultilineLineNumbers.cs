@@ -43,16 +43,13 @@ public class InputTextMultilineLineNumbers {
             lastTextScrollY = ImGui.GetScrollY();
         }
 
-        // Get TextState to access cursor position
-        ImGuiInputTextState textState;
-        unsafe {
-            textState = ImGui.GetCurrentContext().Handle->InputTextState;
-        }
-
         // Calculate current line from cursor position
         var currentLine = 1;
-        var textBeforeCursor = textState.TextW.AsEnumerable().Take(textState.Stb.Cursor).Select(us => (char)us);
-        currentLine = textBeforeCursor.Count(c => c == '\n') + 1;
+        var textState = ImGuiP.GetInputTextState(ImGui.GetID(inputTextLabel));
+        if (!textState.IsNull) {
+            var textBeforeCursor = textState.TextW.AsEnumerable().Take(textState.Stb.Cursor).Select(us => (char)us);
+            currentLine = textBeforeCursor.Count(c => c == '\n') + 1;
+        }
 
         var drawList = ImGui.GetWindowDrawList();
         var style = ImGui.GetStyle();
@@ -141,7 +138,7 @@ public class InputTextMultilineLineNumbers {
 
     private static float CalculateLineNumberWidth(int lineCount) {
         var digits = lineCount.ToString().Length;
-        var maxDigits = Math.Max(digits, 2); // Minimum 3 digits for padding
+        var maxDigits = Math.Max(digits, 2); // Minimum 2 digits for padding
         var sampleText = new string('9', maxDigits);
         return ImGui.CalcTextSize(sampleText).X;
     }
