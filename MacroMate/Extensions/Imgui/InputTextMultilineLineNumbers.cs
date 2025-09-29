@@ -44,9 +44,9 @@ public class InputTextMultilineLineNumbers {
         }
 
         // Get TextState to access cursor position
-        ImGuiInputTextStatePtr textState;
+        ImGuiInputTextState textState;
         unsafe {
-            textState = new ImGuiInputTextStatePtr(&ImGui.GetCurrentContext().Handle->InputTextState);
+            textState = ImGui.GetCurrentContext().Handle->InputTextState;
         }
 
         // Calculate current line from cursor position
