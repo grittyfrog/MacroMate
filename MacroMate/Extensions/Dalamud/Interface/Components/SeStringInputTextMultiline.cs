@@ -123,14 +123,21 @@ public class SeStringInputTextMultiline {
             return result;
         };
 
+        // Reserve space for line numbers first
+        var lineNumbers = InputTextMultilineLineNumbers.Reserve(text, size);
+
+        // Draw the text input with reduced width
         var result = ImGui.InputTextMultiline(
             label,
             ref text,
             maxLength,
-            size,
+            lineNumbers.RemainingTextSize,
             flags,
             decoratedCallback
         );
+
+        // Now draw the line numbers after the InputText is rendered
+        lineNumbers.Draw(label);
 
         if (result) {
             input = SeStringEx.ParseFromText(text, knownTranslationPayloads);
