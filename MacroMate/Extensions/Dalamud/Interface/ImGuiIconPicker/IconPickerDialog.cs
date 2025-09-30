@@ -94,7 +94,7 @@ public class IconPickerDialog : Window {
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
 
-            using (ImRaii.Child("Search##CategoryTree")) {
+            ImRaii.Child("Search##CategoryTree").Use(() => {
                 var flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.OpenOnDoubleClick
                     | ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
                 if (selectedCategory == null) { flags |= ImGuiTreeNodeFlags.Selected; }
@@ -106,10 +106,10 @@ public class IconPickerDialog : Window {
                 foreach (var categoryTree in iconInfoIndex.CategoryRoots()) {
                     DrawCategoryGroupTree(categoryTree);
                 }
-            }
+            });
 
             ImGui.TableNextColumn();
-            using (ImRaii.Child("Search##IconList")) {
+            ImRaii.Child("Search##IconList").Use(() => {
                 var columns = (int)((ImGui.GetContentRegionAvail().X - ImGui.GetStyle().WindowPadding.X) / (iconSize + ImGui.GetStyle().ItemSpacing.X));
                 if (iconInfoIndex.State == IconPickerIndex.IndexState.INDEXED) {
                     DrawSearchResults(iconSize, columns);
@@ -117,7 +117,7 @@ public class IconPickerDialog : Window {
                     var spinner = "|/-\\"[(int)(ImGui.GetTime() / 0.05f) % 3];
                     ImGui.Text($"Indexing... {spinner}");
                 }
-            }
+            });
 
             ImGui.EndTable();
         }

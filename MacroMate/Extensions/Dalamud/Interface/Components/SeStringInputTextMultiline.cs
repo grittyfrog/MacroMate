@@ -163,7 +163,7 @@ public class SeStringInputTextMultiline {
         }
 
         var decorations = GetDecorations(input);
-        textDecorator.DecorateInputText(label, ref text, size, decorations);
+        textDecorator.DecorateInputText(label, text, size, decorations);
 
         // We apply cursor/selection adjustment after parsing `input` in case it has changed.
         if (focused) {

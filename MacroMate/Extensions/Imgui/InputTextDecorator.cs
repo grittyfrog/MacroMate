@@ -6,6 +6,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Bindings.ImGui;
 using Lumina.Text.ReadOnly;
 using Dalamud.Interface.Utility.Raii;
+using MacroMate.Extensions.Dalamud;
 
 namespace MacroMate.Extensions.Imgui;
 
@@ -22,14 +23,14 @@ public class InputTextDecorator {
     /// Assumes no overlapping decorations
     public void DecorateInputText(
         string label,
-        ref string text,
+        string text,
         Vector2 size,
         IEnumerable<InputTextDecoration> decorations
     ) {
         scroll.X = TextState.ScrollX;
-        using (ImRaii.Child(label)) {
+        ImRaii.Child(label).Use(() => {
             scroll.Y = ImGui.GetScrollY();
-        }
+        });
 
         // Prevent showing misplaced decorations when:
         //
@@ -44,30 +45,30 @@ public class InputTextDecorator {
             scroll.X = 0;
         }
 
-        ImDrawListPtr drawList;
-        using (ImRaii.Child(label)) {
-            drawList = ImGui.GetWindowDrawList();
-        }
+        ImRaii.Child(label).Use(() => {
+            var drawList = ImGui.GetWindowDrawList();
 
-        var clipMin = ImGui.GetItemRectMin();
-        var clipMax = ImGui.GetItemRectMax();
-        drawList.PushClipRect(clipMin, clipMax);
+            var clipMin = ImGui.GetItemRectMin();
+            var clipMax = ImGui.GetItemRectMax();
+            drawList.PushClipRect(clipMin, clipMax);
 
-        foreach (var decoration in decorations) {
-            // Figure out the position of this decoration
-            var posInText = ImGuiExt.InputTextCalcText2dPos(text, decoration.StartIndex);
-            var startIndex = Math.Clamp(decoration.StartIndex, 0, text.Length);
-            var endIndex = Math.Clamp(decoration.EndIndex, 0, text.Length);
-            DrawDecoration(drawList, posInText, text[startIndex..endIndex], decoration);
-        }
+            foreach (var decoration in decorations) {
+                // Figure out the position of this decoration
+                var posInText = ImGuiExt.InputTextCalcText2dPos(text, decoration.StartIndex);
+                var startIndex = Math.Clamp(decoration.StartIndex, 0, text.Length);
+                var endIndex = Math.Clamp(decoration.EndIndex, 0, text.Length);
+                DrawDecoration(drawList, posInText, text[startIndex..endIndex], decoration);
+            }
 
-        drawList.PopClipRect();
+            drawList.PopClipRect();
+        });
     }
 
     private void DrawDecoration(ImDrawListPtr drawList, Vector2 posInText, string textSlice, InputTextDecoration decoration) {
         var style = ImGui.GetStyle();
         var min = ImGui.GetItemRectMin() + style.FramePadding;
         var max = ImGui.GetItemRectMax();
+
 
         var fontSize = ImGui.GetFontSize();
         if (decoration is InputTextDecoration.TextColor textColor) {

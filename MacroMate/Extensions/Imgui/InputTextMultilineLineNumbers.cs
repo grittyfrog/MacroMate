@@ -38,9 +38,11 @@ public class InputTextMultilineLineNumbers {
     public required Vector2 ItemRectMax { get; init; }
 
     public void Draw(string inputTextLabel) {
-        float lastTextScrollY;
-        using (ImRaii.Child(inputTextLabel)) {
-            lastTextScrollY = ImGui.GetScrollY();
+        float lastTextScrollY = 0;
+        using (var child = ImRaii.Child(inputTextLabel)) {
+            if (child) {
+                lastTextScrollY = ImGui.GetScrollY();
+            }
         }
 
         // Calculate current line from cursor position
