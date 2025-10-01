@@ -88,9 +88,107 @@ if (ImGui.BeginMenuBar()) {
 - Legacy code that hasn't been migrated
 - APIs that don't have ImRaii wrappers yet
 
+## Real-World Migration Examples
+
+### MacroWindow MenuBar Migration (MacroMate/Windows/MacroWindow.cs:60-97)
+
+**Before:** Traditional conditional Begin/End pattern
+```csharp
+ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8.0f * ImGuiHelpers.GlobalScale, ImGui.GetStyle().ItemSpacing.Y));
+if (ImGui.BeginMenuBar()) {
+    // Menu content...
+    ImGui.EndMenuBar();
+}
+ImGui.PopStyleVar();
+```
+
+**After:** Top-level using var with early returns
+```csharp
+using var _ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(8.0f * ImGuiHelpers.GlobalScale, ImGui.GetStyle().ItemSpacing.Y));
+using var menuBar = ImRaii.MenuBar();
+if (!menuBar) { return; }
+
+// Menu content...
+```
+
+**Key learnings:**
+- **Multiple scopes stack naturally** - Style push and MenuBar both use `using var` declarations
+- **Early returns work well** - Check `if (!menuBar) { return; }` instead of nesting all content in if block
+- **Cleaner separation** - Style management and menu logic are clearly separated
+
+### Nested Menu with Use() Extension
+
+**Before:** Nested Begin/End calls
+```csharp
+if (ImGui.BeginMenu("Settings")) {
+    // Menu content...
+    ImGui.EndMenu();
+}
+```
+
+**After:** Use() extension method
+```csharp
+ImRaii.Menu("Settings").Use(() => {
+    // Menu content...
+});
+```
+
+**Key learnings:**
+- **Use() is ideal for small scoped blocks** - Menu content fits naturally in a lambda
+- **No conditional logic needed** - The Use() extension handles the success/failure internally
+- **Reduces nesting** - Eliminates the if statement wrapper
+
+### Table with Early Return Pattern
+
+**Before:** Large nested if block
+```csharp
+if (ImGui.BeginTable("layoutTable", 3, flags)) {
+    // Large table setup and content...
+    ImGui.EndTable();
+}
+```
+
+**After:** Top-level using with early return
+```csharp
+using var table = ImRaii.Table("layoutTable", 3, flags);
+if (!table) { return; }
+
+// Table setup and content at top level...
+```
+
+**Key learnings:**
+- **Reduces indentation** - Table content moves from nested block to top level
+- **Consistent pattern** - Same early return pattern used throughout the method
+- **Method extraction becomes easier** - Content can be easily moved to separate methods
+
+### Popup Pattern Evolution
+
+**Before:** Traditional popup handling
+```csharp
+if (ImGui.BeginPopup(popupName)) {
+    // Popup content...
+    ImGui.EndPopup();
+}
+```
+
+**After:** using var with early return
+```csharp
+using var popup = ImRaii.Popup(popupName);
+if (!popup) { return popupId; }
+
+// Popup content...
+```
+
+**Key learnings:**
+- **Return values preserved** - Can still return popup ID while using ImRaii
+- **Consistent with other patterns** - Same early return style as MenuBar and Table
+
 ## Guidelines
 
 1. **Prefer top-level `using var`** when it's natural to scope the entire method or large block
 2. **Use `ImRaii.Use()`** for smaller, contained UI blocks that fit well in lambdas
 3. **Use `ImRaii` with `using` block** when you need complex control flow or ref mutations that don't fit #1 or #2
 4. **Migrate from `ImGui.Begin/End`** to ImRaii patterns when working on existing code
+5. **Stack multiple scopes** - Multiple `using var` declarations work well together (style + menu/table/etc.)
+6. **Use early returns** - Check `if (!scope) { return; }` to reduce nesting instead of wrapping content in if blocks
+7. **Extract methods after migration** - ImRaii patterns make it easier to break large methods into smaller focused ones

@@ -12,6 +12,7 @@ using MacroMate.Extensions.Dalamaud.Interface.Components;
 using Dalamud.Interface.Utility;
 using System.Linq;
 using Dalamud.Game.Text;
+using Dalamud.Interface.Utility.Raii;
 
 namespace MacroMate.Windows;
 
@@ -51,33 +52,7 @@ public class MacroWindow : Window, IDisposable {
         if (Macro == null) { return; }
 
         DrawMenuBar();
-
-        if (
-            ImGui.BeginTable(
-                "layoutTable",
-                3,
-                ImGuiTableFlags.Hideable | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.Resizable
-            )
-        ) {
-            ImGui.TableSetupColumn("Macro", ImGuiTableColumnFlags.WidthFixed, 500f * ImGuiHelpers.GlobalScale);
-            ImGui.TableSetupColumn("Link Macros", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, MacroLinkEditor.Width);
-            ImGui.TableSetupColumn("Link Conditions", ImGuiTableColumnFlags.WidthStretch | ImGuiTableColumnFlags.NoResize);
-
-            ImGui.TableSetColumnEnabled(1, showLinkMacros);
-            ImGui.TableSetColumnEnabled(2, showLinkConditions);
-
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn();
-            DrawMacro();
-
-            ImGui.TableNextColumn();
-            DrawMacroLinkEditor();
-
-            ImGui.TableNextColumn();
-            DrawConditionExprEditor();
-
-            ImGui.EndTable();
-        }
+        DrawMainWindows();
     }
 
     private void DrawMenuBar() {
@@ -85,74 +60,95 @@ public class MacroWindow : Window, IDisposable {
 
         bool edited = false;
 
-        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8.0f * ImGuiHelpers.GlobalScale, ImGui.GetStyle().ItemSpacing.Y));
-        if (ImGui.BeginMenuBar()) {
-            MacroRunMenuItem.Draw(
-                Macro,
-                showLinesOnSingleRunHover: false,
-                showLinesOnMultiRunHover: true
-            );
+        using var _ = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(8.0f * ImGuiHelpers.GlobalScale, ImGui.GetStyle().ItemSpacing.Y));
+        using var menuBar = ImRaii.MenuBar();
+        if (!menuBar) { return; }
 
-            // Link Item
-            if (ImGui.MenuItem($"Link ({Macro!.Link.Name()})", selected: showLinkMacros)) {
-                showLinkMacros = !showLinkMacros;
-            }
-            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
-                ImGui.SetTooltip("Link this macro to one or more in-game macro slots");
-            }
+        MacroRunMenuItem.Draw(
+            Macro,
+            showLinesOnSingleRunHover: false,
+            showLinesOnMultiRunHover: true
+        );
 
-            // Conditions Item
-            if (ImGui.MenuItem("Link Conditions", selected: showLinkConditions)) {
-                showLinkConditions = !showLinkConditions;
-            }
-            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
-                ImGui.SetTooltip("Define when to link this macro to the in-game macro slots");
-            }
+        // Link Item
+        if (ImGui.MenuItem($"Link ({Macro!.Link.Name()})", selected: showLinkMacros)) {
+            showLinkMacros = !showLinkMacros;
+        }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+            ImGui.SetTooltip("Link this macro to one or more in-game macro slots");
+        }
 
-            if (ImGui.BeginMenu("Settings")) {
-                if (Env.PluginInterface.MacroChainPluginIsLoaded()) {
-                    var linkWithMacroChain = Macro.LinkWithMacroChain;
-                    if (ImGui.Checkbox("Use Macro Chain", ref linkWithMacroChain)) {
-                        Macro.LinkWithMacroChain = linkWithMacroChain;
-                        edited = true;
-                    }
-                    if (ImGui.IsItemHovered()) {
-                        ImGui.SetTooltip("Use Macro Chain when binding long macros. Macros must be linked to adjacent positions for this to work");
-                    }
-                } else {
-                    ImGui.BeginDisabled();
-                    var disabled = false;
-                    if (ImGui.Checkbox("Use Macro Chain", ref disabled)) {
-                        disabled = false;
-                    };
-                    ImGui.EndDisabled();
-                    if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
-                        ImGui.SetTooltip("Use Macro Chain when binding long macros. This setting is only availalbe if Macro Chain is installed.");
-                    }
-                }
-                ImGui.EndMenu();
-            }
+        // Conditions Item
+        if (ImGui.MenuItem("Link Conditions", selected: showLinkConditions)) {
+            showLinkConditions = !showLinkConditions;
+        }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+            ImGui.SetTooltip("Define when to link this macro to the in-game macro slots");
+        }
 
-            // Delete Item
-            if (ImGui.MenuItem("Delete")) {
-                ImGui.OpenPopup("macrowindow_delete_popup");
-            }
-            if (ImGui.BeginPopup("macrowindow_delete_popup")) {
-                if (ImGui.Selectable("Delete!")) {
-                    deleteRequested = true;
+        ImRaii.Menu("Settings").Use(() => {
+            if (Env.PluginInterface.MacroChainPluginIsLoaded()) {
+                var linkWithMacroChain = Macro.LinkWithMacroChain;
+                if (ImGui.Checkbox("Use Macro Chain", ref linkWithMacroChain)) {
+                    Macro.LinkWithMacroChain = linkWithMacroChain;
                     edited = true;
                 }
-                ImGui.EndPopup();
+                if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip("Use Macro Chain when binding long macros. Macros must be linked to adjacent positions for this to work");
+                }
+            } else {
+                ImRaii.Disabled().Use(() => {
+                    var disabled = false;
+                    if (ImGui.Checkbox("Use Macro Chain", ref disabled)) {};
+                });
+                if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+                    ImGui.SetTooltip("Use Macro Chain when binding long macros. This setting is only availalbe if Macro Chain is installed.");
+                }
             }
-            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) { ImGui.SetTooltip("Delete"); }
+        });
 
-            ImGui.EndMenuBar();
+        // Delete Item
+        if (ImGui.MenuItem("Delete")) {
+            ImGui.OpenPopup("macrowindow_delete_popup");
         }
-        ImGui.PopStyleVar();
+        ImRaii.Popup("macrowindow_delete_popup").Use(() => {
+            if (ImGui.Selectable("Delete!")) {
+                deleteRequested = true;
+                edited = true;
+            }
+        });
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) { ImGui.SetTooltip("Delete"); }
+
 
         if (edited == true) {
             Save();
         }
+    }
+
+    private void DrawMainWindows() {
+        using var table = ImRaii.Table(
+            "layoutTable",
+            3,
+            ImGuiTableFlags.Hideable | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.Resizable
+        );
+        if (!table) { return; }
+
+        ImGui.TableSetupColumn("Macro", ImGuiTableColumnFlags.WidthFixed, 500f * ImGuiHelpers.GlobalScale);
+        ImGui.TableSetupColumn("Link Macros", ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoResize, MacroLinkEditor.Width);
+        ImGui.TableSetupColumn("Link Conditions", ImGuiTableColumnFlags.WidthStretch | ImGuiTableColumnFlags.NoResize);
+
+        ImGui.TableSetColumnEnabled(1, showLinkMacros);
+        ImGui.TableSetColumnEnabled(2, showLinkConditions);
+
+        ImGui.TableNextRow();
+        ImGui.TableNextColumn();
+        DrawMacro();
+
+        ImGui.TableNextColumn();
+        DrawMacroLinkEditor();
+
+        ImGui.TableNextColumn();
+        DrawConditionExprEditor();
     }
 
     private void DrawMacro() {
@@ -229,26 +225,25 @@ public class MacroWindow : Window, IDisposable {
     }
 
     private void DrawMacroLinkEditor() {
-        ImGui.PushID("macro_draw_link_editor");
+        using var id = ImRaii.PushId("macro_draw_link_editor");
         var macroLink = Macro!.Link;
         if (MacroLinkEditor.DrawEditor(ref macroLink)) {
             Macro.Link = macroLink.Clone();
             Save();
         }
-        ImGui.PopID();
     }
 
     private uint DrawRunMacroPopup(MateNode.Macro macro) {
         var runMacroPopupName = $"###macrowindow/run_macro_popup/{macro.Id}";
         var runMacroPopupId = ImGui.GetID(runMacroPopupName);
 
-        if (ImGui.BeginPopup(runMacroPopupName)) {
-            foreach (var vanillaMacro in Macro!.VanillaMacros()) {
-                if (ImGui.Selectable(vanillaMacro.Title)) {
-                    Env.VanillaMacroManager.ExecuteMacro(vanillaMacro);
-                }
+        using var popup = ImRaii.Popup(runMacroPopupName);
+        if (!popup) { return runMacroPopupId; }
+
+        foreach (var vanillaMacro in Macro!.VanillaMacros()) {
+            if (ImGui.Selectable(vanillaMacro.Title)) {
+                Env.VanillaMacroManager.ExecuteMacro(vanillaMacro);
             }
-            ImGui.EndPopup();
         }
 
         return runMacroPopupId;
@@ -258,25 +253,24 @@ public class MacroWindow : Window, IDisposable {
         var macroTextRightClickPopupName = $"""macrowindow/macro_text_right_click_popup/{macro.Id}""";
         var macroTextRightClickPopupId = ImGui.GetID(macroTextRightClickPopupName);
 
-        if (ImGui.BeginPopup(macroTextRightClickPopupName)) {
-            if (ImGui.Selectable("Run Selected")) {
-                var selected = seStringInputTextMultiline.SelectedSeString();
-                if (selected != null) {
-                    Env.VanillaMacroManager.ExecuteMacro(selected);
-                }
-            }
-            if (ImGui.IsItemHovered()) {
-                var selected = seStringInputTextMultiline.SelectedSeString();
-                if (selected != null) {
-                    ImGui.SetTooltip(selected.TextValue.ReplaceLineEndings());
-                }
-            }
+        using var popup = ImRaii.Popup(macroTextRightClickPopupName);
+        if (!popup) { return macroTextRightClickPopupId; }
 
-            if (ImGui.Selectable("Insert Special Character")) {
-                OpenMacroSpecialCharacterPopup(macro);
+        if (ImGui.Selectable("Run Selected")) {
+            var selected = seStringInputTextMultiline.SelectedSeString();
+            if (selected != null) {
+                Env.VanillaMacroManager.ExecuteMacro(selected);
             }
+        }
+        if (ImGui.IsItemHovered()) {
+            var selected = seStringInputTextMultiline.SelectedSeString();
+            if (selected != null) {
+                ImGui.SetTooltip(selected.TextValue.ReplaceLineEndings());
+            }
+        }
 
-            ImGui.EndPopup();
+        if (ImGui.Selectable("Insert Special Character")) {
+            OpenMacroSpecialCharacterPopup(macro);
         }
 
         return macroTextRightClickPopupId;
