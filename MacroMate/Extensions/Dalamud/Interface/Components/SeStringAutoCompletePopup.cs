@@ -42,8 +42,7 @@ public class SeStringAutoCompletePopup {
         set {
             if (value.HasValue) {
                 _selectedCompletionIndex = Math.Clamp(value.Value, 0, Math.Max(0, Completions.Count - 1));
-            }
-            else {
+            } else {
                 _selectedCompletionIndex = null;
             }
             ShouldScrollOnNextDraw = true;
@@ -128,8 +127,7 @@ public class SeStringAutoCompletePopup {
             if (ImGui.IsItemActive()) {
                 if (ImGui.IsKeyPressed(ImGuiKey.DownArrow)) {
                     SelectedCompletionIndex = SelectedCompletionIndex + 1;
-                }
-                else if (ImGui.IsKeyPressed(ImGuiKey.UpArrow)) {
+                } else if (ImGui.IsKeyPressed(ImGuiKey.UpArrow)) {
                     SelectedCompletionIndex = SelectedCompletionIndex - 1;
                 }
             }
@@ -224,8 +222,7 @@ public class SeStringAutoCompletePopup {
                                 if (selectionMidpoint.X <= ImGui.GetWindowViewport().Size.X / 2.0f) {
                                     var tooltipX = max.X + scrollbarPad;
                                     ImGui.SetNextWindowPos(new Vector2(tooltipX, min.Y));
-                                }
-                                else if (LastCompletionTooltipSize.HasValue) { // Otherwise...
+                                } else if (LastCompletionTooltipSize.HasValue) { // Otherwise...
                                     var tooltipX = min.X - LastCompletionTooltipSize.Value.X - scrollbarPad;
                                     ImGui.SetNextWindowPos(new Vector2(tooltipX, min.Y));
                                 }
