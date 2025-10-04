@@ -8,6 +8,8 @@ using Dalamud.Bindings.ImGui;
 using MacroMate.Extensions.Dalamud.AutoComplete;
 using MacroMate.Extensions.Dotnet;
 using MacroMate.Extensions.Imgui;
+using Dalamud.Interface.Utility.Raii;
+using MacroMate.Extensions.Dalamud;
 
 namespace MacroMate.Extensions.Dalamaud.Interface.Components;
 
@@ -96,147 +98,151 @@ public class SeStringAutoCompletePopup {
 
         if (PopupPos.HasValue) { ImGui.SetNextWindowPos(PopupPos.Value); }
         ImGui.SetNextWindowSize(new Vector2(windowWidth, ImGui.GetFontSize() * 10));
-        if (ImGui.BeginPopup(name, popupFlags)) { 
-            ImGui.SetNextItemWidth(windowWidth - (ImGui.GetStyle().FramePadding.X * 8));
 
-            unsafe {
-                if (
-                    ImGui.InputTextWithHint(
-                        "##auto-complete-filter",
-                        "Filter...",
-                        ref _autoCompleteFilter,
-                        256,
-                        ImGuiInputTextFlags.CallbackAlways | ImGuiInputTextFlags.CallbackHistory
-                            | ImGuiInputTextFlags.CallbackEdit,
-                        AutoCompleteFilterCallback
+        using var popup = ImRaii.Popup(name, popupFlags);
+        if (!popup) { return; }
+
+        ImGui.SetNextItemWidth(windowWidth - (ImGui.GetStyle().FramePadding.X * 8));
+
+        if (
+            ImGui.InputTextWithHint(
+                "##auto-complete-filter",
+                "Filter...",
+                ref _autoCompleteFilter,
+                256,
+                ImGuiInputTextFlags.CallbackAlways | ImGuiInputTextFlags.CallbackHistory
+                    | ImGuiInputTextFlags.CallbackEdit,
+                AutoCompleteFilterCallback
+            )
+        ) {
+            Completions = Env.CompletionIndex.Search(_autoCompleteFilter).ToList();
+            SelectedCompletionIndex = 0;
+        }
+
+        if (ImGui.IsWindowAppearing()) {
+            FixCursor = true;
+            ImGui.SetKeyboardFocusHere(-1);
+        }
+
+        if (ImGui.IsItemActive()) {
+            if (ImGui.IsKeyPressed(ImGuiKey.DownArrow)) {
+                SelectedCompletionIndex = SelectedCompletionIndex + 1;
+            } else if (ImGui.IsKeyPressed(ImGuiKey.UpArrow)) {
+                SelectedCompletionIndex = SelectedCompletionIndex - 1;
+            }
+        }
+
+        if (ImGui.IsItemDeactivated()) {
+            if (ImGui.IsKeyDown(ImGuiKey.Escape)) {
+                ImGui.CloseCurrentPopup();
+                return;
+            }
+
+            var enter = ImGui.IsKeyDown(ImGuiKey.Enter) || ImGui.IsKeyDown(ImGuiKey.KeypadEnter);
+            if (Completions.Count > 0 && enter) {
+                Complete();
+                ImGui.CloseCurrentPopup();
+            }
+        }
+
+        DrawCompletionResults(longestCompletionWidth, longestGroupWidth);
+    }
+
+    private void DrawCompletionResults(float longestCompletionWidth, float longestGroupWidth) {
+        using var table = ImRaii.Table("###se_string_auto_complete/completions_layout_table", 2);
+        if (!table) { return; }
+
+        var selectedCompletion = SelectedCompletion;
+
+        ImGui.TableSetupColumn("Completion", ImGuiTableColumnFlags.WidthFixed, longestCompletionWidth);
+        ImGui.TableSetupColumn("Group", ImGuiTableColumnFlags.WidthFixed, longestGroupWidth);
+
+        // info, min, max
+        (CompletionInfo, Vector2, Vector2)? hoveredCompletionData = null;
+        (CompletionInfo, Vector2, Vector2)? visibleSelectedCompletionData = null;
+
+        clipper.Begin(Completions.Count());
+        while (clipper.Step()) {
+            var completionRange = Completions
+                .WithIndex()
+                .Skip(clipper.DisplayStart)
+                .Take(clipper.DisplayEnd - clipper.DisplayStart);
+            foreach (var (completion, index) in completionRange) {
+                ImGui.PushID(index);
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
+                var selected = selectedCompletion != null
+                    && completion.Key == selectedCompletion.Key
+                    && completion.Group == selectedCompletion.Group;
+                if (ImGui.Selectable(
+                        completion.SeString.ExtractText(),
+                        selected,
+                        ImGuiSelectableFlags.SpanAllColumns
                     )
                 ) {
-                    Completions = Env.CompletionIndex.Search(_autoCompleteFilter).ToList();
-                    SelectedCompletionIndex = 0;
-                }
-            }
-
-            if (ImGui.IsWindowAppearing()) {
-                FixCursor = true;
-                ImGui.SetKeyboardFocusHere(-1);
-            }
-
-            if (ImGui.IsItemActive()) {
-                if (ImGui.IsKeyPressed(ImGuiKey.DownArrow)) {
-                    SelectedCompletionIndex = SelectedCompletionIndex + 1;
-                } else if (ImGui.IsKeyPressed(ImGuiKey.UpArrow)) {
-                    SelectedCompletionIndex = SelectedCompletionIndex - 1;
-                }
-            }
-
-            if (ImGui.IsItemDeactivated()) {
-                if (ImGui.IsKeyDown(ImGuiKey.Escape)) {
-                    ImGui.CloseCurrentPopup();
-                    return;
-                }
-
-                var enter = ImGui.IsKeyDown(ImGuiKey.Enter) || ImGui.IsKeyDown(ImGuiKey.KeypadEnter);
-                if (Completions.Count > 0 && enter) {
+                    SelectedCompletionIndex = index;
                     Complete();
                     ImGui.CloseCurrentPopup();
                 }
+
+                // Hovering something takes precedence tooltip-wise, but otherwise
+                // we want to show a tooltip for the currently selected item.
+                if (ImGui.IsItemHovered()) {
+                    hoveredCompletionData = (completion, ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
+                }
+                if (selected) {
+                    visibleSelectedCompletionData = (completion, ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
+                }
+
+                ImGui.TableNextColumn();
+                var text = completion.GroupTitleString;
+                ImGui.SetCursorPosX(
+                    ImGui.GetCursorPosX() + ImGui.GetColumnWidth() - ImGui.CalcTextSize(text).X - ImGui.GetStyle().FramePadding.X
+                );
+                ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.TextDisabled]);
+                ImGui.TextUnformatted(text);
+                ImGui.PopStyleColor();
+                ImGui.PopID();
             }
+        }
 
-            var selectedCompletion = SelectedCompletion;
-            if (ImGui.BeginTable("###se_string_auto_complete/completions_layout_table", 2)) {
-                ImGui.TableSetupColumn("Completion", ImGuiTableColumnFlags.WidthFixed, longestCompletionWidth);
-                ImGui.TableSetupColumn("Group", ImGuiTableColumnFlags.WidthFixed, longestGroupWidth);
+        var scrollPos = clipper.StartPosY + clipper.ItemsHeight * SelectedCompletionIndex.GetValueOrDefault();
+        if (ShouldScrollOnNextDraw) {
+            ImGui.SetScrollFromPosY(scrollPos - ImGui.GetWindowPos().Y);
+            ShouldScrollOnNextDraw = false;
+        }
+        clipper.End();
 
-                // info, min, max
-                (CompletionInfo, Vector2, Vector2)? hoveredCompletionData = null;
-                (CompletionInfo, Vector2, Vector2)? visibleSelectedCompletionData = null;
+        if (hoveredCompletionData != null || visibleSelectedCompletionData != null) {
+            var completionTooltipData = hoveredCompletionData ?? visibleSelectedCompletionData;
+            if (completionTooltipData != null) {
+                var scrollbarPad = 20 * ImGuiHelpers.GlobalScale;
 
-                clipper.Begin(Completions.Count());
-                while (clipper.Step()) {
-                    var completionRange = Completions
-                        .WithIndex()
-                        .Skip(clipper.DisplayStart)
-                        .Take(clipper.DisplayEnd - clipper.DisplayStart);
-                    foreach (var (completion, index) in completionRange) {
-                        ImGui.PushID(index);
-                        ImGui.TableNextRow();
-                        ImGui.TableNextColumn();
+                var (completionTooltip, min, max) = completionTooltipData.Value;
+                if (completionTooltip.HelpText.HasValue) {
+                    var selectionSize = max - min;
+                    var selectionMidpoint = min + (selectionSize / 2.0f);
 
-                        var selected = selectedCompletion != null
-                            && completion.Key == selectedCompletion.Key
-                            && completion.Group == selectedCompletion.Group;
-                        if (ImGui.Selectable(
-                                completion.SeString.ExtractText(),
-                                selected,
-                                ImGuiSelectableFlags.SpanAllColumns
-                            )
-                        ) {
-                            SelectedCompletionIndex = index;
-                            Complete();
-                            ImGui.CloseCurrentPopup();
-                        }
-
-                        // Hovering something takes precedence tooltip-wise, but otherwise
-                        // we want to show a tooltip for the currently selected item.
-                        if (ImGui.IsItemHovered()) {
-                            hoveredCompletionData = (completion, ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
-                        }
-                        if (selected) {
-                            visibleSelectedCompletionData = (completion, ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
-                        }
-
-                        ImGui.TableNextColumn();
-                        var text = completion.GroupTitleString;
-                        ImGui.SetCursorPosX(
-                            ImGui.GetCursorPosX() + ImGui.GetColumnWidth() - ImGui.CalcTextSize(text).X - ImGui.GetStyle().FramePadding.X
-                        );
-                        ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.TextDisabled]);
-                        ImGui.TextUnformatted(text);
-                        ImGui.PopStyleColor();
-                        ImGui.PopID();
+                    if (selectionMidpoint.X <= ImGui.GetWindowViewport().Size.X / 2.0f) {
+                        var tooltipX = max.X + scrollbarPad;
+                        ImGui.SetNextWindowPos(new Vector2(tooltipX, min.Y));
+                    } else if (LastCompletionTooltipSize.HasValue) { // Otherwise...
+                        var tooltipX = min.X - LastCompletionTooltipSize.Value.X - scrollbarPad;
+                        ImGui.SetNextWindowPos(new Vector2(tooltipX, min.Y));
                     }
-                }
 
-                var scrollPos = clipper.StartPosY + clipper.ItemsHeight * SelectedCompletionIndex.GetValueOrDefault();
-                if (ShouldScrollOnNextDraw) {
-                    ImGui.SetScrollFromPosY(scrollPos - ImGui.GetWindowPos().Y);
-                    ShouldScrollOnNextDraw = false;
-                }
-                clipper.End();
-                ImGui.EndTable();
-
-                if (hoveredCompletionData != null || visibleSelectedCompletionData != null) {
-                    var completionTooltipData = hoveredCompletionData ?? visibleSelectedCompletionData;
-                    if (completionTooltipData != null) {
-                        var scrollbarPad = 20 * ImGuiHelpers.GlobalScale;
-
-                        var (completionTooltip, min, max) = completionTooltipData.Value;
-                        if (completionTooltip.HelpText.HasValue) {
-                            var selectionSize = max - min;
-                            var selectionMidpoint = min + (selectionSize / 2.0f);
-
-                            if (selectionMidpoint.X <= ImGui.GetWindowViewport().Size.X / 2.0f) {
-                                var tooltipX = max.X + scrollbarPad;
-                                ImGui.SetNextWindowPos(new Vector2(tooltipX, min.Y));
-                            } else if (LastCompletionTooltipSize.HasValue) { // Otherwise...
-                                var tooltipX = min.X - LastCompletionTooltipSize.Value.X - scrollbarPad;
-                                ImGui.SetNextWindowPos(new Vector2(tooltipX, min.Y));
+                    ImRaii.Tooltip().Use(() => {
+                        var drawResult = ImGuiHelpers.SeStringWrapped(
+                            completionTooltip.HelpText.Value,
+                            new SeStringDrawParams() {
+                                WrapWidth = 640 * ImGuiHelpers.GlobalScale
                             }
-
-                            ImGui.BeginTooltip();
-                            var drawResult = ImGuiHelpers.SeStringWrapped(
-                                completionTooltip.HelpText.Value,
-                                new SeStringDrawParams() {
-                                    WrapWidth = 640 * ImGuiHelpers.GlobalScale
-                                }
-                            );
-                            LastCompletionTooltipSize = drawResult.Size;
-                            ImGui.EndTooltip();
-                        }
-                    }
+                        );
+                        LastCompletionTooltipSize = drawResult.Size;
+                    });
                 }
             }
-            ImGui.EndPopup();
         }
     }
 
