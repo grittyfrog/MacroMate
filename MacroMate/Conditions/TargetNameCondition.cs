@@ -107,7 +107,7 @@ public record class TargetNameCondition(
         }
 
         // For everything else we assume their usual Data sheet has their name.
-        return new TargetNameCondition(target.ObjectKind, target.BaseId);
+        return new TargetNameCondition(target.ObjectKind, target.DataId);
     }
 
     public string Name => TargetKind switch {
