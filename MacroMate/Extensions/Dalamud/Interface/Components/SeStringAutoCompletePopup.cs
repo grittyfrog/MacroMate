@@ -149,6 +149,9 @@ public class SeStringAutoCompletePopup {
     }
 
     private void DrawCompletionResults(float longestCompletionWidth, float longestGroupWidth) {
+        using var child = ImRaii.Child("###se_string_auto_complete/completions_layout_child");
+        if (!child) { return; }
+
         using var table = ImRaii.Table("###se_string_auto_complete/completions_layout_table", 2);
         if (!table) { return; }
 
