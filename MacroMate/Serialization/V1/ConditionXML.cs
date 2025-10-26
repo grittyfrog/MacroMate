@@ -14,6 +14,7 @@ using MacroMate.Extensions.Dotnet;
 namespace MacroMate.Serialization.V1;
 
 [XmlInclude(typeof(ContentConditionXML))]
+[XmlInclude(typeof(CurrentCharacterConditionXML))]
 [XmlInclude(typeof(LocationConditionXML))]
 [XmlInclude(typeof(TargetNpcConditionXML))]
 [XmlInclude(typeof(TargetNameConditionXML))]
@@ -34,6 +35,7 @@ public abstract class ConditionXML {
 
     public static ConditionXML From(ICondition condition) => condition switch {
         ContentCondition cond => ContentConditionXML.From(cond),
+        CurrentCharacterCondition cond => CurrentCharacterConditionXML.From(cond),
         LocationCondition cond => LocationConditionXML.From(cond),
         TargetNameCondition cond => TargetNameConditionXML.From(cond),
         JobCondition cond => JobConditionXML.From(cond),
@@ -62,6 +64,17 @@ public class ContentConditionXML : ConditionXML {
 
     public static ContentConditionXML From(ContentCondition cond) => new() {
         Content = new ExcelIdXML(cond.content)
+    };
+}
+
+[XmlType("CurrentCharacterCondition")]
+public class CurrentCharacterConditionXML : ConditionXML {
+    public required ulong ContentId { get; set; }
+
+    public override ICondition ToReal() => new CurrentCharacterCondition(ContentId);
+
+    public static CurrentCharacterConditionXML From(CurrentCharacterCondition cond) => new() {
+        ContentId = cond.ContentId
     };
 }
 

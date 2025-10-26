@@ -34,6 +34,7 @@ public interface ICondition {
 
         static IEnumerable<IFactory> All => new IFactory[] {
             ContentCondition.Factory,
+            CurrentCharacterCondition.Factory,
             JobCondition.Factory,
             LocationCondition.Factory,
             PlayerConditionCondition.Factory,

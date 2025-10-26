@@ -23,6 +23,7 @@ using System.Net;
 using MacroMate.Subscription;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.AutoComplete;
+using MacroMate.Extensions.Dalamud.LocalPlayerCharacters;
 
 #pragma warning disable SeStringEvaluator
 
@@ -59,6 +60,7 @@ public class Env {
         ItemIndex = new ItemIndex();
         CompletionIndex = new CompletionIndex();
         SubscriptionManager = new SubscriptionManager();
+        LocalPlayerCharactersManager = new LocalPlayerCharactersManager();
 
         MacroMate = new MacroMate();
         PluginCommandManager = new PluginCommandManager();
@@ -66,6 +68,7 @@ public class Env {
     }
 
     public static void Dispose() {
+        LocalPlayerCharactersManager.Dispose();
         ConditionManager.Dispose();
         PluginWindowManager.Dispose();
         PluginCommandManager.Dispose();
@@ -173,4 +176,6 @@ public class Env {
     public static CompletionIndex CompletionIndex { get; private set; } = null!;
 
     public static SubscriptionManager SubscriptionManager { get; private set; } = null!;
+
+    public static LocalPlayerCharactersManager LocalPlayerCharactersManager { get; private set; } = null!;
 }

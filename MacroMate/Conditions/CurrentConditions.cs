@@ -8,6 +8,7 @@ namespace MacroMate.Conditions;
 /// is using reference equality we will see significant performance regression.
 public record CurrentConditions(
     ContentCondition? content,
+    CurrentCharacterCondition? currentCharacter,
     LocationCondition? location,
     TargetNameCondition? targetNpc,
     JobCondition? job,
@@ -25,6 +26,7 @@ public record CurrentConditions(
 ) {
     public static CurrentConditions Empty => new CurrentConditions(
         content: null,
+        currentCharacter: null,
         location: null,
         targetNpc: null,
         job: null,
@@ -43,6 +45,7 @@ public record CurrentConditions(
 
     public IEnumerable<ICondition> Enumerate() {
         if (content != null) { yield return content; }
+        if (currentCharacter != null) { yield return currentCharacter; }
         if (location != null) { yield return location; }
         if (targetNpc != null) { yield return targetNpc; }
         if (job != null) { yield return job; }
@@ -62,6 +65,7 @@ public record CurrentConditions(
     public static CurrentConditions Query() {
         return new CurrentConditions(
             content: ContentCondition.Current(),
+            currentCharacter: CurrentCharacterCondition.Current(),
             location: LocationCondition.Current(),
             targetNpc: TargetNameCondition.Current(),
             job: JobCondition.Current(),
