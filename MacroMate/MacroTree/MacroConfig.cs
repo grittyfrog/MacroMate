@@ -9,7 +9,6 @@ using System;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using MacroMate.Subscription;
-using MacroMate.Extensions.Dalamud.LocalPlayerCharacters;
 
 namespace MacroMate.MacroTree;
 
@@ -69,8 +68,6 @@ public class MacroConfig {
 
     public SubscriptionUrlCache SubscriptionUrlCache { get; set; } = new();
 
-    public LocalCharacterDataCache LocalCharacterDataCache { get; set; } = new();
-
     private MateNode _root;
     public MateNode Root {
         get { return _root; }
@@ -97,7 +94,6 @@ public class MacroConfig {
         this._minutesBetweenSubscriptionAutoCheckForUpdates = other.MinutesBetweenSubscriptionAutoCheckForUpdates;
         this._root = other.Root;
         this.SubscriptionUrlCache = other.SubscriptionUrlCache;
-        this.LocalCharacterDataCache.MergeFrom(other.LocalCharacterDataCache);
         this.CharPickerDialogFavourites = other.CharPickerDialogFavourites;
         NotifyEdit();
     }

@@ -24,6 +24,7 @@ using MacroMate.Subscription;
 using MacroMate.Extensions.Dalamud;
 using MacroMate.Extensions.Dalamud.AutoComplete;
 using MacroMate.Extensions.Dalamud.LocalPlayerCharacters;
+using MacroMate.Cache;
 
 #pragma warning disable SeStringEvaluator
 
@@ -52,6 +53,7 @@ public class Env {
         PlayerLocationManager = new PlayerLocationManager();
         VanillaMacroManager = new VanillaMacroManager();
         SaveManager = new SaveManager();
+        MacroMateCache = new MacroMateCache();
         MacroConfig = new MacroConfig();
         IPCManager = new IPCManager();
         ContextMenuManager = new ContextMenuManager();
@@ -158,6 +160,8 @@ public class Env {
     public static PlayerLocationManager PlayerLocationManager { get; private set; } = null!;
 
     public static MacroConfig MacroConfig { get; private set; } = null!;
+
+    public static MacroMateCache MacroMateCache { get; private set; } = null!;
 
     public static PluginCommandManager PluginCommandManager { get; private set; } = null!;
 

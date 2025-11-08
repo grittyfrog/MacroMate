@@ -9,7 +9,7 @@ namespace MacroMate.Extensions.Dalamud.LocalPlayerCharacters;
 
 /// <summary>
 /// Manages tracking of characters that have logged in on this installation.
-/// Character data is stored in MacroConfig.LocalCharacterDataCache and persisted via XML serialization.
+/// Character data is stored in a separate MacroMateCharacters.xml file.
 /// </summary>
 public class LocalPlayerCharactersManager : IDisposable {
     private bool isPollingForPlayerData = false;
@@ -67,22 +67,22 @@ public class LocalPlayerCharactersManager : IDisposable {
             World = new ExcelId<World>(player.HomeWorld.RowId)
         };
 
-        Env.MacroConfig.LocalCharacterDataCache.TrackCharacter(character);
-        Env.MacroConfig.NotifyEdit();
+        Env.MacroMateCache.LocalCharacterData.TrackCharacter(character);
+        Env.MacroMateCache.Save();
     }
 
     public LocalCharacterDataCache.Entry? GetCurrentCharacter() {
         var contentId = Env.ClientState.LocalContentId;
         if (contentId == 0) return null;
 
-        return Env.MacroConfig.LocalCharacterDataCache.GetCharacter(contentId);
+        return Env.MacroMateCache.LocalCharacterData.GetCharacter(contentId);
     }
 
     public IEnumerable<LocalCharacterDataCache.Entry> GetAllCharacters() {
-        return Env.MacroConfig.LocalCharacterDataCache.GetAllCharacters();
+        return Env.MacroMateCache.LocalCharacterData.GetAllCharacters();
     }
 
     public LocalCharacterDataCache.Entry? GetCharacter(ulong contentId) {
-        return Env.MacroConfig.LocalCharacterDataCache.GetCharacter(contentId);
+        return Env.MacroMateCache.LocalCharacterData.GetCharacter(contentId);
     }
 }

@@ -8,7 +8,7 @@ namespace MacroMate.Extensions.Dalamud.LocalPlayerCharacters;
 
 /// <summary>
 /// Cache of character data for all characters that have logged in on this installation.
-/// Stored in MacroConfig and persisted with custom XML serialization.
+/// Stored separately from MacroConfig in MacroMateCharacters.xml.
 /// </summary>
 public class LocalCharacterDataCache {
     public class Entry {
@@ -31,9 +31,10 @@ public class LocalCharacterDataCache {
         return Characters.Values.OrderBy(c => c.Name);
     }
 
-    public void MergeFrom(LocalCharacterDataCache other) {
-        foreach (var character in other.Characters.Values) {
-            TrackCharacter(character);
-        }
+    /// <summary>
+    /// We want to update in place to not break other parts of the system that may reference this cache
+    /// </summary>
+    public void OverwriteFrom(LocalCharacterDataCache other) {
+        Characters = new Dictionary<ulong, Entry>(other.Characters);
     }
 }
