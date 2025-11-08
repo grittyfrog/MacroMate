@@ -42,11 +42,4 @@ public class SubscriptionUrlCache {
             .Where(kv => kv.Value.SubscriptionGroupId != subscriptionGroupId)
             .ToDictionary();
     }
-
-    /// <summary>
-    /// We want to update in place to not break other parts of the system that may reference this cache
-    /// </summary>
-    public void OverwriteFrom(SubscriptionUrlCache other) {
-        Entries = new Dictionary<string, Entry>(other.Entries);
-    }
 }

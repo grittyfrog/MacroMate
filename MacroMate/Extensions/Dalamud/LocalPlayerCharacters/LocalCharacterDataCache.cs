@@ -30,11 +30,4 @@ public class LocalCharacterDataCache {
     public IEnumerable<Entry> GetAllCharacters() {
         return Characters.Values.OrderBy(c => c.Name);
     }
-
-    /// <summary>
-    /// We want to update in place to not break other parts of the system that may reference this cache
-    /// </summary>
-    public void OverwriteFrom(LocalCharacterDataCache other) {
-        Characters = new Dictionary<ulong, Entry>(other.Characters);
-    }
 }

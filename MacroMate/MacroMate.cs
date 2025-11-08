@@ -2,7 +2,6 @@ using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using MacroMate.Cache;
 using MacroMate.Conditions;
 using MacroMate.Extensions.Dalamud.Macros;
 
@@ -15,7 +14,6 @@ public class MacroMate {
     public MacroMate() {
         // Now that we're initialized we can load the save file.
         LoadConfig();
-        LoadCache();
 
         Env.ConditionManager.ConditionChange += OnConditionChange;
         Env.MacroConfig.ConfigChange += OnConfigChange;
@@ -32,13 +30,6 @@ public class MacroMate {
         var savedConfig = Env.SaveManager.Load();
         if (savedConfig != null) {
             Env.MacroConfig.OverwiteFrom(savedConfig);
-        }
-    }
-
-    public void LoadCache() {
-        var savedCache = MacroMateCache.Load();
-        if (savedCache != null) {
-            Env.MacroMateCache.OverwriteFrom(savedCache);
         }
     }
 

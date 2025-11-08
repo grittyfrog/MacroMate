@@ -50,10 +50,11 @@ public class Env {
         XIVCSSignatures = new XIVCSSignatures();
 
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        MacroMateCache = MacroMateCache.Load();
+
         PlayerLocationManager = new PlayerLocationManager();
         VanillaMacroManager = new VanillaMacroManager();
         SaveManager = new SaveManager();
-        MacroMateCache = new MacroMateCache();
         MacroConfig = new MacroConfig();
         IPCManager = new IPCManager();
         ContextMenuManager = new ContextMenuManager();

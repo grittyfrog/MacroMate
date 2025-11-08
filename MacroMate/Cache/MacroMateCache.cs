@@ -6,8 +6,8 @@ using MacroMate.Subscription;
 namespace MacroMate.Cache;
 
 public class MacroMateCache {
-    public LocalCharacterDataCache LocalCharacterData { get; set; } = new();
-    public SubscriptionUrlCache SubscriptionUrlCache { get; set; } = new();
+    public required LocalCharacterDataCache LocalCharacterData { get; set; }
+    public required SubscriptionUrlCache SubscriptionUrlCache { get; set; }
 
     private static FileInfo CacheDataFile {
         get => new FileInfo(Path.Combine(Env.PluginInterface.ConfigDirectory.FullName, "MacroMateCache.xml"));
@@ -15,14 +15,6 @@ public class MacroMateCache {
 
     private static FileInfo CacheDataSaveAttemptFile {
         get => new FileInfo(Path.Combine(Env.PluginInterface.ConfigDirectory.FullName, "MacroMateCache.saveAttempt.xml"));
-    }
-
-    /// <summary>
-    /// We want to update in place to not break other parts of the system that may reference this cache
-    /// </summary>
-    public void OverwriteFrom(MacroMateCache other) {
-        this.LocalCharacterData.OverwriteFrom(other.LocalCharacterData);
-        this.SubscriptionUrlCache.OverwriteFrom(other.SubscriptionUrlCache);
     }
 
     public void Save() {
@@ -34,8 +26,13 @@ public class MacroMateCache {
         File.Move(CacheDataSaveAttemptFile.FullName, CacheDataFile.FullName, overwrite: true);
     }
 
-    public static MacroMateCache? Load() {
-        if (!CacheDataFile.Exists) { return null; }
+    public static MacroMateCache Load() {
+        if (!CacheDataFile.Exists) {
+            return new MacroMateCache {
+                LocalCharacterData = new(),
+                SubscriptionUrlCache = new()
+            };
+        }
         return MacroMateCacheV1.Read(CacheDataFile);
     }
 }
