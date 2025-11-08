@@ -66,8 +66,6 @@ public class MacroConfig {
 
     public HashSet<char> CharPickerDialogFavourites { get; set; } = new();
 
-    public SubscriptionUrlCache SubscriptionUrlCache { get; set; } = new();
-
     private MateNode _root;
     public MateNode Root {
         get { return _root; }
@@ -93,7 +91,6 @@ public class MacroConfig {
         this._enableSubscriptionAutoCheckForUpdates = other.EnableSubscriptionAutoCheckForUpdates;
         this._minutesBetweenSubscriptionAutoCheckForUpdates = other.MinutesBetweenSubscriptionAutoCheckForUpdates;
         this._root = other.Root;
-        this.SubscriptionUrlCache = other.SubscriptionUrlCache;
         this.CharPickerDialogFavourites = other.CharPickerDialogFavourites;
         NotifyEdit();
     }
@@ -273,7 +270,8 @@ public class MacroConfig {
 
     public void Delete(MateNode node) {
         Root.Delete(node.Id);
-        Env.MacroConfig.SubscriptionUrlCache.ClearForSubscription(node.Id);
+        Env.MacroMateCache.SubscriptionUrlCache.ClearForSubscription(node.Id);
+        Env.MacroMateCache.Save();
         NotifyEdit();
     }
 

@@ -1,11 +1,13 @@
 using System.IO;
 using MacroMate.Extensions.Dalamud.LocalPlayerCharacters;
 using MacroMate.Serialization.V1;
+using MacroMate.Subscription;
 
 namespace MacroMate.Cache;
 
 public class MacroMateCache {
     public LocalCharacterDataCache LocalCharacterData { get; set; } = new();
+    public SubscriptionUrlCache SubscriptionUrlCache { get; set; } = new();
 
     private static FileInfo CacheDataFile {
         get => new FileInfo(Path.Combine(Env.PluginInterface.ConfigDirectory.FullName, "MacroMateCache.xml"));
@@ -20,6 +22,7 @@ public class MacroMateCache {
     /// </summary>
     public void OverwriteFrom(MacroMateCache other) {
         this.LocalCharacterData.OverwriteFrom(other.LocalCharacterData);
+        this.SubscriptionUrlCache.OverwriteFrom(other.SubscriptionUrlCache);
     }
 
     public void Save() {

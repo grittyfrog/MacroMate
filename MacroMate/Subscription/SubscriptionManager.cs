@@ -147,8 +147,9 @@ public class SubscriptionManager {
                 await Env.Framework.RunOnTick(() => {
                     sGroup.LastSyncTime = DateTimeOffset.Now;
                     sGroup.HasUpdate = false;
-                    Env.MacroConfig.SubscriptionUrlCache.ClearForSubscription(sGroup.Id);
-                    Env.MacroConfig.SubscriptionUrlCache.AddEntries(sGroup, urlToEtags);
+                    Env.MacroMateCache.SubscriptionUrlCache.ClearForSubscription(sGroup.Id);
+                    Env.MacroMateCache.SubscriptionUrlCache.AddEntries(sGroup, urlToEtags);
+                    Env.MacroMateCache.Save();
                     Env.MacroConfig.NotifyEdit();
                 });
             });
@@ -282,7 +283,7 @@ public class SubscriptionManager {
             return response;
         });
 
-        var hasKnownEtag = Env.MacroConfig.SubscriptionUrlCache.TryGetEtagForUrl(sGroup.SubscriptionUrl, out var knownEtag);
+        var hasKnownEtag = Env.MacroMateCache.SubscriptionUrlCache.TryGetEtagForUrl(sGroup.SubscriptionUrl, out var knownEtag);
 
         if (response.Headers.ETag != null) { urlToEtags[sGroup.SubscriptionUrl] = response.Headers.ETag.Tag; }
 
@@ -323,7 +324,7 @@ public class SubscriptionManager {
         var url = sGroup.RelativeUrl(yamlUrl);
         var response = await taskDetails.Child("Checking File Headers").Loading(async () => {
             var request = new HttpRequestMessage(HttpMethod.Get, url);
-            if (Env.MacroConfig.SubscriptionUrlCache.TryGetEtagForUrl(url, out var knownEtag)) {
+            if (Env.MacroMateCache.SubscriptionUrlCache.TryGetEtagForUrl(url, out var knownEtag)) {
                 request.Headers.IfNoneMatch.ParseAdd(knownEtag);
             }
 

@@ -10,11 +10,15 @@ public class MacroMateCacheXML {
 
     public required LocalCharacterDataCacheXML? LocalCharacterData { get; set; }
 
+    public required SubscriptionUrlCacheXML? SubscriptionUrlCache { get; set; }
+
     public MacroMateCache ToReal() => new MacroMateCache {
-        LocalCharacterData = LocalCharacterData?.ToReal() ?? new()
+        LocalCharacterData = LocalCharacterData?.ToReal() ?? new(),
+        SubscriptionUrlCache = SubscriptionUrlCache?.ToReal() ?? new()
     };
 
     public static MacroMateCacheXML From(MacroMateCache cache) => new() {
-        LocalCharacterData = LocalCharacterDataCacheXML.From(cache.LocalCharacterData)
+        LocalCharacterData = LocalCharacterDataCacheXML.From(cache.LocalCharacterData),
+        SubscriptionUrlCache = SubscriptionUrlCacheXML.From(cache.SubscriptionUrlCache)
     };
 }
