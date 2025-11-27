@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using KTrie;
 using Lumina.Excel.Sheets;
+using MacroMate.Extensions.Dotnet;
 
 namespace MacroMate.Extensions.Dalamud.AutoComplete;
 
@@ -19,7 +20,7 @@ public class CompletionIndex {
     /// we need to look at the "special" group header completion, there should be 1 per GroupId.
     /// </summary>
     private Dictionary<uint, Completion> CompletionGroupsById = new();
-    private TrieDictionary<List<CompletionInfo>> CompletionsByText = new();
+    private TrieDictionary<List<CompletionInfo>> CompletionsByText = new(new AccentInsensitiveCharComparer());
     private Dictionary<(uint, uint), CompletionInfo> CompletionInfoByGroupKey = new();
 
     public enum IndexState { UNINDEXED, INDEXING, INDEXED }
@@ -29,7 +30,7 @@ public class CompletionIndex {
         if (State != IndexState.INDEXED) { return new List<CompletionInfo>(); }
         if (prefix == "") { return new List<CompletionInfo>(); }
 
-        return CompletionsByText.StartsWith(prefix.ToLower()).SelectMany(c => c.Value);
+        return CompletionsByText.StartsWith(prefix).SelectMany(c => c.Value);
     }
 
     public CompletionInfo? ById(uint group, uint key) {
@@ -86,7 +87,7 @@ public class CompletionIndex {
     }
 
     private void RefreshCompletionIndex(IEnumerable<CompletionInfo> completions) {
-        var grouped = completions.GroupBy(c => c.SeString.ExtractText().ToLower());
+        var grouped = completions.GroupBy(c => c.SeString.ExtractText(), new AccentInsensitiveStringComparer());
         foreach (var g in grouped) {
             CompletionsByText.Add(g.Key, g.ToList());
         }

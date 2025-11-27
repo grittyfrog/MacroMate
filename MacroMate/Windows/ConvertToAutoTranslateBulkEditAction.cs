@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Dalamud.Bindings.ImGui;
@@ -17,6 +18,7 @@ internal class ConvertToAutoTranslateBulkEditAction : MacroBulkEdit {
     private int maximumWords = 3;
     private bool autoTranslateCommands = true;
     private int convertedWordsCount = 0;
+    private readonly CompareInfo compareInfo = CultureInfo.InvariantCulture.CompareInfo;
 
     public void DrawLabel(int id) {
         ImGui.TextUnformatted("Convert to Auto-Translate");
@@ -128,7 +130,7 @@ internal class ConvertToAutoTranslateBulkEditAction : MacroBulkEdit {
 
                 // Try to find exact match in CompletionIndex
                 var completions = Env.CompletionIndex.Search(phrase)
-                    .Where(c => c.SeString.ExtractText().Equals(phrase, StringComparison.OrdinalIgnoreCase))
+                    .Where(c => compareInfo.Compare(c.SeString.ExtractText(), phrase, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
                     .ToList();
 
                 if (completions.Count > 0) {
