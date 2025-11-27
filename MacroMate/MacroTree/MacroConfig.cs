@@ -296,7 +296,7 @@ public class MacroConfig {
         if (startMacroSlot > endMacroSlot) { throw new ArgumentException("Invalid import: start must be before end"); }
 
         var results = new List<string>();
-        var linkedSlots = ActiveMacros.SelectMany(macro => macro.Link.Slots).ToHashSet();
+        var linkedSlots = ActiveMacros.Where(macro => macro.Link.Set == macroSet).SelectMany(macro => macro.Link.Slots).ToHashSet();
         for (var macroSlot = startMacroSlot; macroSlot <= endMacroSlot; ++macroSlot) {
             if (linkedSlots.Contains(macroSlot)) {
                 results.Add($"Slot {macroSlot}: Skipped (already managed by Macro Mate)");
