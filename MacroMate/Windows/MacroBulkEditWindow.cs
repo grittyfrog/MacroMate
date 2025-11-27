@@ -182,7 +182,8 @@ internal interface MacroBulkEdit : IDisposable {
             AddOrConditionBulkEditAction.Factory,
             AddAndConditionBulkEditAction.Factory,
             RemoveConditionBulkEditAction.Factory,
-            RemoveAllConditionsBulkEditAction.Factory
+            RemoveAllConditionsBulkEditAction.Factory,
+            ConvertToAutoTranslateBulkEditAction.Factory
         };
     }
 }
