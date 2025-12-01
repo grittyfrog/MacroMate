@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Dalamud.Utility;
@@ -21,6 +22,8 @@ public class IconPickerIndex {
 
     /// The range of icons within iconRange that should be ignored (because they cause exceptions).
     private readonly HashSet<int> iconRangeNullValues = Enumerable.Range(170000, 9999).ToHashSet();
+
+    private readonly AccentInsensitiveStringComparer stringComparer = new();
 
     private SortedList<uint, IconInfo> iconInfos = new();
     private SortedList<IconInfoCategory, IconInfoCategoryGroup> iconInfoGroupForCategory = new(IconInfoCategory.NameComparer);
@@ -75,13 +78,15 @@ public class IconPickerIndex {
 
         var searchHaystack = All(category);
 
+        var compareInfo = CultureInfo.InvariantCulture.CompareInfo;
+
         IEnumerable<(IconInfo, int)> results = searchHaystack
             .Select<IconInfo, (IconInfo, int)?>(icon => {
                 if (icon.IconId.ToString() == searchNeedle) { return (icon, 0); }
                 foreach (var searchName in icon.SearchNames) {
-                    if (searchName.ToLowerInvariant() == searchNeedle) { return (icon, 1); }
-                    if (searchName.Split(" ").Any(word => word == searchNeedle)) { return (icon, 2); }
-                    if (searchName.Contains(searchNeedle)) { return (icon, 3); }
+                    if (stringComparer.Equals(searchName, searchNeedle)) { return (icon, 1); }
+                    if (searchName.Split(" ").Any(word => stringComparer.Equals(word, searchNeedle))) { return (icon, 2); }
+                    if (compareInfo.IndexOf(searchName, searchNeedle, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0) { return (icon, 3); }
                 }
 
                 return null;
@@ -701,6 +706,8 @@ public class IconPickerIndex {
 }
 
 public class IconInfo {
+    private static readonly AccentInsensitiveStringComparer stringComparer = new();
+
     public required uint IconId { get; init; }
 
     /// The names/descriptions that refer to this IconId.
@@ -724,11 +731,13 @@ public class IconInfo {
 
     public void AddNames(IEnumerable<string> names) {
         foreach (var name in names) {
-            var searchName = name.ToLowerInvariant();
-            if (SearchNames.Contains(searchName)) { continue; }
+            // Check if this name already exists (ignoring diacritics)
+            if (SearchNames.Any(existingName => stringComparer.Equals(existingName, name))) {
+                continue;
+            }
 
             Names.Add(name);
-            SearchNames.Add(searchName);
+            SearchNames.Add(name);
         }
     }
 
