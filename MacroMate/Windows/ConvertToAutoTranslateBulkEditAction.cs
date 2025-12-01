@@ -99,20 +99,25 @@ internal class ConvertToAutoTranslateBulkEditAction : MacroBulkEdit {
         var i = 0;
 
         while (i < matches.Count) {
-            // Add any text before this match
-            if (currentPos < matches[i].Index) {
-                payloads.Add(new TextPayload(text.Substring(currentPos, matches[i].Index - currentPos)));
-            }
-
             // Try to match the longest sequence starting at position i
             CompletionInfo? longestMatch = null;
             int longestWordCount = 0;
-            int longestEndPos = 0;
+            int longestActualStartPos = 0; // Includes opening quote if present
+            int longestActualEndPos = 0;   // Includes closing quote if present
             string longestPhrase = "";
 
             for (var wordCount = Math.Min(maximumWords, matches.Count - i); wordCount >= 1; wordCount--) {
                 var startPos = matches[i].Index;
                 var endPos = matches[i + wordCount - 1].Index + matches[i + wordCount - 1].Length;
+
+                // Check if phrase is surrounded by quotes
+                var hasOpeningQuote = startPos > 0 && text[startPos - 1] == '"';
+                var hasClosingQuote = endPos < text.Length && text[endPos] == '"';
+                var bothQuotesPresent = hasOpeningQuote && hasClosingQuote;
+
+                var actualStartPos = bothQuotesPresent ? startPos - 1 : startPos;
+                var actualEndPos = bothQuotesPresent ? endPos + 1 : endPos;
+
                 var phrase = text.Substring(startPos, endPos - startPos);
 
                 // Check if this is a command phrase - if commands are disabled, skip
@@ -136,20 +141,29 @@ internal class ConvertToAutoTranslateBulkEditAction : MacroBulkEdit {
                 if (completions.Count > 0) {
                     longestMatch = completions[0];
                     longestWordCount = wordCount;
-                    longestEndPos = endPos;
+                    longestActualStartPos = actualStartPos;
+                    longestActualEndPos = actualEndPos;
                     longestPhrase = phrase;
                     break; // Found longest match, no need to try shorter ones
                 }
             }
 
             if (longestMatch != null) {
+                // Add text before match (skipping opening quote if present)
+                if (currentPos < longestActualStartPos) {
+                    payloads.Add(new TextPayload(text.Substring(currentPos, longestActualStartPos - currentPos)));
+                }
+
                 // Found a match, add as AutoTranslatePayload
                 payloads.Add(new AutoTranslatePayload(longestMatch.Group, longestMatch.Key));
                 convertedCount++;
-                currentPos = longestEndPos;
+                currentPos = longestActualEndPos;
                 i += longestWordCount;
             } else {
-                // No match, add the current word as text
+                // No match, add text before this word and the word itself
+                if (currentPos < matches[i].Index) {
+                    payloads.Add(new TextPayload(text.Substring(currentPos, matches[i].Index - currentPos)));
+                }
                 payloads.Add(new TextPayload(matches[i].Value));
                 currentPos = matches[i].Index + matches[i].Length;
                 i++;
