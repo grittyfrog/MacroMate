@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Dalamud.Utility;
 using Lumina.Excel;
@@ -22,8 +23,6 @@ public class IconPickerIndex {
 
     /// The range of icons within iconRange that should be ignored (because they cause exceptions).
     private readonly HashSet<int> iconRangeNullValues = Enumerable.Range(170000, 9999).ToHashSet();
-
-    private readonly AccentInsensitiveStringComparer stringComparer = new();
 
     private SortedList<uint, IconInfo> iconInfos = new();
     private SortedList<IconInfoCategory, IconInfoCategoryGroup> iconInfoGroupForCategory = new(IconInfoCategory.NameComparer);
@@ -74,19 +73,21 @@ public class IconPickerIndex {
         if (State != IndexState.INDEXED) { return new(); }
         if (needle.Length < 2)  { return new(); }
 
-        var searchNeedle = needle.ToLowerInvariant();
+        var searchNeedle = IconInfo.NormalizeForSearch(needle);
 
         var searchHaystack = All(category);
-
-        var compareInfo = CultureInfo.InvariantCulture.CompareInfo;
 
         IEnumerable<(IconInfo, int)> results = searchHaystack
             .Select<IconInfo, (IconInfo, int)?>(icon => {
                 if (icon.IconId.ToString() == searchNeedle) { return (icon, 0); }
                 foreach (var searchName in icon.SearchNames) {
-                    if (stringComparer.Equals(searchName, searchNeedle)) { return (icon, 1); }
-                    if (searchName.Split(" ").Any(word => stringComparer.Equals(word, searchNeedle))) { return (icon, 2); }
-                    if (compareInfo.IndexOf(searchName, searchNeedle, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0) { return (icon, 3); }
+                    if (searchName == searchNeedle) { return (icon, 1); }
+
+                    // Cache split to avoid repeated allocations
+                    var words = searchName.Split(' ');
+                    if (words.Any(word => word == searchNeedle)) { return (icon, 2); }
+
+                    if (searchName.Contains(searchNeedle)) { return (icon, 3); }
                 }
 
                 return null;
@@ -706,7 +707,12 @@ public class IconPickerIndex {
 }
 
 public class IconInfo {
-    private static readonly AccentInsensitiveStringComparer stringComparer = new();
+    public static string NormalizeForSearch(string input) {
+        return string.Concat(
+            input.Normalize(NormalizationForm.FormD)
+                .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+        ).ToLowerInvariant();
+    }
 
     public required uint IconId { get; init; }
 
@@ -719,25 +725,27 @@ public class IconInfo {
         get { return _names; }
         init {
             _names = value;
-            SearchNames = value.Select(name => name.ToLowerInvariant()).ToList();
+            SearchNames = value.Select(name => NormalizeForSearch(name)).ToHashSet();
         }
     }
 
-    /// Same as Names, but all lowercase
-    public List<string> SearchNames { get; private set; } = new();
+    /// Normalized (diacritics removed, lowercase) versions of Names for fast searching
+    public HashSet<string> SearchNames { get; private set; } = new();
 
     /// The Categories that this Icon belongs to.
     public List<IconInfoCategory> Categories { get; private set; } = new();
 
     public void AddNames(IEnumerable<string> names) {
         foreach (var name in names) {
-            // Check if this name already exists (ignoring diacritics)
-            if (SearchNames.Any(existingName => stringComparer.Equals(existingName, name))) {
+            var normalizedName = NormalizeForSearch(name);
+
+            // Check if this name already exists (O(1) lookup in HashSet)
+            if (SearchNames.Contains(normalizedName)) {
                 continue;
             }
 
             Names.Add(name);
-            SearchNames.Add(name);
+            SearchNames.Add(normalizedName);
         }
     }
 
