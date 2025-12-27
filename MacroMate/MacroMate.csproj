@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Dalamud.NET.Sdk/13.0.0">
+<Project Sdk="Dalamud.NET.Sdk/14.0.0">
   <PropertyGroup>
     <Authors></Authors>
     <Company></Company>
@@ -11,14 +11,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Generator.Equals" Version="3.1.1" />
-    <PackageReference Include="KTrie" Version="2.6.0" />
-    <PackageReference Include="Markdig" Version="0.37.0" />
-    <PackageReference Include="OneOf" Version="3.0.263" />
+    <PackageReference Include="Generator.Equals" Version="3.2.1" />
+    <PackageReference Include="KTrie" Version="3.0.1" />
+    <PackageReference Include="Markdig" Version="0.44.0" />
+    <PackageReference Include="OneOf" Version="3.0.271" />
     <PackageReference Include="Sprache" Version="2.3.1" />
-    <PackageReference Include="System.Collections.Immutable" Version="7.0.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="10.0.1" />
     <PackageReference Include="XSerializer" Version="0.4.4" />
-    <PackageReference Include="YamlDotNet" Version="16.0.0" />
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,5 +26,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>Images/icon.png</TargetPath>
     </ContentWithTargetPath>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="DalamudPackager" Version="14.0.1" />
   </ItemGroup>
 </Project>

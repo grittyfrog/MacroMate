@@ -24,15 +24,15 @@ namespace MacroMate.Subscription;
 public class SubscriptionManager {
     private static readonly TimeSpan CheckForUpdatesTimeAfterLogin = TimeSpan.FromSeconds(20);
 
-    private List<MateNode.SubscriptionGroup> SubscriptionGroups  = new();
+    private List<MateNode.SubscriptionGroup> subscriptionGroups  = new();
 
-    private ConcurrentDictionary<Guid, Task> SubscriptionGroupTasks = new();
+    private ConcurrentDictionary<Guid, Task> subscriptionGroupTasks = new();
 
-    private ConcurrentDictionary<Guid, SubscriptionTaskDetails> SubscriptionGroupTaskDetails = new();
+    private ConcurrentDictionary<Guid, SubscriptionTaskDetails> subscriptionGroupTaskDetails = new();
 
-    private SemaphoreSlim JobSemaphore = new SemaphoreSlim(1, 1);
+    private SemaphoreSlim jobSemaphore = new SemaphoreSlim(1, 1);
 
-    private CancellationTokenSource CancellationTokenSource = new();
+    private CancellationTokenSource cancellationTokenSource = new();
 
     private bool firstLogin = true;
     private DateTimeOffset? lastAutoCheckForUpdatesTime = null;
@@ -47,7 +47,7 @@ public class SubscriptionManager {
         // If we are already logged run the "First Login" to make plugin reloads consistent with
         // first login.
         Env.Framework.RunOnTick(() => {
-            if (Env.ClientState.LocalPlayer != null) {
+            if (Env.PlayerState.IsLoaded) {
                 OnLogin();
             }
 
@@ -56,31 +56,31 @@ public class SubscriptionManager {
     }
 
     public void ScheduleCheckForUpdates(MateNode.SubscriptionGroup sGroup) {
-        if (SubscriptionGroupTasks.ContainsKey(sGroup.Id)) { return; }
+        if (subscriptionGroupTasks.ContainsKey(sGroup.Id)) { return; }
 
-        SubscriptionGroupTasks[sGroup.Id] = Task.Run(async () => {
+        subscriptionGroupTasks[sGroup.Id] = Task.Run(async () => {
             try {
                 await CheckForUpdates(sGroup);
             } finally {
-                SubscriptionGroupTasks.Remove(sGroup.Id, out var _);
+                subscriptionGroupTasks.Remove(sGroup.Id, out var _);
             }
         });
     }
 
     public void ScheduleSync(MateNode.SubscriptionGroup sGroup) {
-        if (SubscriptionGroupTasks.ContainsKey(sGroup.Id)) { return; }
+        if (subscriptionGroupTasks.ContainsKey(sGroup.Id)) { return; }
 
-        SubscriptionGroupTasks[sGroup.Id] = Task.Run(async () => {
+        subscriptionGroupTasks[sGroup.Id] = Task.Run(async () => {
             try {
                 await Sync(sGroup);
             } finally {
-                SubscriptionGroupTasks.Remove(sGroup.Id, out var _);
+                subscriptionGroupTasks.Remove(sGroup.Id, out var _);
             }
         });
     }
 
     public SubscriptionTaskDetails GetSubscriptionTaskDetails(MateNode.SubscriptionGroup sGroup) {
-        return SubscriptionGroupTaskDetails.GetOrAdd(sGroup.Id, new SubscriptionTaskDetails());
+        return subscriptionGroupTaskDetails.GetOrAdd(sGroup.Id, new SubscriptionTaskDetails());
     }
 
     private void OnLogin() {
@@ -93,7 +93,7 @@ public class SubscriptionManager {
     private void OnMacroMateConfigChanged() {
         // If the config has changed the tree might have changed, we need to refresh
         // our subscription groups.
-        SubscriptionGroups = Env.MacroConfig.Root.Descendants()
+        subscriptionGroups = Env.MacroConfig.Root.Descendants()
             .OfType<MateNode.SubscriptionGroup>()
             .ToList();
 
@@ -106,12 +106,12 @@ public class SubscriptionManager {
 
     private void OnFrameworkUpdate(IFramework framework) {
         if (!Env.MacroConfig.EnableSubscriptionAutoCheckForUpdates) { return; }
-        if (SubscriptionGroups.Count == 0) { return; }
+        if (subscriptionGroups.Count == 0) { return; }
         if (nextAutoCheckForUpdatesTime == null) { return; }
 
         if (DateTimeOffset.Now > nextAutoCheckForUpdatesTime) {
             Env.PluginLog.Info("Checking subscriptions for updates");
-            foreach (var sGroup in SubscriptionGroups) {
+            foreach (var sGroup in subscriptionGroups) {
                 if (sGroup.HasUpdate) { continue; }
                 ScheduleCheckForUpdates(sGroup);
             }
@@ -121,9 +121,9 @@ public class SubscriptionManager {
     }
 
     private async Task Sync(MateNode.SubscriptionGroup sGroup) {
-        var taskDetails = SubscriptionGroupTaskDetails[sGroup.Id] = new SubscriptionTaskDetails();
+        var taskDetails = subscriptionGroupTaskDetails[sGroup.Id] = new SubscriptionTaskDetails();
         await taskDetails.Child("Waiting for existing jobs to finish").Loading(async () => {
-            await JobSemaphore.WaitAsync();
+            await jobSemaphore.WaitAsync();
         });
         try {
             await taskDetails.Catching(async () => {
@@ -154,7 +154,7 @@ public class SubscriptionManager {
                 });
             });
         } finally {
-            JobSemaphore.Release();
+            jobSemaphore.Release();
         }
     }
 
@@ -213,9 +213,9 @@ public class SubscriptionManager {
     }
 
     private async Task CheckForUpdates(MateNode.SubscriptionGroup sGroup) {
-        var taskDetails = SubscriptionGroupTaskDetails[sGroup.Id] = new SubscriptionTaskDetails();
+        var taskDetails = subscriptionGroupTaskDetails[sGroup.Id] = new SubscriptionTaskDetails();
         await taskDetails.Child("Waiting for existing jobs to finish").Loading(async () => {
-            await JobSemaphore.WaitAsync();
+            await jobSemaphore.WaitAsync();
         });
         try {
             await taskDetails.Catching(async () => {
@@ -236,7 +236,7 @@ public class SubscriptionManager {
                 });
             });
         } finally {
-            JobSemaphore.Release();
+            jobSemaphore.Release();
         }
     }
 

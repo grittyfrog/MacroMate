@@ -8,11 +8,11 @@ public class ConditionManager : IDisposable {
     private CurrentConditions? currentConditions;
 
     public delegate void OnConditionChangeDelegate(CurrentConditions conditions);
-    public event OnConditionChangeDelegate? ConditionChange;
+    public event OnConditionChangeDelegate? OnConditionChange;
 
     public ConditionManager() {
         Env.Framework.RunOnTick(() => {
-            this.loggedIn = Env.ClientState.LocalPlayer != null;
+            this.loggedIn = Env.PlayerState.IsLoaded;
         });
 
         Env.Framework.Update += this.OnFrameworkUpdate;
@@ -28,16 +28,21 @@ public class ConditionManager : IDisposable {
 
     public CurrentConditions Conditions { get => currentConditions ?? CurrentConditions.Query(); }
 
-    private void OnFrameworkUpdate(IFramework framework) {
+    private void OnFrameworkUpdate(IFramework framework)
+    {
         if (!loggedIn) { return; }
 
-        var newConditions = CurrentConditions.Query();
-        if (currentConditions != newConditions) {
-            currentConditions = newConditions;
-
-            if (ConditionChange != null) {
-                ConditionChange(currentConditions);
+        try
+        {
+            var newConditions = CurrentConditions.Query();
+            if (currentConditions != newConditions)
+            {
+                currentConditions = newConditions;
+                OnConditionChange?.Invoke(currentConditions);
             }
+        }
+        catch (Exception)
+        {
         }
     }
 

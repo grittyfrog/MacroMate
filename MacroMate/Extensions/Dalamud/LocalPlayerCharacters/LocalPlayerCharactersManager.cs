@@ -19,7 +19,7 @@ public class LocalPlayerCharactersManager : IDisposable {
 
         // Track current character if already logged in (deferred to next tick to ensure we're on main thread)
         Env.Framework.RunOnTick(() => {
-            if (Env.ClientState.LocalPlayer != null && Env.ClientState.LocalContentId != 0) {
+            if (Env.PlayerState.IsLoaded && Env.PlayerState.ContentId != 0) {
                 TrackCurrentCharacter();
             }
         });
@@ -40,11 +40,11 @@ public class LocalPlayerCharactersManager : IDisposable {
     }
 
     private void PollForPlayerData(IFramework framework) {
-        var player = Env.ClientState.LocalPlayer;
-        if (player == null) return;
 
-        var contentId = Env.ClientState.LocalContentId;
-        if (contentId == 0) return;
+        if (Env.PlayerState.IsLoaded) return;
+
+
+        if (Env.PlayerState.ContentId == 0) return;
 
         // Player data is available, track the character
         TrackCurrentCharacter();
@@ -55,15 +55,15 @@ public class LocalPlayerCharactersManager : IDisposable {
     }
 
     private void TrackCurrentCharacter() {
-        var player = Env.ClientState.LocalPlayer;
-        if (player == null) return;
+ 
+        if (!Env.PlayerState.IsLoaded) return;
 
-        var contentId = Env.ClientState.LocalContentId;
+        var contentId = Env.PlayerState.ContentId;
         if (contentId == 0) return;
-
+        var player = Env.ObjectTable.LocalPlayer;
         var character = new LocalCharacterDataCache.Entry {
             ContentId = contentId,
-            Name = player.Name.TextValue,
+            Name = player!.Name.TextValue,
             World = new ExcelId<World>(player.HomeWorld.RowId)
         };
 
@@ -72,7 +72,7 @@ public class LocalPlayerCharactersManager : IDisposable {
     }
 
     public LocalCharacterDataCache.Entry? GetCurrentCharacter() {
-        var contentId = Env.ClientState.LocalContentId;
+        var contentId = Env.PlayerState.ContentId;
         if (contentId == 0) return null;
 
         return Env.MacroMateCache.LocalCharacterData.GetCharacter(contentId);

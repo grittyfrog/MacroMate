@@ -1,7 +1,8 @@
-using System.Collections.Generic;
-using System.Linq;
 using Lumina.Excel.Sheets;
 using MacroMate.Extensions.Dalamaud.Excel;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace MacroMate.Conditions;
 
@@ -21,11 +22,21 @@ public record class JobCondition(
     public static IValueCondition.IFactory Factory => new ConditionFactory();
     public IValueCondition.IFactory FactoryRef => Factory;
 
-    public static JobCondition? Current() {
-        var player = Env.ClientState.LocalPlayer;
-        if (player == null) { return null; }
-
-        return new JobCondition(player.ClassJob.RowId);
+    public static JobCondition? Current()
+    {
+        try
+        {
+            if (!Env.PlayerState.IsLoaded) { return null; }
+            var player = Env.ObjectTable.LocalPlayer;
+            // 更安全的检查：即使IsLoaded为真，LocalPlayer也可能暂时为空
+            if (player == null) { return null; }
+            return new JobCondition(player.ClassJob.RowId);
+        }
+        catch (Exception ex)
+        {
+            Env.PluginLog.Error($"Failed to get current job: {ex}");
+            return null;
+        }
     }
 
     class ConditionFactory : IValueCondition.IFactory {

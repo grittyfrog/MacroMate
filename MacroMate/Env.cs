@@ -36,7 +36,10 @@ namespace MacroMate;
 public class Env {
     public static void Initialize(IDalamudPluginInterface pluginInterface) {
         pluginInterface.Create<Env>();
-
+        PlayerState = (IPlayerState?)pluginInterface.GetService(typeof(IPlayerState))
+                      ?? throw new InvalidOperationException("Failed to get IPlayerState service.");
+        ObjectTable = (IObjectTable?)pluginInterface.GetService(typeof(IObjectTable))
+                      ?? throw new InvalidOperationException("Failed to get IObjectTable service.");
         HappyEyeballsCallback = new HappyEyeballsCallback();
         HttpClient = new HttpClient(new SocketsHttpHandler {
             AutomaticDecompression = DecompressionMethods.All,
@@ -183,4 +186,6 @@ public class Env {
     public static SubscriptionManager SubscriptionManager { get; private set; } = null!;
 
     public static LocalPlayerCharactersManager LocalPlayerCharactersManager { get; private set; } = null!;
+    public static IPlayerState PlayerState { get; private set; }= null!;
+    public static IObjectTable ObjectTable { get; private set; }= null!;
 }

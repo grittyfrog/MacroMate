@@ -9,16 +9,16 @@ namespace MacroMate;
 
 public class MacroMate {
     /// We need to track CurrentLinks so we can know when we unlink something and need to delete it
-    private ImmutableList<VanillaMacroLink> CurrentVanillaLinks;
+    private ImmutableList<VanillaMacroLink> currentVanillaLinks;
 
     public MacroMate() {
         // Now that we're initialized we can load the save file.
         LoadConfig();
 
-        Env.ConditionManager.ConditionChange += OnConditionChange;
+        Env.ConditionManager.OnConditionChange += OnConditionChange;
         Env.MacroConfig.ConfigChange += OnConfigChange;
 
-        CurrentVanillaLinks = Env.MacroConfig.AllVanillaLinks();
+        currentVanillaLinks = Env.MacroConfig.AllVanillaLinks();
         Env.Framework.RunOnTick(() => {
             Refresh(Env.ConditionManager.Conditions);
         });
@@ -51,7 +51,7 @@ public class MacroMate {
         try {
             Env.MacroConfig.ActivateMacrosForConditions(conditions);
 
-            var inactiveVanillaMacroLinks = CurrentVanillaLinks.ToList();
+            var inactiveVanillaMacroLinks = currentVanillaLinks.ToList();
             foreach (var macro in Env.MacroConfig.ActiveMacros) {
                 foreach (var (vanillaMacroLink, vanillaMacroOrNull) in macro.VanillaMacroLinkBinding()) {
                     Env.VanillaMacroManager.SetMacro(vanillaMacroLink, vanillaMacroOrNull);
@@ -66,19 +66,19 @@ public class MacroMate {
             }
 
             var nextVanillaLinks = Env.MacroConfig.AllVanillaLinks();
-            var removedVanillaLinks = CurrentVanillaLinks.Except(nextVanillaLinks);
+            var removedVanillaLinks = currentVanillaLinks.Except(nextVanillaLinks);
 
             foreach (var link in removedVanillaLinks) {
                 Env.VanillaMacroManager.DeleteMacro(link.Set, link.Slot);
             }
 
-            CurrentVanillaLinks = nextVanillaLinks;
+            currentVanillaLinks = nextVanillaLinks;
         } catch (Exception) {
             // If we fail for some reason, report it and then detach so we don't keep crashing things.
             // In an ideal world this would never happen
             Env.ChatGui.PrintError("Macro Mate: Failed to bind macros on condition change");
             Env.ChatGui.PrintError("Unbinding condition listener...");
-            Env.ConditionManager.ConditionChange -= OnConditionChange;
+            Env.ConditionManager.OnConditionChange -= OnConditionChange;
             Env.MacroConfig.ConfigChange -= OnConfigChange;
             throw;
         }

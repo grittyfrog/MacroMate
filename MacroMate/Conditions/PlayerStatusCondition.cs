@@ -1,9 +1,10 @@
-using System.Collections.Generic;
-using System.Linq;
 using Generator.Equals;
 using Lumina.Excel.Sheets;
 using MacroMate.Extensions.Dalamaud.Excel;
 using MacroMate.Extensions.Dalamud;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace MacroMate.Conditions;
 
@@ -47,25 +48,42 @@ public record class PlayerStatusCondition(
         return Statuses.All(status => otherStatusCondition.Statuses.Any(os => status.SatisfiedBy(os)));
     }
 
-    public static PlayerStatusCondition? Current() {
-        if (Env.ClientState.LocalPlayer == null) { return null; }
+    public static PlayerStatusCondition? Current()
+    {
+        try
+        {
+            if (!Env.PlayerState.IsLoaded) { return null; }
 
-        var playerStatuses = Env.ClientState.LocalPlayer.StatusList.Select(s => {
-            if (s.StatusId == WELL_FED || s.StatusId == MEDICATED) {
-                var itemFoodId = s.Param;
-                var itemInfo = Env.ItemIndex.FindFoodItemInfo(itemFoodId);
-                if (itemInfo == null) { return null; }
-                return new WellFedOrMedicated(
-                    ConsumableType: itemInfo.ItemType,
-                    Item: new ExcelId<Item>(itemInfo.ItemId),
-                    IsHighQuality: itemInfo.IsHighQuality
-                );
-            } 
+            var player = Env.ObjectTable.LocalPlayer;
+            if (player == null) { return null; }
 
+            // 关键修复：直接访问 StatusList，API 14 中它仍然存在且类型为 StatusList
+            var statusList = player.StatusList; // player 是 IPlayerCharacter，继承自 IBattleChara
+            if (statusList == null) { return null; }
+
+            var playerStatuses = statusList.Select(s => {
+                if (s.StatusId == WELL_FED || s.StatusId == MEDICATED)
+                {
+                    var itemFoodId = s.Param;
+                    var itemInfo = Env.ItemIndex.FindFoodItemInfo(itemFoodId);
+                    if (itemInfo == null) { return null; }
+                    return new WellFedOrMedicated(
+                        ConsumableType: itemInfo.ItemType,
+                        Item: new ExcelId<Item>(itemInfo.ItemId),
+                        IsHighQuality: itemInfo.IsHighQuality
+                    );
+                }
+                return null;
+            }).OfType<WellFedOrMedicated>();
+
+            return new PlayerStatusCondition(playerStatuses.ToList());
+        }
+        catch (Exception)
+        {
+            //Exception ex,使用 Env.PluginLog 记录错误
+            //Env.PluginLog?.Error($"Failed to get player status: {ex.Message}");
             return null;
-        }).OfType<WellFedOrMedicated>();
-
-        return new PlayerStatusCondition(playerStatuses.ToList());
+        }
     }
 
     public static IValueCondition.IFactory Factory => new ConditionFactory();

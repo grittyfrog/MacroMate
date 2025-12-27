@@ -10,11 +10,15 @@ namespace MacroMate.Extensions.Dalamud.PlayerLocation;
  *
  * Region/SubArea code adapted from https://github.com/cassandra308/WhereAmIAgain/blob/main/WhereAmIAgain
  */
-public unsafe class PlayerLocationManager {
-    public ExcelId<ContentFinderCondition>? Content {
-        get {
+public unsafe class PlayerLocationManager
+{
+    public ExcelId<ContentFinderCondition>? Content
+    {
+        get
+        {
             var territoryTypeFound = Env.DataManager.GetExcelSheet<TerritoryType>().TryGetRow(Env.ClientState.TerritoryType, out var territoryType);
-            if (territoryTypeFound) {
+            if (territoryTypeFound)
+            {
                 var cfc = new ExcelId<ContentFinderCondition>(territoryType.ContentFinderCondition.RowId);
                 return cfc.DefaultIf(x => x.Id == 0);
             }
@@ -27,9 +31,12 @@ public unsafe class PlayerLocationManager {
 
     public ExcelId<PlaceName>? RegionName => new ExcelId<PlaceName>(TerritoryInfo.Instance()->AreaPlaceNameId).DefaultIf(name => name.Id == 0);
 
-    public ExcelId<PlaceName>? TerritoryName {
-        get {
-            if (Env.DataManager.GetExcelSheet<TerritoryType>().TryGetRow(Env.ClientState.TerritoryType, out var territoryType)) {
+    public ExcelId<PlaceName>? TerritoryName
+    {
+        get
+        {
+            if (Env.DataManager.GetExcelSheet<TerritoryType>().TryGetRow(Env.ClientState.TerritoryType, out var territoryType))
+            {
                 return new ExcelId<PlaceName>(territoryType.PlaceName.RowId);
             }
 
@@ -37,12 +44,24 @@ public unsafe class PlayerLocationManager {
         }
     }
 
-    public ExcelId<World>? CurrentWorld {
-        get {
-            var player = Env.ClientState.LocalPlayer;
-            if (player == null) { return null; }
+    public ExcelId<World>? CurrentWorld
+    {
+        get
+        {
+            try
+            {
+                if (!Env.PlayerState.IsLoaded) { return null; }
 
-            return new ExcelId<World>(player.CurrentWorld.RowId);
+                var player = Env.ObjectTable.LocalPlayer;
+                if (player == null) { return null; }
+
+                return new ExcelId<World>(player.CurrentWorld.RowId);
+            }
+            catch
+            {
+                // 静默失败，防止崩溃
+                return null;
+            }
         }
     }
 }
