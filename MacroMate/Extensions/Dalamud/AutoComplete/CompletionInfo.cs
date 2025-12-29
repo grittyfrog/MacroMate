@@ -88,7 +88,7 @@ public record class CompletionInfo(
         if (TryGetRowByName<MainCommand>(table, rowId, out var mainCommand)) { return mainCommand.Description; }
         if (TryGetRowByName<TextCommand>(table, rowId, out var textCommand)) { return textCommand.Description; }
         if (TryGetTransientRowByName<CompanionTransient>(table, rowId, out var companion)) { return companion.Tooltip; }
-        if (TryGetRowByName<MKDSupportJob>(table, rowId, out var occJob)) { return occJob.Unknown3; }
+        if (TryGetRowByName<MKDSupportJob>(table, rowId, out var occJob)) { return occJob.Description; }
 
         return null;
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Utility;
@@ -54,16 +55,21 @@ public class ParsedCompletion {
         if (completion.Key != 0) { return null; }
 
         var table = Env.SeStringEvaluator.Evaluate(completion.LookupTable).ExtractText();
+        if (table.IsNullOrWhitespace()) { return null; }
         if (table == "@") { return null; }
 
-        var (lookupTableName, lookupEntries) = ParseLookupTable.End().Parse(table);
-        var columns = lookupEntries.OfType<Lookup.Entry.Column>().Select(c => c.Col).ToList();
-        return new Lookup {
-            Entries = lookupEntries.ToList(),
-            TableName = lookupTableName,
-            TableNameColumns = columns.Count > 0 ? columns : new List<uint> { 0 },
-            IsNoun = lookupEntries.Any(e => e is Lookup.Entry.Noun)
-        };
+        try {
+            var (lookupTableName, lookupEntries) = ParseLookupTable.End().Parse(table);
+            var columns = lookupEntries.OfType<Lookup.Entry.Column>().Select(c => c.Col).ToList();
+            return new Lookup {
+                Entries = lookupEntries.ToList(),
+                TableName = lookupTableName,
+                TableNameColumns = columns.Count > 0 ? columns : new List<uint> { 0 },
+                IsNoun = lookupEntries.Any(e => e is Lookup.Entry.Noun)
+            };
+        } catch (Sprache.ParseException ex) {
+            throw new Exception($"Failed to parse completion: '{table}' (row: {completion.RowId})", ex);
+        }
     }
 
     private static readonly Parser<Lookup.Entry> ParseLookupEntryRowRange =

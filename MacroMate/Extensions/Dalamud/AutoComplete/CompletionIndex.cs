@@ -75,10 +75,12 @@ public class CompletionIndex {
 
     private List<CompletionInfo> AllCompletionInfo() {
         return Env.DataManager.GetExcelSheet<Completion>()
+             .Where(raw => raw.Group != 0)
              .Select(raw => ParsedCompletion.From(raw))
              .SelectMany<ParsedCompletion, CompletionInfo>(parsed => CompletionInfo.From(parsed))
              .Select(info => {
-                 if (CompletionGroupsById.TryGetValue(info.Group, out var completionGroup)) {
+                 if (CompletionGroupsById.TryGetValue(info.Group, out var completionGroup))
+                 {
                      return info with { GroupTitle = completionGroup.GroupTitle };
                  }
                  return info;
