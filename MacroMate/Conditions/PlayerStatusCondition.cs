@@ -48,9 +48,10 @@ public record class PlayerStatusCondition(
     }
 
     public static PlayerStatusCondition? Current() {
-        if (Env.ClientState.LocalPlayer == null) { return null; }
+        if (!Env.ClientState.IsLoggedIn) { return null; }
+        if (Env.ObjectTable.LocalPlayer == null) { return null; }
 
-        var playerStatuses = Env.ClientState.LocalPlayer.StatusList.Select(s => {
+        var playerStatuses = Env.ObjectTable.LocalPlayer.StatusList.Select(s => {
             if (s.StatusId == WELL_FED || s.StatusId == MEDICATED) {
                 var itemFoodId = s.Param;
                 var itemInfo = Env.ItemIndex.FindFoodItemInfo(itemFoodId);

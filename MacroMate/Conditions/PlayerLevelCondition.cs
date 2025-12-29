@@ -4,10 +4,9 @@ public record class PlayerLevelCondition(
     int Level
 ) : INumericCondition {
     public static PlayerLevelCondition? Current() {
-        var player = Env.ClientState.LocalPlayer;
-        if (player == null) { return null; }
+        if (!Env.PlayerState.IsLoaded) { return null; }
 
-        return new PlayerLevelCondition(player.Level);
+        return new PlayerLevelCondition(Env.PlayerState.Level);
     }
 
     public int AsNumber() => Level;

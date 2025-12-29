@@ -139,6 +139,12 @@ public class Env {
     [PluginService]
     public static ISeStringEvaluator SeStringEvaluator { get; private set; } = null!;
 
+    [PluginService]
+    public static IPlayerState PlayerState { get; private set; } = null!;
+
+    [PluginService]
+    public static IObjectTable ObjectTable { get; private set; } = null!;
+
     public static WindowSystem WindowSystem { get; private set; } = null!;
 
     public static Random Random { get; private set; } = null!;

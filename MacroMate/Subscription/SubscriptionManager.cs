@@ -47,7 +47,7 @@ public class SubscriptionManager {
         // If we are already logged run the "First Login" to make plugin reloads consistent with
         // first login.
         Env.Framework.RunOnTick(() => {
-            if (Env.ClientState.LocalPlayer != null) {
+            if (Env.ClientState.IsLoggedIn) {
                 OnLogin();
             }
 

@@ -39,10 +39,9 @@ public unsafe class PlayerLocationManager {
 
     public ExcelId<World>? CurrentWorld {
         get {
-            var player = Env.ClientState.LocalPlayer;
-            if (player == null) { return null; }
+            if (!Env.PlayerState.IsLoaded) { return null; }
 
-            return new ExcelId<World>(player.CurrentWorld.RowId);
+            return new ExcelId<World>(Env.PlayerState.CurrentWorld.RowId);
         }
     }
 }

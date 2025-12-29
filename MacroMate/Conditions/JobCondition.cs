@@ -22,10 +22,9 @@ public record class JobCondition(
     public IValueCondition.IFactory FactoryRef => Factory;
 
     public static JobCondition? Current() {
-        var player = Env.ClientState.LocalPlayer;
-        if (player == null) { return null; }
+        if (!Env.PlayerState.IsLoaded) { return null; }
 
-        return new JobCondition(player.ClassJob.RowId);
+        return new JobCondition(Env.PlayerState.ClassJob.RowId);
     }
 
     class ConditionFactory : IValueCondition.IFactory {
