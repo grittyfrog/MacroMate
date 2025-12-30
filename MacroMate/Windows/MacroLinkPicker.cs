@@ -1,6 +1,7 @@
 
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Windowing;
 using MacroMate.MacroTree;
 using MacroMate.Windows.Components;
 

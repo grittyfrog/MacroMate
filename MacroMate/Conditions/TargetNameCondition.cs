@@ -31,22 +31,23 @@ public record class TargetNameCondition(
      * Defines support levels for targeting different object kinds
      */
     private static Dictionary<ObjectKind, ObjectKindSupport> ObjectKindSupportLevel = new() {
-        { ObjectKind.None,           ObjectKindSupport.UNSUPPORTED },
-        { ObjectKind.Player,         ObjectKindSupport.KIND_ONLY   },
-        { ObjectKind.BattleNpc,      ObjectKindSupport.SUPPORTED   },
-        { ObjectKind.EventNpc,       ObjectKindSupport.SUPPORTED   },
-        { ObjectKind.Treasure,       ObjectKindSupport.KIND_ONLY   }, // No table
-        { ObjectKind.Aetheryte,      ObjectKindSupport.KIND_ONLY   }, // Too many spoilers
-        { ObjectKind.GatheringPoint, ObjectKindSupport.KIND_ONLY   }, // No useful table
-        { ObjectKind.EventObj,       ObjectKindSupport.SUPPORTED   },
-        { ObjectKind.MountType,      ObjectKindSupport.UNSUPPORTED },
-        { ObjectKind.Companion,      ObjectKindSupport.SUPPORTED   }, // Minion
-        { ObjectKind.Retainer,       ObjectKindSupport.UNSUPPORTED },
-        { ObjectKind.Area,           ObjectKindSupport.UNSUPPORTED },
-        { ObjectKind.Housing,        ObjectKindSupport.SUPPORTED   },
-        { ObjectKind.Cutscene,       ObjectKindSupport.UNSUPPORTED },
-        { ObjectKind.CardStand,      ObjectKindSupport.UNSUPPORTED }, // Island Sanctuary gathering
-        { ObjectKind.Ornament,       ObjectKindSupport.UNSUPPORTED }
+        { ObjectKind.None,                 ObjectKindSupport.UNSUPPORTED },
+        { ObjectKind.Pc,                   ObjectKindSupport.KIND_ONLY   },
+        { ObjectKind.BattleNpc,            ObjectKindSupport.SUPPORTED   },
+        { ObjectKind.EventNpc,             ObjectKindSupport.SUPPORTED   },
+        { ObjectKind.Treasure,             ObjectKindSupport.KIND_ONLY   }, // No table
+        { ObjectKind.Aetheryte,            ObjectKindSupport.KIND_ONLY   }, // Too many spoilers
+        { ObjectKind.GatheringPoint,       ObjectKindSupport.KIND_ONLY   }, // No useful table
+        { ObjectKind.EventObj,             ObjectKindSupport.SUPPORTED   },
+        { ObjectKind.Mount,                ObjectKindSupport.UNSUPPORTED },
+        { ObjectKind.Companion,            ObjectKindSupport.SUPPORTED   }, // Minion
+        { ObjectKind.Retainer,             ObjectKindSupport.UNSUPPORTED },
+        { ObjectKind.AreaObject,           ObjectKindSupport.UNSUPPORTED },
+        { ObjectKind.HousingEventObject,   ObjectKindSupport.SUPPORTED   },
+        { ObjectKind.Cutscene,             ObjectKindSupport.UNSUPPORTED },
+        { ObjectKind.ReactionEventObject,  ObjectKindSupport.UNSUPPORTED },
+        { ObjectKind.Ornament,             ObjectKindSupport.UNSUPPORTED },
+        { ObjectKind.CardStand,            ObjectKindSupport.UNSUPPORTED }  // Island Sanctuary gathering
     };
 
     public string ValueName {
@@ -112,7 +113,7 @@ public record class TargetNameCondition(
 
     public string Name => TargetKind switch {
         ObjectKind.None => null,
-        ObjectKind.Player => null, // Not supported
+        ObjectKind.Pc => null, // Not supported
         ObjectKind.BattleNpc =>
             Env.DataManager.GetExcelSheet<BNpcName>()?.GetRowOrNull(TargetId)?.Singular.ExtractText(),
         ObjectKind.EventNpc =>
@@ -121,16 +122,16 @@ public record class TargetNameCondition(
         ObjectKind.Aetheryte => null,
         ObjectKind.GatheringPoint => null,
         ObjectKind.EventObj => Env.DataManager.GetExcelSheet<EObjName>()?.GetRowOrNull(TargetId)?.Singular.ExtractText(),
-        ObjectKind.MountType => null,
+        ObjectKind.Mount => null,
         ObjectKind.Companion => Env.DataManager.GetExcelSheet<Companion>()?.GetRowOrNull(TargetId)?.Singular.ExtractText(), // Minion
         ObjectKind.Retainer => null,
-        ObjectKind.Area => null,
-        ObjectKind.Housing =>
+        ObjectKind.AreaObject => null,
+        ObjectKind.HousingEventObject =>
             Env.DataManager.GetExcelSheet<HousingFurniture>()
               ?.GetRowOrNull(TargetId)?.Item.ValueNullable?.Name.ExtractText(),
         ObjectKind.Cutscene => null,
-        ObjectKind.CardStand => null,
         ObjectKind.Ornament => null,
+        ObjectKind.CardStand => null,
         _ => null
     } ?? "<unknown>";
 
@@ -197,9 +198,9 @@ public record class TargetNameCondition(
                     .Select(c => new TargetNameCondition(ObjectKind.Companion, c.RowId));
             }
 
-            if (targetCondition.TargetKind == ObjectKind.Housing) {
+            if (targetCondition.TargetKind == ObjectKind.HousingEventObject) {
                 return Env.DataManager.GetExcelSheet<HousingFurniture>()!
-                    .Select(furniture => new TargetNameCondition(ObjectKind.Housing, furniture.RowId));
+                    .Select(furniture => new TargetNameCondition(ObjectKind.HousingEventObject, furniture.RowId));
             }
 
             return new List<IValueCondition>();

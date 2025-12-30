@@ -74,7 +74,7 @@ public record class ExcelId<T>(uint Id) : ExcelId where T : struct, IExcelRow<T>
         var gameData = GameData;
         if (gameData is BNpcName) { return ObjectKind.BattleNpc; }
         if (gameData is ENpcResident) { return ObjectKind.EventNpc; }
-        if (gameData is HousingFurniture) { return ObjectKind.Housing; }
+        if (gameData is HousingFurniture) { return ObjectKind.HousingEventObject; }
 
         return null;
     }
