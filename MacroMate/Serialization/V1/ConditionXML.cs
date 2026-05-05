@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using System.Xml.Serialization;
-using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Lumina.Excel.Sheets;
 using MacroMate.Conditions;
@@ -125,7 +124,7 @@ public class TargetNameConditionXML : ConditionXML {
     public XmlComment? TargetNameComment { get => TargetNameNpc?.Comment; set {} }
 
     public uint? TargetId { get; set; }
-    public ObjectKind? TargetKind { get; set; }
+    public ObjectKindXML? TargetKind { get; set; }
 
     // Old Fields: Deprecated on next version
     public ExcelIdXML? TargetNameNpc { get; set; }
@@ -134,7 +133,7 @@ public class TargetNameConditionXML : ConditionXML {
 
     public override ICondition ToReal() {
         if (TargetId != null && TargetKind != null) {
-            return new TargetNameCondition((ObjectKind)TargetKind, (uint)TargetId);
+            return new TargetNameCondition(((ObjectKindXML)TargetKind).FromXml(), (uint)TargetId);
         }
 
         if (TargetNameNpc != null) {
@@ -151,7 +150,7 @@ public class TargetNameConditionXML : ConditionXML {
     public static TargetNameConditionXML From(TargetNameCondition cond) {
         return new TargetNameConditionXML {
             TargetId = cond.TargetId,
-            TargetKind = cond.TargetKind
+            TargetKind = cond.TargetKind.ToXml()
         };
     }
 }
@@ -200,12 +199,14 @@ public class PvpStateConditionXML : ConditionXML {
 
 [XmlType("PlayerConditionCondition")]
 public class PlayerConditionConditionXML : ConditionXML {
-    public required List<ConditionFlag> Conditions { get; set; }
+    public required List<ConditionFlagXML> Conditions { get; set; }
 
-    public override ICondition ToReal() => new PlayerConditionCondition(Conditions.ToHashSet());
+    public override ICondition ToReal() => new PlayerConditionCondition(
+        Conditions.Select(c => c.FromXml()).ToHashSet()
+    );
 
     public static PlayerConditionConditionXML From(PlayerConditionCondition cond) => new() {
-        Conditions = cond.Conditions.ToList()
+        Conditions = cond.Conditions.Select(c => c.ToXml()).ToList()
     };
 }
 
