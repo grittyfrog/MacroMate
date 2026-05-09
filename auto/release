@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+#
+# Prepare a DalamudPluginsD17 release commit from the latest plugin
+# version-bump commit.
+#
+# End state:
+#   The configured D17 branch is one commit ahead of upstream/main, where that
+#   commit updates stable/<PluginName>/manifest.toml to reference the latest
+#   release commit and changelog.
+#
+# This script is idempotent. Re-running with no upstream changes is a no-op.
+# Re-running after `upstream/main` advances or after a new release commit
+# lands in the plugin repo will regenerate the release commit on the new base.
+#
+# Does NOT push. Review the result, then push and open the PR yourself.
+#
+# Configuration (env vars):
+#   PLUGIN_NAME      Plugin name as it appears in commit titles ("Foo X.Y.Z.W")
+#                    and in the D17 directory layout (stable/<PluginName>/).
+#                    (default: basename of this repo)
+#   D17_REPO         Path to local DalamudPluginsD17 checkout
+#                    (default: sibling directory ../DalamudPluginsD17)
+#   D17_BRANCH       Branch name to use in the D17 repo
+#                    (default: lowercased PLUGIN_NAME)
+#   D17_UPSTREAM     Remote name pointing at goatcorp/DalamudPluginsD17
+#                    (default: upstream)
+
+set -euo pipefail
+
+PLUGIN_REPO="$(git rev-parse --show-toplevel 2>/dev/null || jj workspace root)"
+PLUGIN_NAME="${PLUGIN_NAME:-$(basename "$PLUGIN_REPO")}"
+D17_REPO="${D17_REPO:-$(dirname "$PLUGIN_REPO")/DalamudPluginsD17}"
+D17_BRANCH="${D17_BRANCH:-$(echo "$PLUGIN_NAME" | tr '[:upper:]' '[:lower:]')}"
+D17_UPSTREAM="${D17_UPSTREAM:-upstream}"
+MANIFEST_REL="stable/$PLUGIN_NAME/manifest.toml"
+
+if [[ ! -d "$D17_REPO/.git" ]]; then
+    echo "error: D17 repo not found at $D17_REPO" >&2
+    echo "set D17_REPO env var to override" >&2
+    exit 1
+fi
+
+###############################################################################
+# Discover latest plugin release commit
+###############################################################################
+cd "$PLUGIN_REPO"
+
+release_change=$(jj log --no-graph -r "latest(description(glob:\"$PLUGIN_NAME *.*.*.*\"))" -T 'change_id ++ "\n"' | head -1)
+release_sha=$(jj log --no-graph -r "$release_change" -T 'commit_id ++ "\n"' | head -1)
+release_msg=$(jj log --no-graph -r "$release_change" -T 'description')
+
+if [[ -z "$release_sha" || -z "$release_msg" ]]; then
+    echo "error: no '$PLUGIN_NAME X.Y.Z.W' version-bump commit found" >&2
+    exit 1
+fi
+
+release_title=$(printf '%s\n' "$release_msg" | head -1)
+release_version="${release_title#$PLUGIN_NAME }"
+release_body=$(printf '%s\n' "$release_msg" | tail -n +3)
+
+if [[ -z "$release_body" ]]; then
+    echo "error: release commit ($release_sha) has no body / changelog" >&2
+    exit 1
+fi
+
+echo "Latest $PLUGIN_NAME release: $release_version  ($release_sha)"
+
+###############################################################################
+# Build the desired manifest content
+###############################################################################
+cd "$D17_REPO"
+
+git fetch --quiet --all
+
+# Render desired manifest by patching the upstream/main version of it. This
+# preserves any unrelated fields we don't manage (repository, owners, etc.).
+# All inputs are passed via env vars so the Python source is fully literal.
+upstream_manifest=$(git show "$D17_UPSTREAM/main:$MANIFEST_REL")
+desired_manifest=$(
+    UPSTREAM_MANIFEST="$upstream_manifest" \
+    RELEASE_SHA="$release_sha" \
+    RELEASE_VERSION="$release_version" \
+    RELEASE_BODY="$release_body" \
+    python3 - <<'PY'
+import os, re, sys
+
+text = os.environ['UPSTREAM_MANIFEST']
+sha = os.environ['RELEASE_SHA']
+version = os.environ['RELEASE_VERSION']
+body = os.environ['RELEASE_BODY']
+
+text = re.sub(r'^commit\s*=\s*".*"$',  f'commit = "{sha}"',     text, count=1, flags=re.M)
+text = re.sub(r'^version\s*=\s*".*"$', f'version = "{version}"', text, count=1, flags=re.M)
+text = re.sub(
+    r'^changelog\s*=\s*"""\n.*?\n"""',
+    f'changelog = """\n{body}\n"""',
+    text,
+    count=1,
+    flags=re.M | re.S,
+)
+sys.stdout.write(text)
+PY
+)
+
+###############################################################################
+# Idempotency check: are we already in the desired end state?
+###############################################################################
+
+# We are "done" iff:
+#   1. The branch exists.
+#   2. HEAD's parent is upstream/main.
+#   3. HEAD's title equals the desired title.
+#   4. HEAD's manifest matches the desired content.
+already_done=false
+if git show-ref --verify --quiet "refs/heads/$D17_BRANCH"; then
+    head_sha=$(git rev-parse "$D17_BRANCH")
+    head_parent=$(git rev-parse "$D17_BRANCH^" 2>/dev/null || echo "")
+    upstream_sha=$(git rev-parse "$D17_UPSTREAM/main")
+    head_title=$(git log -1 --pretty=%s "$D17_BRANCH")
+    head_manifest=$(git show "$D17_BRANCH:$MANIFEST_REL" 2>/dev/null || echo "")
+
+    if [[ "$head_parent" == "$upstream_sha" \
+       && "$head_title" == "$release_title" \
+       && "$head_manifest" == "$desired_manifest" ]]; then
+        already_done=true
+    fi
+fi
+
+if $already_done; then
+    git checkout --quiet "$D17_BRANCH"
+    echo
+    echo "Already prepared. No changes needed."
+    git log --oneline -1
+    exit 0
+fi
+
+###############################################################################
+# Prepare branch + commit
+###############################################################################
+
+# Refuse to clobber unrelated uncommitted work.
+if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "error: working tree has uncommitted changes; aborting" >&2
+    git status --short >&2
+    exit 1
+fi
+
+if git show-ref --verify --quiet "refs/heads/$D17_BRANCH"; then
+    git checkout --quiet "$D17_BRANCH"
+    git reset --quiet --hard "$D17_UPSTREAM/main"
+else
+    git checkout --quiet -b "$D17_BRANCH" "$D17_UPSTREAM/main"
+fi
+
+printf '%s\n' "$desired_manifest" > "$MANIFEST_REL"
+git add "$MANIFEST_REL"
+git commit --quiet -m "$release_title
+
+$release_body
+"
+
+echo
+echo "Prepared release commit on '$D17_BRANCH':"
+git log --oneline -1
+echo
+echo "Review the diff, then push with:"
+echo "  git -C $D17_REPO push --force-with-lease origin $D17_BRANCH"
