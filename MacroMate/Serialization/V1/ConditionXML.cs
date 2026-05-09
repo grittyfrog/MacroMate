@@ -18,6 +18,7 @@ namespace MacroMate.Serialization.V1;
 [XmlInclude(typeof(TargetNpcConditionXML))]
 [XmlInclude(typeof(TargetNameConditionXML))]
 [XmlInclude(typeof(JobConditionXML))]
+[XmlInclude(typeof(GearsetConditionXML))]
 [XmlInclude(typeof(PvpStateConditionXML))]
 [XmlInclude(typeof(PlayerConditionConditionXML))]
 [XmlInclude(typeof(PlayerLevelConditionXML))]
@@ -38,6 +39,7 @@ public abstract class ConditionXML {
         LocationCondition cond => LocationConditionXML.From(cond),
         TargetNameCondition cond => TargetNameConditionXML.From(cond),
         JobCondition cond => JobConditionXML.From(cond),
+        GearsetCondition cond => GearsetConditionXML.From(cond),
         PvpStateCondition cond => PvpStateConditionXML.From(cond),
         PlayerConditionCondition cond => PlayerConditionConditionXML.From(cond),
         PlayerLevelCondition cond => PlayerLevelConditionXML.From(cond),
@@ -165,6 +167,17 @@ public class JobConditionXML : ConditionXML {
 
     public static JobConditionXML From(JobCondition cond) => new() {
         Job = new ExcelIdXML(cond.Job)
+    };
+}
+
+[XmlType("GearsetCondition")]
+public class GearsetConditionXML : ConditionXML {
+    public required int Index { get; set; }
+
+    public override ICondition ToReal() => new GearsetCondition(Index);
+
+    public static GearsetConditionXML From(GearsetCondition cond) => new() {
+        Index = cond.Index
     };
 }
 

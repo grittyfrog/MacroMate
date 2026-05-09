@@ -12,6 +12,7 @@ public record CurrentConditions(
     LocationCondition? location,
     TargetNameCondition? targetNpc,
     JobCondition? job,
+    GearsetCondition? gearset,
     PvpStateCondition? pvpState,
     PlayerConditionCondition? playerCondition,
     PlayerLevelCondition? playerLevelCondition,
@@ -30,6 +31,7 @@ public record CurrentConditions(
         location: null,
         targetNpc: null,
         job: null,
+        gearset: null,
         pvpState: null,
         playerCondition: null,
         playerLevelCondition: null,
@@ -49,6 +51,7 @@ public record CurrentConditions(
         if (location != null) { yield return location; }
         if (targetNpc != null) { yield return targetNpc; }
         if (job != null) { yield return job; }
+        if (gearset != null) { yield return gearset; }
         if (pvpState != null) { yield return pvpState; }
         if (playerCondition != null) { yield return playerCondition; }
         if (playerLevelCondition != null) { yield return playerLevelCondition; }
@@ -69,6 +72,7 @@ public record CurrentConditions(
             location: LocationCondition.Current(),
             targetNpc: TargetNameCondition.Current(),
             job: JobCondition.Current(),
+            gearset: GearsetCondition.Current(),
             pvpState: PvpStateCondition.Current(),
             playerCondition: PlayerConditionCondition.Current(),
             playerLevelCondition: PlayerLevelCondition.Current(),

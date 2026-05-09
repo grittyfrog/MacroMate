@@ -36,6 +36,7 @@ public interface ICondition {
             ContentCondition.Factory,
             CurrentCharacterCondition.Factory,
             JobCondition.Factory,
+            GearsetCondition.Factory,
             LocationCondition.Factory,
             PlayerConditionCondition.Factory,
             PlayerLevelCondition.Factory,
