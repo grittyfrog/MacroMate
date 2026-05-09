@@ -9,8 +9,8 @@ public static class ImGuiInputTextStateExt {
         var lower = self.Stb.SelectStart <= self.Stb.SelectEnd ? self.Stb.SelectStart : self.Stb.SelectEnd;
         var higher = self.Stb.SelectStart <= self.Stb.SelectEnd ? self.Stb.SelectEnd : self.Stb.SelectStart;
         var selectionLength = higher - lower;
-        var selectedChars = self.TextW.AsEnumerable().Skip(lower).Take(selectionLength);
-        return string.Join("", selectedChars.ToString()); 
+        var selectedChars = self.TextW.AsEnumerable().Skip(lower).Take(selectionLength).Select(us => (char)us);
+        return string.Join("", selectedChars);
     }
     
     /// <summary>
