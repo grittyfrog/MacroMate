@@ -66,9 +66,9 @@ public unsafe class VanillaMacroManager : IDisposable {
     }
 
     public void ExecuteMacro(SeString lines) {
-        var vanillaMacroLines = lines.SplitIntoLines();
-        if (vanillaMacroLines.Count() > 15) {
-            Env.ChatGui.PrintError($"Macro has too many lines (max 15)");
+        var vanillaMacroLines = lines.SplitIntoLines().ToList();
+        if (vanillaMacroLines.Count() > VanillaMacro.MaxLines) {
+            Env.ChatGui.PrintError($"Macro has too many lines (max {VanillaMacro.MaxLines})");
             return;
         }
 
@@ -131,8 +131,6 @@ public unsafe class VanillaMacroManager : IDisposable {
             return;
         }
 
-        var macroText = vanillaMacro.Lines.Value;
-
         var vanillaMacroLines = vanillaMacro.Lines.Value.SplitIntoLines();
         if (vanillaMacroLines.Count() > 15) {
             Env.ChatGui.PrintError($"Macro {macroSlot} has too many lines (max 15)");
@@ -141,22 +139,29 @@ public unsafe class VanillaMacroManager : IDisposable {
 
         try {
             var macro = raptureMacroModule->GetMacro((uint)macroSet, macroSlot);
-            macro->Clear();
-            macro->Name.SetString(vanillaMacro.Title.Truncate(20));
+            var oldName = macro->Name.ToString();
+            var oldIconId = macro->IconId;
 
-            bool iconIdChanged = macro->IconId != vanillaMacro.IconId;
+            macro->Clear();
+            macro->Name.SetString(vanillaMacro.Title.Truncate((int)VanillaMacro.MaxNameLength));
             macro->SetIcon(vanillaMacro.IconId);
 
             foreach (var (line, index) in vanillaMacroLines.WithIndex()) {
                 macro->Lines[index].SetString(line.EncodeWithNullTerminator());
             }
 
+            var nameChanged = oldName != macro->Name.ToString();
+            var iconChanged = oldIconId != macro->IconId;
+
             // Update the MacroAddon if it's open (since it doesn't auto-refresh)
-            if (iconIdChanged) {
+            if (iconChanged) {
                 SetVanillaMacroUISlotIcon(macroSet, macroSlot, vanillaMacro.IconId);
             }
 
-            raptureHotbarModule->ReloadMacroSlots((byte)macroSet, (byte)macroSlot);
+            // Writes to HOTBAR.DAT (via dirty flag). Skip if hotbar-visible data isn't changed.
+            if (nameChanged || iconChanged) {
+                raptureHotbarModule->ReloadMacroSlots((byte)macroSet, (byte)macroSlot);
+            }
         } catch (Exception e) {
             Env.PluginLog.Error($"Failed to set macro {vanillaMacro.Title} to {macroSet} ({macroSlot}): {e}");
         }
